@@ -256,7 +256,7 @@ const SKILLS = [
   { id: 'adren',    rar: 'epic', name: 'Adrenaline',    desc: 'When a teammate goes down, everyone fires twice as fast and drives faster for 5 seconds.', max: 1 },
   { id: 'cluster',  rar: 'epic', name: 'Cluster Mines', desc: 'Your mines burst into a ring of 8 shells.', max: 1 },
   // legendary
-  { id: 'phoenix',  rar: 'legendary', name: 'Phoenix Core',    desc: 'Once per level, each tank survives a killing blow and explodes back to life.', max: 1 },
+  { id: 'phoenix',  rar: 'legendary', name: 'Blast Rebirth',   desc: 'Once per level, each tank survives a killing blow and explodes back to life.', max: 1 },
   { id: 'reflect',  rar: 'legendary', name: 'Mirror Plating',  desc: 'Enemy shells have a 35% chance to bounce off you and fly back at them.', max: 2 },
   { id: 'storm',    rar: 'legendary', name: 'Shell Storm',     desc: 'Every 6 seconds, each tank fires a ring of 8 shells on its own.', max: 2 },
   { id: 'chain',    rar: 'legendary', name: 'Chain Reaction',  desc: 'Destroyed enemies explode and damage the enemies around them.', max: 1 },
@@ -974,7 +974,7 @@ function hurtTank(t, killer, dmg) {
   }
   if (t.team === 'p' && sk('phoenix') && !G.phoenix[t.slot]) {
     G.phoenix[t.slot] = true; t.shield = 2;
-    emit({ t: 'boom', x: r1(t.x), y: r1(t.y), c: '#ff9a3d', k: .9 }); emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 26), s: 'PHOENIX', c: '#ffb04d' });
+    emit({ t: 'boom', x: r1(t.x), y: r1(t.y), c: '#ff9a3d', k: .9 }); emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 26), s: 'REBIRTH', c: '#ffb04d' });
     sfx('revive'); rumble(t.dev, .8, .8, 300);
     for (const e of G.tanks) if (e.alive && e.team === 'e' && !e.boss && Math.hypot(e.x - t.x, e.y - t.y) < 80) hurtTank(e, t, 1);
     return;
