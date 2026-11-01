@@ -2,6 +2,8 @@
 
 A top-down co-op tank game for 1–4 players in the browser. Shells bounce off walls, mines clear crates, and you can revive a downed teammate by parking on their wreck.
 
+Runs are endless. After every level, three slot machines spin to decide the next wave (each lands on an enemy type, then on how many of it), and the squad picks one of three skills. Every 10th level is a boss fight.
+
 The game is a single static page (`index.html`), so any static host works (this repo deploys as-is on Vercel).
 
 ## Controls

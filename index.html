@@ -118,15 +118,23 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 #net-status[data-err="1"]{color:#ffb4a8}
 .btnrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between}
 
+.skillp{width:76%;pointer-events:auto;text-align:center;align-items:center}
+.skillp h2{font-family:var(--display);font-weight:400;font-size:2.6em;margin:0;line-height:1}
+.skills{display:grid;grid-template-columns:repeat(3,1fr);gap:.8em;width:100%}
+.sk{border:1px solid #5a4b39;border-radius:6px;padding:1em;cursor:pointer;background:rgba(255,255,255,.04);text-align:left;color:var(--ink);font:inherit;display:flex;flex-direction:column;gap:.45em;min-width:0}
+.sk h4{font:400 1.25em var(--display);margin:0;color:var(--ink)}
+.sk:hover{border-color:var(--muted)}
+.sk.sel{border-color:var(--accent);background:rgba(242,185,15,.12);box-shadow:inset 0 0 0 2px var(--accent)}
+.sk.sel h4{color:var(--accent)}
 @keyframes pulse{50%{opacity:.55}}
 @media (prefers-reduced-motion:reduce){.go{animation:none}}
-@media (max-width:700px){#legend{display:none}.title{width:auto}.slots{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:700px){#legend{display:none}.title,.skillp{width:auto}.slots{grid-template-columns:repeat(2,1fr)}.skills{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div id="app">
   <header id="hud">
-    <div class="hgroup"><span class="lbl">Stage</span><b id="h-stage">–</b><span id="h-name"></span></div>
+    <div class="hgroup"><span class="lbl">Level</span><b id="h-stage">–</b><span id="h-name"></span></div>
     <div class="hgroup"><span class="lbl">Enemies</span><b id="h-enemies">–</b><span class="lbl">Lives</span><b id="h-lives">–</b><span class="lbl" id="h-ff">Friendly fire off</span></div>
     <div class="hgroup net"><button id="net-btn" class="hbtn" type="button">Play online</button><button id="voice-btn" class="hbtn" type="button" hidden>Voice off</button></div>
     <div class="hud-slots">
@@ -175,15 +183,57 @@ const COLORS = [['Green', '#3fae4a'], ['Red', '#e5484d'], ['Blue', '#3e7bfa'], [
 const shade = (hex, k) => { const n = parseInt(hex.slice(1), 16); return `rgb(${Math.round((n >> 16) * k)},${Math.round((n >> 8 & 255) * k)},${Math.round((n & 255) * k)})`; };
 const DARK = COLORS.map(c => c[0] === 'Black' ? '#77777f' : shade(c[1], .55));
 const TRAILS = [['smoke', 'Smoke'], ['fire', 'Flame'], ['tint', 'Team color'], ['spark', 'Sparkle'], ['rainbow', 'Rainbow'], ['bubble', 'Bubbles'], ['none', 'No']];
+// miss = chance a shot is sloppy, err = how far off (radians) a sloppy shot can go
 const ETYPES = {
-  a: { name: 'Cork',     color: '#a86b3c', speed: 0,  bs: 165, bounces: 1, max: 1, cd: 2.6, turn: 1.4, aimEvery: .6 },
-  b: { name: 'Scout',    color: '#6e7f8d', speed: 42, bs: 165, bounces: 1, max: 1, cd: 2.2, turn: 1.8, aimEvery: .5, pref: 300 },
-  c: { name: 'Hornet',   color: '#e07b24', speed: 58, bs: 330, bounces: 0, max: 1, cd: 1.9, turn: 2.4, aimEvery: .4, rocket: true, pref: 340 },
-  d: { name: 'Sapper',   color: '#6a4f9e', speed: 92, bs: 170, bounces: 1, max: 1, cd: 2.6, turn: 2.0, aimEvery: .5, mines: 2, pref: 200 },
-  e: { name: 'Ricochet', color: '#d36aa8', speed: 58, bs: 200, bounces: 2, max: 2, cd: 1.5, turn: 2.8, aimEvery: .35, smart: true, pref: 320 },
-  f: { name: 'Brute',    color: '#3a3d44', speed: 70, bs: 215, bounces: 1, max: 4, cd: 1.7, burst: 3, burstGap: .2, turn: 3.2, aimEvery: .3, smart: true, pref: 240 },
-  g: { name: 'Ghost',    color: '#eef3f6', speed: 78, bs: 250, bounces: 1, max: 2, cd: 1.3, turn: 2.8, aimEvery: .35, smart: true, ghost: true, pref: 260 },
+  a: { name: 'Cork',     color: '#a86b3c', speed: 0,  bs: 165, bounces: 1, max: 1, cd: 2.6, turn: 1.4, aimEvery: .6, miss: .5, err: .22 },
+  b: { name: 'Scout',    color: '#6e7f8d', speed: 42, bs: 165, bounces: 1, max: 1, cd: 2.2, turn: 1.8, aimEvery: .5, pref: 300, miss: .45, err: .2 },
+  c: { name: 'Hornet',   color: '#e07b24', speed: 58, bs: 330, bounces: 0, max: 1, cd: 1.9, turn: 2.4, aimEvery: .4, kind: 'rocket', pref: 340, miss: .35, err: .14 },
+  d: { name: 'Sapper',   color: '#6a4f9e', speed: 92, bs: 170, bounces: 1, max: 1, cd: 2.6, turn: 2.0, aimEvery: .5, mines: 2, pref: 200, miss: .5, err: .2 },
+  e: { name: 'Ricochet', color: '#d36aa8', speed: 58, bs: 200, bounces: 2, max: 2, cd: 1.5, turn: 2.8, aimEvery: .35, smart: true, pref: 320, miss: .3, err: .12 },
+  f: { name: 'Brute',    color: '#3a3d44', speed: 70, bs: 215, bounces: 1, max: 4, cd: 1.7, burst: 3, burstGap: .2, turn: 3.2, aimEvery: .3, smart: true, pref: 240, miss: .4, err: .18 },
+  g: { name: 'Ghost',    color: '#eef3f6', speed: 78, bs: 250, bounces: 1, max: 2, cd: 1.3, turn: 2.8, aimEvery: .35, smart: true, ghost: true, pref: 260, miss: .3, err: .12 },
+  h: { name: 'Shotgun',  color: '#b5a642', speed: 64, bs: 230, bounces: 0, max: 5, cd: 2.2, turn: 2.6, aimEvery: .35, pellets: 5, spread: .5, life: .75, range: 280, pref: 150, miss: .3, err: .1 },
+  m: { name: 'Missile',  color: '#2d6e8e', speed: 50, bs: 235, bounces: 2, max: 2, cd: 2.4, turn: 2.2, aimEvery: .4, kind: 'missile', smart: true, pref: 340, miss: .35, err: .15 },
+  s: { name: 'Sniper',   color: '#5c6b2f', speed: 30, bs: 480, bounces: 1, max: 1, cd: 3.4, turn: 1.6, aimEvery: .45, kind: 'snipe', smart: true, charge: .75, pref: 420, miss: .15, err: .05 },
 };
+// When each enemy type can start showing up on the slot machines
+const UNLOCK = { a: 1, b: 1, c: 3, h: 4, d: 5, e: 6, m: 7, f: 8, s: 9, g: 12 };
+const unlockedTypes = lvl => Object.keys(UNLOCK).filter(k => lvl >= UNLOCK[k]);
+const BOSSES = [
+  { name: 'Juggernaut', color: '#6b2a2a', hp: 26, speed: 34, turn: 1.6, gap: 2.1, pref: 260, attacks: ['fan', 'mines', 'fan', 'ring'] },
+  { name: 'Hydra',      color: '#24434f', hp: 30, speed: 40, turn: 1.8, gap: 2.0, pref: 300, attacks: ['missiles', 'fan', 'missiles', 'ring'] },
+  { name: 'Warden',     color: '#4a3a62', hp: 34, speed: 46, turn: 2.2, gap: 1.9, pref: 320, attacks: ['ring', 'snipe', 'fan', 'mines', 'snipe'] },
+];
+const BOSS_R = 30;
+const SKILLS = [
+  { id: 'reload', name: 'Quick Loader',  desc: 'Fire 25% faster and carry 1 more shell.', max: 3 },
+  { id: 'bounce', name: 'Rubber Rounds', desc: 'Your shells bounce 1 more time.', max: 2 },
+  { id: 'speed',  name: 'Hot Shells',    desc: 'Your shells fly 20% faster.', max: 3 },
+  { id: 'treads', name: 'Racing Treads', desc: 'Your tanks drive 15% faster.', max: 3 },
+  { id: 'mines',  name: 'Mine Layer',    desc: 'Carry 1 more mine, and your mines blast 20% wider.', max: 3 },
+  { id: 'armor',  name: 'Plating',       desc: 'Every tank shrugs off its first hit each level.', max: 2 },
+  { id: 'medic',  name: 'Field Medic',   desc: 'Revive teammates twice as fast.', max: 2 },
+  { id: 'twin',   name: 'Twin Barrels',  desc: 'Every shot fires two shells side by side.', max: 1 },
+  { id: 'heavy',  name: 'Heavy Shells',  desc: 'Your shells hit bosses twice as hard.', max: 2 },
+  { id: 'slow',   name: 'Jammer',        desc: 'Enemy shells fly 12% slower.', max: 3 },
+  { id: 'life',   name: 'Spare Parts',   desc: 'The squad gains 2 extra lives.', max: 99 },
+];
+const SKILL = Object.fromEntries(SKILLS.map(s => [s.id, s]));
+const ARENAS = [
+ { name: 'The Colosseum', map: [
+  '........................','.##..................##.','.#....................#.',
+  '...1....................','.........+....+.........','..2.....................',
+  '.......##......##.......','...................B....','........................',
+  '..3....##......##.......','........................','.........+....+.........',
+  '...4....................','.#....................#.','.##..................##.','........................']},
+ { name: 'Iron Yard', map: [
+  '........................','........................','..1.....#........#......',
+  '........#........#......','........................','..2.........++..........',
+  '....oo..................','....oo.............B....','........................',
+  '..3.........++..........','........................','........#........#......',
+  '..4.....#........#......','........................','........................','........................']},
+];
+const GEN_NAMES = ['Scrapyard', 'Dust Bowl', 'Switchback', 'Lumber Yard', 'Checkpoint', 'Badlands', 'Quarry', 'Outpost', 'Rail Yard', 'Salt Flats', 'Depot', 'Foundry'];
 // Map legend: # wall  + crate (mines break it)  o pit (blocks tanks, not shells)  1-4 player spawns  a-g enemies
 const STAGES = [
  { name: 'Opening Move', map: [
@@ -262,9 +312,13 @@ const store = {
 };
 
 // ---------- game state ----------
-const G = { state: 'title', slots: [null, null, null, null], ff: false, stage: 0, lives: 3, timer: 0,
+const G = { state: 'title', slots: [null, null, null, null], ff: false, level: 1, lives: 3, timer: 0,
   grid: [], spawns: null, tanks: [], bullets: [], mines: [], parts: [], marks: [], wrecks: [], scorch: [],
-  shake: 0, time: 0, msg: '', reached: 0, idSeq: 0, images: {} };
+  shake: 0, time: 0, msg: '', idSeq: 0, images: {},
+  layoutName: '', lastLayout: -1, skills: {}, nextWave: [], reels: [], reelT: 0, skillChoices: [], cursor: 1, bossKill: false };
+const sk = id => G.skills[id] || 0;
+const isBossLevel = lvl => lvl % 10 === 0;
+const bossIndex = lvl => lvl / 10 - 1;
 const slotColor = i => COLORS[G.slots[i] ? G.slots[i].color : i % 4][1];
 const slotDark = i => DARK[G.slots[i] ? G.slots[i].color : i % 4];
 
@@ -380,6 +434,9 @@ function playSfx(n) {
     case 'clear': [523, 659, 784, 1046].forEach((f, i) => tone(f, .2, 'triangle', .14, null, i * .12)); break;
     case 'fail': [392, 330, 262, 196].forEach((f, i) => tone(f, .25, 'triangle', .14, null, i * .16)); break;
     case 'tick': tone(900, .04, 'square', .05); break;
+    case 'reel': tone(380, .07, 'square', .09); tone(760, .09, 'triangle', .08, null, .05); break;
+    case 'snipe': tone(1800, .12, 'sawtooth', .07, 300); noise(.12, .2, 6000); break;
+    case 'shotgun': noise(.22, .4, 2400); tone(160, .15, 'square', .1, 60); break;
   }
 }
 
@@ -431,7 +488,8 @@ function stick(x, y, dz) {
   const n = Math.min(1, (m - dz) / (1 - dz)); return [x / m * n, y / m * n, n];
 }
 // Every device produces the same input shape. Remote devices arrive over the network with the same fields.
-const PRESS_KEYS = ['fire', 'mine', 'start', 'a', 'b', 'y', 'join', 'enter', 'leave', 'quit', 'dl', 'dr', 'du', 'dd'];
+const PRESS_KEYS = ['fire', 'mine', 'start', 'a', 'b', 'y', 'join', 'enter', 'leave', 'quit', 'dl', 'dr', 'du', 'dd', 'sl', 'sr'];
+const stickMem = {};
 let INP = {};
 function buildInputs() {
   INP = {};
@@ -443,7 +501,8 @@ function buildInputs() {
     fire: p('Space') || kb.click, mine: p('KeyE') || p('ShiftLeft') || p('ShiftRight') || kb.rclick,
     start: p('Escape') || p('KeyP'), a: p('Enter') || p('Space'), b: p('Escape') || p('Backspace'), y: p('KeyF'),
     join: p('Space') || p('Enter'), enter: p('Enter'), leave: p('Escape'), quit: p('KeyQ'),
-    dl: p('ArrowLeft'), dr: p('ArrowRight'), du: p('ArrowUp'), dd: p('ArrowDown'), voice: p('KeyV') };
+    dl: p('ArrowLeft'), dr: p('ArrowRight'), du: p('ArrowUp'), dd: p('ArrowDown'), voice: p('KeyV'),
+    sl: p('KeyA') || p('ArrowLeft'), sr: p('KeyD') || p('ArrowRight') };
   for (const i in pads) {
     const s = pads[i]; if (!s.connected) continue;
     const pp = n => !!(s.btn[n] && !s.prev[n]);
@@ -453,10 +512,12 @@ function buildInputs() {
     const dx = (s.btn[15] ? 1 : 0) - (s.btn[14] ? 1 : 0), dy = (s.btn[13] ? 1 : 0) - (s.btn[12] ? 1 : 0);
     let fx = lx, fy = ly;
     if (!lx && !ly && (dx || dy)) { const m = Math.hypot(dx, dy); fx = dx / m; fy = dy / m; }
+    const sx = (ax[0] || 0) < -.6 ? -1 : (ax[0] || 0) > .6 ? 1 : 0, was = stickMem[i] || 0; stickMem[i] = sx;
     INP['pad' + i] = { kb: false, mx: fx, my: fy, mouseAim: false, aim: rm > 0 ? Math.atan2(ry, rx) : null, aimAbs: false,
       fire: pp(7) || pp(5) || pp(2), mine: pp(6) || pp(4) || pp(0),
       start: pp(9), a: pp(0), b: pp(1), y: pp(3), join: pp(0), enter: pp(9), leave: pp(1), quit: pp(1),
-      dl: pp(14), dr: pp(15), du: pp(12), dd: pp(13), voice: pp(8) };
+      dl: pp(14), dr: pp(15), du: pp(12), dd: pp(13), voice: pp(8),
+      sl: pp(14) || (sx === -1 && was !== -1), sr: pp(15) || (sx === 1 && was !== 1) };
   }
 }
 function endInputFrame() { kb.pressed.clear(); kb.click = false; kb.rclick = false; }
@@ -508,6 +569,8 @@ function explosionParts(x, y, color, k) {
 function bulletTrail(b, dt) {
   b.trailT = (b.trailT || 0) - dt; if (b.trailT > 0) return;
   const x = b.x - b.dx * 6, y = b.y - b.dy * 6, P = G.parts;
+  if (b.kind === 'pellet') { b.trailT = .04; P.push({ kind: 'smoke', x, y, vx: 0, vy: 0, life: .3, max: .3, size: 1.5, grow: 5, color: '#a99c86', drag: 2 }); return; }
+  if (b.kind === 'snipe') { b.trailT = .008; P.push({ kind: 'dot', x, y, vx: 0, vy: 0, life: .35, max: .35, size: 2.2, grow: 0, color: '#fff4d6', drag: 0 }); return; }
   if (b.rocket) {
     b.trailT = .012;
     P.push({ kind: 'fire', x, y, vx: rnd(-15, 15), vy: rnd(-15, 15), life: .18, max: .18, size: 4, grow: 4, color: '#ff9d3d', drag: 2 });
@@ -532,6 +595,67 @@ function addMark(t) {
 }
 
 // ---------- slots / stages ----------
+function parse(map) {
+  const grid = [], sp = { p: [], e: [], boss: null };
+  for (let r = 0; r < ROWS; r++) {
+    const row = (map[r] || '').padEnd(COLS, '.'); grid.push([]);
+    for (let c = 0; c < COLS; c++) {
+      const ch = row[c]; let t = 0;
+      const x = c * TS + TS / 2, y = r * TS + TS / 2;
+      if (ch === '#') t = 1; else if (ch === '+') t = 2; else if (ch === 'o') t = 3;
+      else if (ch >= '1' && ch <= '4') sp.p[+ch - 1] = { x, y };
+      else if (ch === 'B') sp.boss = { x, y };
+      else if (ETYPES[ch]) sp.e.push({ type: ch, x, y });
+      grid[r].push(t);
+    }
+  }
+  return { grid, sp };
+}
+// Random symmetric layout. Rejected and retried if any open floor can't be driven to (crates count as open: mines clear them).
+function genLayout() {
+  const P = [[2, 3], [2, 6], [2, 9], [2, 12]];
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const g = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    const n = 6 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < n; i++) {
+      const roll = Math.random(), t = roll < .55 ? 1 : roll < .9 ? 2 : 3;
+      const len = 2 + Math.floor(Math.random() * 3), vert = Math.random() < .4;
+      const c0 = 5 + Math.floor(Math.random() * (16 - (vert ? 1 : len)));
+      const r0 = 1 + Math.floor(Math.random() * (vert ? 7 - len : 6));
+      for (let k = 0; k < len; k++) {
+        const c = vert ? c0 : c0 + k, r = vert ? r0 + k : r0;
+        if (r < 0 || r > 7) continue;
+        g[r][c] = t; g[ROWS - 1 - r][c] = t;
+      }
+    }
+    const seen = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+    const stack = [[2, 3]]; seen[3][2] = true; let reached = 0;
+    while (stack.length) {
+      const [c, r] = stack.pop(); reached++;
+      for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nc = c + dc, nr = r + dr;
+        if (nc < 0 || nr < 0 || nc >= COLS || nr >= ROWS || seen[nr][nc]) continue;
+        if (g[nr][nc] === 1 || g[nr][nc] === 3) continue;
+        seen[nr][nc] = true; stack.push([nc, nr]);
+      }
+    }
+    let open = 0; for (const row of g) for (const v of row) if (v === 0 || v === 2) open++;
+    if (open !== reached) continue;
+    const blocked = g.reduce((a, row) => a + row.filter(v => v).length, 0);
+    if (blocked < 14) continue;
+    return { grid: g, sp: { p: P.map(([c, r]) => ({ x: c * TS + TS / 2, y: r * TS + TS / 2 })), e: [], boss: null },
+      name: GEN_NAMES[Math.floor(Math.random() * GEN_NAMES.length)] };
+  }
+  return Object.assign(parse(STAGES[0].map), { name: STAGES[0].name });
+}
+function buildLayout(lvl) {
+  if (isBossLevel(lvl)) { const a = ARENAS[bossIndex(lvl) % ARENAS.length]; return Object.assign(parse(a.map), { name: a.name }); }
+  if (lvl <= 9) { G.lastLayout = lvl - 1; return Object.assign(parse(STAGES[lvl - 1].map), { name: STAGES[lvl - 1].name }); }
+  if (Math.random() < .5) { G.lastLayout = -1; return genLayout(); }
+  let i; do { i = Math.floor(Math.random() * STAGES.length); } while (i === G.lastLayout);
+  G.lastLayout = i;
+  return Object.assign(parse(STAGES[i].map), { name: STAGES[i].name });
+}
 const slotOf = dev => G.slots.findIndex(s => s && s.dev === dev);
 const joinedCount = () => G.slots.filter(Boolean).length;
 function join(dev) {
@@ -553,21 +677,6 @@ function removeSlot(i) {
   G.wrecks = G.wrecks.filter(w => w.slot !== i);
 }
 function toggleFF() { G.ff = !G.ff; sfx('tick'); }
-function parse(map) {
-  const grid = [], sp = { p: [], e: [] };
-  for (let r = 0; r < ROWS; r++) {
-    const row = (map[r] || '').padEnd(COLS, '.'); grid.push([]);
-    for (let c = 0; c < COLS; c++) {
-      const ch = row[c]; let t = 0;
-      const x = c * TS + TS / 2, y = r * TS + TS / 2;
-      if (ch === '#') t = 1; else if (ch === '+') t = 2; else if (ch === 'o') t = 3;
-      else if (ch >= '1' && ch <= '4') sp.p[+ch - 1] = { x, y };
-      else if (ETYPES[ch]) sp.e.push({ type: ch, x, y });
-      grid[r].push(t);
-    }
-  }
-  return { grid, sp };
-}
 const tileAt = (x, y) => {
   const c = Math.floor(x / TS), r = Math.floor(y / TS);
   if (c < 0 || r < 0 || c >= COLS || r >= ROWS || !G.grid.length) return 1;
@@ -575,18 +684,27 @@ const tileAt = (x, y) => {
 };
 const bb = (x, y) => { const t = tileAt(x, y); return t === 1 || t === 2; };
 function makeTank(x, y, team) {
-  return { id: ++G.idSeq, x, y, team, body: team === 'p' ? 0 : Math.PI, turret: team === 'p' ? 0 : Math.PI, alive: true,
-    cool: 0, bullets: 0, mines: 0, recoil: 0, tread: 0, trail: 0, reveal: 0, shield: 0 };
+  return { id: ++G.idSeq, x, y, r: R, team, body: team === 'p' ? 0 : Math.PI, turret: team === 'p' ? 0 : Math.PI, alive: true,
+    cool: 0, bullets: 0, mines: 0, recoil: 0, tread: 0, trail: 0, reveal: 0, shield: 0, charge: 0, armor: 0, hit: 0 };
 }
 function spawnPlayer(k, at) {
   const sp = at || G.spawns.p[k] || G.spawns.p[0] || { x: 80, y: 80 + k * 80 };
   const t = makeTank(sp.x, sp.y, 'p'); t.slot = k; t.dev = G.slots[k].dev; t.shield = at ? 1.6 : 0;
+  if (!at) t.armor = sk('armor');
   G.tanks.push(t); return t;
 }
 function makeEnemy(type, x, y) {
   const t = makeTank(x, y, 'e'); t.type = type; t.spec = ETYPES[type];
   t.cool = rnd(1.2, 2.6);
-  t.ai = { aimT: Math.random() * .5, target: Math.PI, moveT: 0, dir: Math.random() * TAU, mineT: rnd(3, 6), burst: 0, fireCheck: 0, flee: 0, fleeFrom: null };
+  t.cdK = Math.max(.65, 1 - (G.level - 1) * .012); // later levels fire a little more often
+  t.ai = { aimT: Math.random() * .5, target: Math.PI, moveT: 0, dir: Math.random() * TAU, mineT: rnd(3, 6), burst: 0, fireCheck: 0, flee: 0, fleeFrom: null, charging: 0 };
+  return t;
+}
+function makeBoss(idx, x, y) {
+  const B = BOSSES[idx % BOSSES.length], tier = Math.floor(idx / BOSSES.length);
+  const t = makeTank(x, y, 'e'); t.type = 'boss' + (idx % BOSSES.length); t.spec = B; t.boss = true; t.r = BOSS_R;
+  t.maxhp = t.hp = Math.round(B.hp * (1 + .5 * tier) * (1 + .35 * (joinedCount() - 1)));
+  t.ai = { atkT: 2.4, atk: 0, dir: Math.PI, moveT: 0, flee: 0, charging: 0, tier };
   return t;
 }
 function areaClear(c, r) {
@@ -595,28 +713,62 @@ function areaClear(c, r) {
   }
   return true;
 }
-function loadStage(i) {
+function placeEnemies(types) {
+  const cands = G.spawns.e.map(e => ({ x: e.x, y: e.y })).sort(() => Math.random() - .5);
+  const ok = (x, y, gap) => !G.tanks.some(t => Math.hypot(t.x - x, t.y - y) < gap + (t.r || R)) && tankFree(x, y);
+  for (const type of types) {
+    let spot = null;
+    while (cands.length && !spot) { const c = cands.pop(); if (ok(c.x, c.y, 60)) spot = c; }
+    for (let tries = 0; !spot && tries < 800; tries++) {
+      const c = 11 + Math.floor(Math.random() * 12), r = 1 + Math.floor(Math.random() * 14);
+      const x = c * TS + TS / 2, y = r * TS + TS / 2;
+      if ((tries < 400 ? areaClear(c, r) : G.grid[r][c] === 0) && ok(x, y, tries < 400 ? 80 : 40)) spot = { x, y };
+    }
+    if (spot) G.tanks.push(makeEnemy(type, spot.x, spot.y));
+  }
+}
+function loadLevel() {
   emit({ t: 'reset' });
-  const st = STAGES[i], { grid, sp } = parse(st.map);
-  G.grid = grid; G.spawns = sp;
+  const L = buildLayout(G.level);
+  G.grid = L.grid; G.spawns = L.sp; G.layoutName = L.name;
   G.tanks = []; G.bullets = []; G.mines = []; G.parts = []; G.marks = []; G.wrecks = []; G.scorch = [];
   G.slots.forEach((s, k) => { if (s) spawnPlayer(k); });
-  for (const e of sp.e) G.tanks.push(makeEnemy(e.type, e.x, e.y));
-  let extra = Math.round((joinedCount() - 1) * 0.7), tries = 0;
-  const types = sp.e.map(e => e.type);
-  while (extra > 0 && tries++ < 600) {
-    const c = 12 + Math.floor(Math.random() * 11), r = 1 + Math.floor(Math.random() * 14);
-    if (!areaClear(c, r)) continue;
-    const x = c * TS + TS / 2, y = r * TS + TS / 2;
-    if (G.tanks.some(t => Math.hypot(t.x - x, t.y - y) < 110)) continue;
-    G.tanks.push(makeEnemy(types[Math.floor(Math.random() * types.length)], x, y)); extra--;
-  }
-  staticDirty = true; G.state = 'intro'; G.timer = 2.6;
+  const boss = isBossLevel(G.level);
+  if (boss) { const b = L.sp.boss || { x: W - 180, y: H / 2 }; G.tanks.push(makeBoss(bossIndex(G.level), b.x, b.y)); }
+  const types = [];
+  for (const w of G.nextWave) for (let i = 0; i < w.n; i++) types.push(w.t);
+  const extra = Math.round((joinedCount() - 1) * 0.7);
+  for (let i = 0; i < extra && types.length; i++) types.push(types[Math.floor(Math.random() * types.length)]);
+  placeEnemies(types);
+  staticDirty = true; G.state = 'intro'; G.timer = boss ? 3.2 : 2.6; G.bossKill = false;
+}
+// Three slot machines: each lands on an enemy type, then on how many of it come next level.
+function rollReels(lvl) {
+  const pool = unlockedTypes(lvl);
+  const maxN = isBossLevel(lvl) ? 1 : Math.min(4, 1 + Math.floor(lvl / 6));
+  return [0, 1, 2].map(() => ({ t: pool[Math.floor(Math.random() * pool.length)], n: 1 + Math.floor(Math.random() * maxN) }));
+}
+const REEL_STOPS = [0, 1, 2].map(i => [1.0 + i * .55, 1.55 + i * .55]);
+const REEL_DONE = REEL_STOPS[2][1] + 1.3;
+function pickSkills() {
+  const open = SKILLS.filter(s => sk(s.id) < s.max).sort(() => Math.random() - .5);
+  return open.slice(0, 3).map(s => s.id);
+}
+function chooseSkill(i) {
+  if (G.state !== 'skill' || G.timer > 0) return;
+  const id = G.skillChoices[i]; if (!id) return;
+  G.skills[id] = sk(id) + 1;
+  if (id === 'life') G.lives += 2;
+  sfx('revive');
+  G.nextWave = G.reels.map(r => ({ t: r.t, n: r.n }));
+  loadLevel();
 }
 function startGame() {
   if (!joinedCount()) return;
   G.slots.forEach(s => { if (s) { s.kills = 0; s.deaths = 0; } });
-  G.lives = 3; G.stage = 0; G.reached = 0; loadStage(0); sfx('join');
+  G.lives = 3; G.level = 1; G.skills = {}; G.lastLayout = -1;
+  G.nextWave = [{ t: 'a', n: 2 }];
+  loadLevel(); sfx('join');
 }
 function toTitle() {
   G.state = 'title'; G.tanks = []; G.bullets = []; G.mines = []; G.wrecks = []; G.parts = []; G.grid = []; staticDirty = true;
@@ -624,6 +776,7 @@ function toTitle() {
 
 // ---------- physics ----------
 function collideTank(t) {
+  const R = t.r || 14;
   for (let pass = 0; pass < 2; pass++) {
     const c0 = Math.floor((t.x - R) / TS), c1 = Math.floor((t.x + R) / TS);
     const r0 = Math.floor((t.y - R) / TS), r1_ = Math.floor((t.y + R) / TS);
@@ -644,9 +797,9 @@ function collideTank(t) {
     t.x = clamp(t.x, R, W - R); t.y = clamp(t.y, R, H - R);
   }
 }
-function tankFree(x, y) {
-  if (x < R || y < R || x > W - R || y > H - R) return false;
-  const rr = R + 2;
+function tankFree(x, y, rad = R) {
+  if (x < rad || y < rad || x > W - rad || y > H - rad) return false;
+  const rr = rad + 2;
   for (let r = Math.floor((y - rr) / TS); r <= Math.floor((y + rr) / TS); r++)
     for (let c = Math.floor((x - rr) / TS); c <= Math.floor((x + rr) / TS); c++) {
       if (r < 0 || c < 0 || r >= ROWS || c >= COLS) return false;
@@ -681,30 +834,44 @@ function simulate(x, y, ang, bounces, shooter) {
       if (t === shooter && !bounced) continue;
       const d2 = (t.x - o.x) ** 2 + (t.y - o.y) ** 2;
       if (t.team === 'p') { if (d2 < (R + 3) ** 2) return 'player'; }
-      else if (d2 < (R + 5) ** 2) return 'ally';
+      else if (d2 < ((t.r || R) + 5) ** 2) return 'ally';
     }
   }
   return null;
 }
 
 // ---------- actions ----------
-function fire(t, speed, bounces, rocket) {
-  const tx = t.x + Math.cos(t.turret) * 22, ty = t.y + Math.sin(t.turret) * 22;
+// kind: shell | rocket (no bounce look) | missile (bouncing rocket) | pellet | snipe
+function shoot(t, ang, speed, bounces, kind = 'shell', o = {}) {
+  const reach = (t.r || R) + 8, side = o.side || 0;
+  const tx = t.x + Math.cos(ang) * reach - Math.sin(ang) * side, ty = t.y + Math.sin(ang) * reach + Math.cos(ang) * side;
   t.recoil = 1;
-  if (bb(tx, ty)) { emit({ t: 'puff', x: r1(tx), y: r1(ty), n: 5 }); sfx('pop'); return true; }
-  G.bullets.push({ id: ++G.idSeq, x: tx, y: ty, dx: Math.cos(t.turret), dy: Math.sin(t.turret), speed, bounces, owner: t, team: t.team,
-    slot: t.team === 'p' ? t.slot : -1, rocket: !!rocket, age: 0, bounced: false, alive: true, trailT: 0 });
+  if (bb(tx, ty)) { if (o.fx !== false) { emit({ t: 'puff', x: r1(tx), y: r1(ty), n: 5 }); sfx('pop'); } return; }
+  G.bullets.push({ id: ++G.idSeq, x: tx, y: ty, dx: Math.cos(ang), dy: Math.sin(ang), speed, bounces, owner: t, team: t.team,
+    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0 });
   t.bullets++;
-  emit({ t: 'muz', x: r1(tx), y: r1(ty), a: r2(t.turret) });
-  sfx(rocket ? 'rocket' : 'fire');
+  if (o.fx !== false) {
+    emit({ t: 'muz', x: r1(tx), y: r1(ty), a: r2(ang) });
+    sfx(kind === 'rocket' || kind === 'missile' ? 'rocket' : kind === 'snipe' ? 'snipe' : kind === 'pellet' ? 'shotgun' : 'fire');
+  }
   if (t.spec && t.spec.ghost) t.reveal = 1.1;
-  return true;
+}
+const enemyShotSpeed = S => S.bs * (1 - .12 * sk('slow'));
+// Enemies sometimes fumble a shot: a random chance per type of being off by up to `err` radians.
+function enemyFire(t) {
+  const S = t.spec;
+  const off = Math.random() < S.miss ? rnd(-1, 1) * S.err : rnd(-1, 1) * .02;
+  const ang = t.turret + off;
+  if (S.pellets) {
+    for (let i = 0; i < S.pellets; i++) shoot(t, ang + (i / (S.pellets - 1) - .5) * S.spread + rnd(-.04, .04), enemyShotSpeed(S) * rnd(.9, 1.1), S.bounces, 'pellet', { life: S.life, fx: i === 0 });
+  } else shoot(t, ang, enemyShotSpeed(S), S.bounces, S.kind || 'shell');
 }
 function layMine(t) {
-  const max = t.team === 'p' ? 2 : (t.spec.mines || 0);
+  const max = t.team === 'p' ? 2 + sk('mines') : (t.spec.mines || 0);
   if (t.mines >= max) return false;
   if (G.mines.some(m => m.alive && Math.hypot(m.x - t.x, m.y - t.y) < 30)) return false;
-  G.mines.push({ x: t.x, y: t.y, owner: t, team: t.team, slot: t.team === 'p' ? t.slot : -1, type: t.type || null, t: 0, fuse: 9, alive: true, beep: 0 });
+  G.mines.push({ x: t.x, y: t.y, owner: t, team: t.team, slot: t.team === 'p' ? t.slot : -1, type: t.type || null, t: 0, fuse: 9, alive: true, beep: 0,
+    rad: t.team === 'p' ? MINE_R * (1 + .2 * sk('mines')) : MINE_R });
   t.mines++; sfx('mine'); return true;
 }
 function killBullet(b, fx) {
@@ -713,15 +880,32 @@ function killBullet(b, fx) {
 }
 function canHit(b, t) {
   if (t.shield > 0) return false;
+  if (t.boss && b.team === 'e') return false;
   if (t === b.owner && !b.bounced && b.age < .25) return false;
   if (b.team === 'p' && t.team === 'p' && !G.ff) return false;
   return true;
+}
+// Bosses lose health, plated players lose their plating, everyone else is destroyed.
+function hurtTank(t, killer, dmg) {
+  if (t.boss) {
+    t.hp -= dmg; t.hit = .12;
+    emit({ t: 'spk', x: r1(t.x), y: r1(t.y), n: 6, v: 160 }); sfx('pop');
+    if (t.hp <= 0) killTank(t, killer);
+    return;
+  }
+  if (t.team === 'p' && t.armor > 0) {
+    t.armor--; t.shield = 1;
+    emit({ t: 'ring', x: r1(t.x), y: r1(t.y), c: '#f1e6cf' }); sfx('tick'); rumble(t.dev, .5, .5, 150);
+    return;
+  }
+  killTank(t, killer);
 }
 function killTank(t, killer) {
   if (!t.alive) return;
   t.alive = false;
   const col = t.team === 'p' ? slotColor(t.slot) : t.spec.color;
-  emit({ t: 'boom', x: r1(t.x), y: r1(t.y), c: col, k: 1 });
+  emit({ t: 'boom', x: r1(t.x), y: r1(t.y), c: col, k: t.boss ? 2.6 : 1 });
+  if (t.boss) { G.bossKill = true; shake(20); G.slots.forEach(s => s && rumble(s.dev, 1, 1, 700)); }
   emit({ t: 'sc', x: r1(t.x), y: r1(t.y), r: Math.round(rnd(22, 28)) });
   if (t.team === 'p') {
     const s = G.slots[t.slot]; if (s) s.deaths++;
@@ -735,22 +919,24 @@ function killTank(t, killer) {
 function explode(m) {
   if (!m.alive) return;
   m.alive = false; m.owner.mines = Math.max(0, m.owner.mines - 1);
+  const MR = m.rad || MINE_R;
   for (const t of G.tanks) {
     if (!t.alive || t.shield > 0) continue;
-    if (Math.hypot(t.x - m.x, t.y - m.y) > MINE_R + R * .3) continue;
+    if (Math.hypot(t.x - m.x, t.y - m.y) > MR + (t.r || R) * .3) continue;
     if (m.team === 'p' && t.team === 'p' && !G.ff) continue;
-    killTank(t, m.owner);
+    if (t.boss && m.team === 'e') continue;
+    hurtTank(t, m.owner, t.boss ? 6 * (1 + sk('heavy')) : 1);
   }
-  const c0 = Math.floor((m.x - MINE_R) / TS), c1 = Math.floor((m.x + MINE_R) / TS);
-  const r0 = Math.floor((m.y - MINE_R) / TS), rr1 = Math.floor((m.y + MINE_R) / TS);
+  const c0 = Math.floor((m.x - MR) / TS), c1 = Math.floor((m.x + MR) / TS);
+  const r0 = Math.floor((m.y - MR) / TS), rr1 = Math.floor((m.y + MR) / TS);
   for (let r = r0; r <= rr1; r++) for (let c = c0; c <= c1; c++) {
     if (r < 0 || c < 0 || r >= ROWS || c >= COLS || G.grid[r][c] !== 2) continue;
     const cx = c * TS + TS / 2, cy = r * TS + TS / 2;
-    if (Math.hypot(cx - m.x, cy - m.y) < MINE_R + 14) { G.grid[r][c] = 0; staticDirty = true; emit({ t: 'crate', x: cx, y: cy }); }
+    if (Math.hypot(cx - m.x, cy - m.y) < MR + 14) { G.grid[r][c] = 0; staticDirty = true; emit({ t: 'crate', x: cx, y: cy }); }
   }
-  for (const b of G.bullets) if (b.alive && Math.hypot(b.x - m.x, b.y - m.y) < MINE_R) killBullet(b, false);
-  for (const o of G.mines) if (o.alive && o !== m && Math.hypot(o.x - m.x, o.y - m.y) < MINE_R + 10) o.fuse = Math.min(o.fuse, o.t + .15);
-  emit({ t: 'boom', x: r1(m.x), y: r1(m.y), c: '#ff9a3d', k: 1.6 });
+  for (const b of G.bullets) if (b.alive && Math.hypot(b.x - m.x, b.y - m.y) < MR) killBullet(b, false);
+  for (const o of G.mines) if (o.alive && o !== m && Math.hypot(o.x - m.x, o.y - m.y) < MR + 10) o.fuse = Math.min(o.fuse, o.t + .15);
+  emit({ t: 'boom', x: r1(m.x), y: r1(m.y), c: '#ff9a3d', k: 1.6 * MR / MINE_R });
   emit({ t: 'sc', x: r1(m.x), y: r1(m.y), r: 46 });
   sfx('boom'); shake(12);
   G.slots.forEach(s => s && rumble(s.dev, .5, .8, 260));
@@ -776,14 +962,21 @@ function updatePlayer(t, dt, active) {
   const mag = Math.min(1, Math.hypot(inp.mx, inp.my));
   if (mag > .05) {
     steerBody(t, Math.atan2(inp.my, inp.mx), 8, dt);
-    moveTank(t, inp.mx * PSPEED, inp.my * PSPEED, dt);
+    const sp = PSPEED * (1 + .15 * sk('treads'));
+    moveTank(t, inp.mx * sp, inp.my * sp, dt);
   }
   if (inp.mouseAim) t.turret = Math.atan2(kb.my - t.y, kb.mx - t.x);
   else if (inp.aim !== null && inp.aimAbs) t.turret = inp.aim;
   else if (inp.aim !== null) t.turret += angDiff(inp.aim, t.turret) * Math.min(1, dt * 28);
   else if (mag > .5 && t.idleAim > .6) t.turret += angDiff(Math.atan2(inp.my, inp.mx), t.turret) * Math.min(1, dt * 6);
   t.idleAim = inp.aim === null && !inp.mouseAim ? (t.idleAim || 0) + dt : 0;
-  if (inp.fire && t.cool <= 0 && t.bullets < PMAX) { fire(t, PBS, 1, false); t.cool = PCD; rumble(t.dev, 0, .35, 70); }
+  const twin = sk('twin') > 0, need = twin ? 2 : 1;
+  if (inp.fire && t.cool <= 0 && t.bullets + need <= PMAX + sk('reload')) {
+    const spd = PBS * (1 + .2 * sk('speed')), bnc = 1 + sk('bounce');
+    if (twin) { shoot(t, t.turret, spd, bnc, 'shell', { side: -5 }); shoot(t, t.turret, spd, bnc, 'shell', { side: 5, fx: false }); }
+    else shoot(t, t.turret, spd, bnc);
+    t.cool = PCD * Math.pow(.75, sk('reload')); rumble(t.dev, 0, .35, 70);
+  }
   if (inp.mine) layMine(t);
 }
 function nearestPlayer(t) {
@@ -835,17 +1028,26 @@ function updateEnemy(t, dt, active) {
     if (a !== null) ai.target = a;
     else if (target) ai.target = Math.atan2(target.y - t.y, target.x - t.x) + rnd(-.5, .5);
   }
-  t.turret += clamp(angDiff(ai.target, t.turret), -S.turn * dt, S.turn * dt);
+  if (ai.charging > 0) {
+    // Sniper: holds still with its laser showing, then fires
+    ai.charging -= dt; t.charge = Math.max(0, ai.charging);
+    if (ai.charging <= 0) { enemyFire(t); t.cool = S.cd * t.cdK * rnd(.8, 1.2); }
+  } else t.turret += clamp(angDiff(ai.target, t.turret), -S.turn * dt, S.turn * dt);
   ai.fireCheck -= dt;
-  if (target && t.cool <= 0 && t.bullets < S.max && ai.fireCheck <= 0) {
+  const shots = S.pellets || 1;
+  const inRange = !S.range || (target && dist(target, t) < S.range);
+  if (target && inRange && !(ai.charging > 0) && t.cool <= 0 && t.bullets + shots <= S.max && ai.fireCheck <= 0) {
     ai.fireCheck = .08;
     if (simulate(t.x, t.y, t.turret, S.bounces, t) === 'player') {
-      fire(t, S.bs, S.bounces, S.rocket);
-      if (S.burst) { if (ai.burst <= 0) ai.burst = S.burst; ai.burst--; t.cool = ai.burst > 0 ? S.burstGap : S.cd * rnd(.8, 1.2); }
-      else t.cool = S.cd * rnd(.8, 1.2);
+      if (S.charge) { ai.charging = S.charge; t.charge = S.charge; }
+      else {
+        enemyFire(t);
+        if (S.burst) { if (ai.burst <= 0) ai.burst = S.burst; ai.burst--; t.cool = ai.burst > 0 ? S.burstGap : S.cd * t.cdK * rnd(.8, 1.2); }
+        else t.cool = S.cd * t.cdK * rnd(.8, 1.2);
+      }
     }
   }
-  if (!S.speed) return;
+  if (!S.speed || ai.charging > 0) return;
   ai.moveT -= dt; ai.flee -= dt;
   const blocked = !tankFree(t.x + Math.cos(ai.dir) * 20, t.y + Math.sin(ai.dir) * 20);
   if (ai.moveT <= 0 || blocked) {
@@ -864,13 +1066,57 @@ function updateEnemy(t, dt, active) {
     }
   }
 }
+function updateBoss(t, dt, active) {
+  t.hit = Math.max(0, t.hit - dt);
+  if (!active) return;
+  const B = t.spec, ai = t.ai, target = nearestPlayer(t);
+  if (ai.charging > 0) {
+    ai.charging -= dt; t.charge = Math.max(0, ai.charging);
+    if (ai.charging <= 0) shoot(t, t.turret, 540 * (1 - .12 * sk('slow')), 2, 'snipe');
+  } else if (target) {
+    t.turret += clamp(angDiff(Math.atan2(target.y - t.y, target.x - t.x), t.turret), -B.turn * dt, B.turn * dt);
+    ai.atkT -= dt * (1 + ai.tier * .15);
+    if (ai.atkT <= 0) { ai.atkT = B.gap; bossAttack(t, B.attacks[ai.atk++ % B.attacks.length]); }
+  }
+  if (ai.charging > 0) return;
+  ai.moveT -= dt;
+  const rad = t.r;
+  if (ai.moveT <= 0 || !tankFree(t.x + Math.cos(ai.dir) * (rad + 6), t.y + Math.sin(ai.dir) * (rad + 6), rad)) {
+    ai.moveT = rnd(.6, 1.4);
+    let best = null, bs = -1e9;
+    for (let i = 0; i < 12; i++) {
+      const a = i / 12 * TAU, cx = Math.cos(a), cy = Math.sin(a);
+      if (!tankFree(t.x + cx * (rad + 8), t.y + cy * (rad + 8), rad)) continue;
+      let sc = Math.random() * .8;
+      if (target) { const d = dist(target, t), s = d > B.pref ? 1 : d < B.pref * .7 ? -1 : 0; sc += (cx * (target.x - t.x) + cy * (target.y - t.y)) / (d || 1) * s; }
+      if (sc > bs) { bs = sc; best = a; }
+    }
+    ai.dir = best === null ? ai.dir + Math.PI : best;
+  }
+  if (steerBody(t, ai.dir, 2.5, dt) < .6) moveTank(t, Math.cos(ai.dir) * B.speed, Math.sin(ai.dir) * B.speed, dt);
+}
+function bossAttack(t, atk) {
+  const slow = 1 - .12 * sk('slow'), a = t.turret;
+  switch (atk) {
+    case 'fan': for (let k = -2; k <= 2; k++) shoot(t, a + k * .22 + rnd(-.03, .03), 210 * slow, 1, 'shell', { fx: k === 0 }); break;
+    case 'ring': { const off = Math.random() * TAU; for (let k = 0; k < 14; k++) shoot(t, off + k / 14 * TAU, 165 * slow, 0, 'shell', { fx: k === 0 }); break; }
+    case 'missiles': for (let k = -1; k <= 1; k++) shoot(t, a + k * .3, 230 * slow, 2, 'missile', { fx: k === 0 }); break;
+    case 'mines':
+      for (let k = 0; k < 2; k++) {
+        const x = clamp(t.x + rnd(-70, 70), 30, W - 30), y = clamp(t.y + rnd(-70, 70), 30, H - 30);
+        if (G.mines.filter(m => m.owner === t).length < 6 && !bb(x, y)) { G.mines.push({ x, y, owner: t, team: 'e', slot: -1, type: 'd', t: 0, fuse: 7, alive: true, beep: 0, rad: MINE_R }); t.mines++; }
+      }
+      sfx('mine'); break;
+    case 'snipe': t.ai.charging = .9; t.charge = .9; break;
+  }
+}
 function separateTanks() {
   for (let i = 0; i < aliveTanks.length; i++) for (let j = i + 1; j < aliveTanks.length; j++) {
     const a = aliveTanks[i], b = aliveTanks[j];
-    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
-    if (d >= R * 2 || d < 1e-4) continue;
-    const p = R * 2 - d, nx = dx / d, ny = dy / d;
-    const aFix = a.spec && !a.spec.speed, bFix = b.spec && !b.spec.speed;
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), rs = (a.r || R) + (b.r || R);
+    if (d >= rs || d < 1e-4) continue;
+    const p = rs - d, nx = dx / d, ny = dy / d;
+    const aFix = (a.spec && !a.spec.speed) || a.boss, bFix = (b.spec && !b.spec.speed) || b.boss;
     const ka = aFix ? 0 : bFix ? 1 : .5, kb2 = bFix ? 0 : aFix ? 1 : .5;
     a.x -= nx * p * ka; a.y -= ny * p * ka; b.x += nx * p * kb2; b.y += ny * p * kb2;
     collideTank(a); collideTank(b);
@@ -880,6 +1126,7 @@ function updateBullets(dt) {
   for (const b of G.bullets) {
     if (!b.alive) continue;
     b.age += dt;
+    if (b.life && b.age > b.life) { killBullet(b, false); emit({ t: 'puff', x: r1(b.x), y: r1(b.y), n: 2, z: 2 }); continue; }
     let remain = b.speed * dt;
     while (remain > 0 && b.alive) {
       const s = Math.min(4, remain); remain -= s;
@@ -888,7 +1135,9 @@ function updateBullets(dt) {
       if (r === 'bounce') { b.bounced = true; sfx('bounce'); emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 4, v: 90 }); }
       for (const t of aliveTanks) {
         if (!t.alive) continue;
-        if ((t.x - b.x) ** 2 + (t.y - b.y) ** 2 < (R + 3) ** 2 && canHit(b, t)) { killBullet(b, false); killTank(t, b.owner); break; }
+        if ((t.x - b.x) ** 2 + (t.y - b.y) ** 2 < ((t.r || R) + 3) ** 2 && canHit(b, t)) {
+          killBullet(b, false); hurtTank(t, b.owner, b.team === 'p' ? 1 + sk('heavy') : 1); break;
+        }
       }
     }
     if (b.alive) bulletTrail(b, dt);
@@ -916,7 +1165,7 @@ function updateMines(dt) {
     if (m.t >= m.fuse) { explode(m); continue; }
     if (m.fuse - m.t < 2.2) { m.beep -= dt; if (m.beep <= 0) { m.beep = .22; sfx('blink'); } }
     if (m.t > .8) for (const t of aliveTanks) {
-      if (t.alive && t.team !== m.team && (t.x - m.x) ** 2 + (t.y - m.y) ** 2 < (R + 18) ** 2) { explode(m); break; }
+      if (t.alive && t.team !== m.team && (t.x - m.x) ** 2 + (t.y - m.y) ** 2 < ((t.r || R) + 18) ** 2) { explode(m); break; }
     }
   }
   G.mines = G.mines.filter(m => m.alive);
@@ -929,7 +1178,7 @@ function updateWrecks(dt, active) {
       const before = w.prog; w.prog += dt;
       if (Math.floor(before * 4) !== Math.floor(w.prog * 4)) { sfx('tick'); rumble(helper.dev, 0, .25, 60); }
     } else w.prog = Math.max(0, w.prog - dt * .6);
-    if (w.prog >= 1.6) {
+    if (w.prog >= 1.6 / (1 + sk('medic'))) {
       w.dead = true;
       const t = spawnPlayer(w.slot, { x: w.x, y: w.y }); t.body = w.body; collideTank(t);
       sfx('revive'); rumble(t.dev, .4, .7, 250);
@@ -953,7 +1202,7 @@ function simStep(dt, active) {
   aliveTanks = G.tanks.filter(t => t.alive);
   for (const t of aliveTanks) {
     t.cool -= dt; t.recoil = Math.max(0, t.recoil - dt * 6); t.reveal -= dt; t.shield = Math.max(0, t.shield - dt);
-    if (t.team === 'p') updatePlayer(t, dt, active); else updateEnemy(t, dt, active);
+    if (t.team === 'p') updatePlayer(t, dt, active); else if (t.boss) updateBoss(t, dt, active); else updateEnemy(t, dt, active);
   }
   separateTanks();
   updateBullets(dt);
@@ -1030,18 +1279,41 @@ function update(dt) {
     case 'clear':
       simStep(dt, false); G.timer -= dt;
       if (G.timer <= 0) {
-        G.stage++; G.reached = G.stage;
-        if (G.stage % 3 === 0) G.lives++;
-        if (G.stage >= STAGES.length) { G.state = 'victory'; G.reached = STAGES.length - 1; sfx('clear'); }
-        else loadStage(G.stage);
+        if (G.bossKill) G.lives++;
+        G.level++;
+        G.reels = rollReels(G.level); G.reelT = 0; G.state = 'reels';
       }
+      break;
+    case 'reels': {
+      updateParts(dt);
+      const before = G.reelT;
+      let skip = false;
+      eachDevice((dev, inp) => { if (slotOf(dev) >= 0 && (inp.kb ? inp.enter : (inp.a || inp.start))) skip = true; });
+      if (skip && G.reelT < REEL_STOPS[2][1]) G.reelT = REEL_STOPS[2][1];
+      else G.reelT += dt;
+      for (const [a, b] of REEL_STOPS) {
+        if (before < a && G.reelT >= a) sfx('reel');
+        if (before < b && G.reelT >= b) sfx('reel');
+      }
+      if (G.reelT >= REEL_DONE) { G.skillChoices = pickSkills(); G.cursor = 1; G.state = 'skill'; G.timer = .5; }
+      break;
+    }
+    case 'skill':
+      updateParts(dt);
+      G.timer = Math.max(0, G.timer - dt);
+      eachDevice((dev, inp) => {
+        if (slotOf(dev) < 0 || G.state !== 'skill') return;
+        if (inp.sl || inp.dl) { G.cursor = (G.cursor + 2) % 3; sfx('tick'); }
+        if (inp.sr || inp.dr) { G.cursor = (G.cursor + 1) % 3; sfx('tick'); }
+        if (inp.kb ? inp.enter : inp.a) chooseSkill(G.cursor);
+      });
       break;
     case 'fail':
       simStep(dt, true);
       G.timer -= dt;
-      if (G.timer <= 0) { G.lives--; if (G.lives <= 0) { G.state = 'gameover'; G.reached = G.stage; } else loadStage(G.stage); }
+      if (G.timer <= 0) { G.lives--; if (G.lives <= 0) G.state = 'gameover'; else loadLevel(); }
       break;
-    case 'gameover': case 'victory':
+    case 'gameover':
       simStep(dt, false);
       eachDevice((dev, inp) => { if (inp.kb ? inp.join : (inp.a || inp.start)) toTitle(); });
       break;
@@ -1120,6 +1392,7 @@ function onHostData(pid, d) {
     case 'in': if (d.d && typeof d.d === 'object') p.input = d.d; break;
     case 'pref': { const s = G.slots[d.slot]; if (s && s.dev.startsWith('r:' + pid + ':')) applyPref(d.slot, d.patch); break; }
     case 'voice': p.voice = !!d.on; updateRoster(); break;
+    case 'pick': if (Object.keys(p.input).length && G.slots.some(s => s && s.dev.startsWith('r:' + pid + ':'))) chooseSkill(d.i | 0); break;
   }
 }
 function dropPeer(pid) {
@@ -1154,11 +1427,13 @@ function addRemoteInputs() {
 }
 function sendSnapshot() {
   if (!Object.keys(NET.conns).length) { NET.events = []; return; }
-  broadcast({ t: 'snap', st: G.state, sg: G.stage, lv: G.lives, ff: G.ff ? 1 : 0, tm: r2(G.timer), msg: G.msg, rc: G.reached,
+  broadcast({ t: 'snap', st: G.state, lvl: G.level, lv: G.lives, ff: G.ff ? 1 : 0, tm: r2(G.timer), msg: G.msg, ln: G.layoutName,
+    sk: G.skills, rl: G.reels, rt: r2(G.reelT), sc: G.skillChoices, cur: G.cursor, nw: G.nextWave, bk: G.bossKill ? 1 : 0,
     grid: G.grid.length ? G.grid.map(r => r.join('')).join('') : '',
     sl: G.slots.map(s => s ? [s.dev, s.kills, s.deaths, s.color, s.trail, s.img || ''] : null),
-    tk: G.tanks.filter(t => t.alive).map(t => [t.id, r1(t.x), r1(t.y), r2(t.body), r2(t.turret), t.team === 'p' ? t.slot : t.type, r2(t.recoil), r2(Math.max(0, t.reveal)), r2(t.shield)]),
-    bl: G.bullets.filter(b => b.alive).map(b => [b.id, r1(b.x), r1(b.y), r3(b.dx), r3(b.dy), b.speed, b.bounces, b.rocket ? 1 : 0, b.slot]),
+    tk: G.tanks.filter(t => t.alive).map(t => [t.id, r1(t.x), r1(t.y), r2(t.body), r2(t.turret), t.team === 'p' ? t.slot : t.type, r2(t.recoil), r2(Math.max(0, t.reveal)), r2(t.shield),
+      r2(t.charge || 0), t.boss ? t.hp : 0, t.boss ? t.maxhp : 0, r2(t.hit || 0), t.armor || 0]),
+    bl: G.bullets.filter(b => b.alive).map(b => [b.id, r1(b.x), r1(b.y), r3(b.dx), r3(b.dy), b.speed, b.bounces, b.kind, b.slot]),
     mn: G.mines.map(m => [r1(m.x), r1(m.y), m.team === 'p' ? m.slot : m.type, r2(m.t), r2(m.fuse)]),
     wr: G.wrecks.map(w => [r1(w.x), r1(w.y), w.slot, r2(w.prog), r2(w.body)]),
     ev: NET.events });
@@ -1215,7 +1490,10 @@ function onClientData(d) {
   }
 }
 function applySnap(s) {
-  G.state = s.st; G.stage = s.sg | 0; G.lives = s.lv | 0; G.ff = !!s.ff; G.timer = +s.tm || 0; G.msg = s.msg || ''; G.reached = s.rc | 0;
+  G.state = s.st; G.level = s.lvl | 0 || 1; G.lives = s.lv | 0; G.ff = !!s.ff; G.timer = +s.tm || 0; G.msg = s.msg || ''; G.layoutName = s.ln || '';
+  G.skills = s.sk && typeof s.sk === 'object' ? s.sk : {}; G.reels = Array.isArray(s.rl) ? s.rl : []; G.skillChoices = Array.isArray(s.sc) ? s.sc : [];
+  G.cursor = s.cur | 0; G.nextWave = Array.isArray(s.nw) ? s.nw : []; G.bossKill = !!s.bk;
+  if (G.state !== 'reels' || Math.abs(G.reelT - s.rt) > .25) G.reelT = +s.rt || 0;
   const grid = s.grid || '';
   if (grid !== NET.lastGrid) {
     NET.lastGrid = grid; G.grid = [];
@@ -1228,13 +1506,16 @@ function applySnap(s) {
     let t = old.get(a[0]);
     if (!t) t = { id: a[0], x: a[1], y: a[2], body: a[3], turret: a[4], tread: 0, trail: 0 };
     t.tx = a[1]; t.ty = a[2]; t.tb = a[3]; t.tt = a[4]; t.recoil = a[6]; t.reveal = a[7]; t.shield = a[8]; t.alive = true;
-    if (typeof a[5] === 'number') { t.team = 'p'; t.slot = a[5]; } else { t.team = 'e'; t.type = a[5]; t.spec = ETYPES[a[5]] || ETYPES.a; }
+    t.charge = a[9] || 0; t.hp = a[10]; t.maxhp = a[11]; t.hit = a[12] || 0; t.armor = a[13] || 0;
+    if (typeof a[5] === 'number') { t.team = 'p'; t.slot = a[5]; t.r = R; }
+    else if (String(a[5]).startsWith('boss')) { t.team = 'e'; t.type = a[5]; t.boss = true; t.r = BOSS_R; t.spec = BOSSES[+String(a[5]).slice(4)] || BOSSES[0]; }
+    else { t.team = 'e'; t.type = a[5]; t.r = R; t.spec = ETYPES[a[5]] || ETYPES.a; }
     return t;
   });
   const ob = new Map(G.bullets.map(b => [b.id, b]));
   G.bullets = (s.bl || []).map(a => {
     const b = ob.get(a[0]) || { id: a[0], trailT: 0, alive: true };
-    b.x = a[1]; b.y = a[2]; b.dx = a[3]; b.dy = a[4]; b.speed = a[5]; b.bounces = a[6]; b.rocket = !!a[7]; b.slot = a[8];
+    b.x = a[1]; b.y = a[2]; b.dx = a[3]; b.dy = a[4]; b.speed = a[5]; b.bounces = a[6]; b.kind = a[7]; b.rocket = a[7] === 'rocket' || a[7] === 'missile'; b.slot = a[8];
     return b;
   });
   G.mines = (s.mn || []).map(a => ({ x: a[0], y: a[1], team: typeof a[2] === 'number' ? 'p' : 'e', slot: typeof a[2] === 'number' ? a[2] : -1, type: typeof a[2] === 'string' ? a[2] : null, t: a[3], fuse: a[4] }));
@@ -1294,6 +1575,7 @@ function clientUpdate(dt) {
     bulletTrail(b, dt);
   }
   for (const m of G.mines) m.t += dt;
+  if (G.state === 'reels') G.reelT += dt;
   updateParts(dt);
 }
 function leaveRoom(msg) {
@@ -1406,6 +1688,7 @@ const fileIn = $('#file-in'); let pendingSlot = -1;
 ov.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   b.blur(); unlockAudio();
+  if (b.dataset.act === 'skill') { const i = +b.dataset.i; if (NET.mode === 'client') send({ t: 'pick', i }); else chooseSkill(i); return; }
   const i = +b.dataset.slot, s = G.slots[i]; if (!s || !isMine(s.dev)) return;
   switch (b.dataset.act) {
     case 'col': setPref(i, { color: s.color + +b.dataset.d }); break;
@@ -1427,7 +1710,7 @@ function drawStatic() {
   const c = sctx; c.setTransform(RS, 0, 0, RS, 0, 0);
   c.fillStyle = '#e2d3b2'; c.fillRect(0, 0, W, H);
   for (let r = 0; r < ROWS; r++) for (let k = 0; k < COLS; k++) if ((r + k) % 2) { c.fillStyle = 'rgba(120,90,50,.045)'; c.fillRect(k * TS, r * TS, TS, TS); }
-  const rng = seeded(G.stage * 97 + 13);
+  const rng = seeded(G.level * 97 + 13);
   for (let i = 0; i < 1600; i++) { c.fillStyle = `rgba(${rng() < .5 ? '110,80,45' : '255,250,235'},${.05 + rng() * .08})`; c.fillRect(rng() * W, rng() * H, 1 + rng() * 1.6, 1 + rng() * 1.6); }
   const grid = G.grid;
   if (grid.length) {
@@ -1463,8 +1746,8 @@ function drawStatic() {
   c.fillStyle = v; c.fillRect(0, 0, W, H);
 }
 function rrect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
-function drawTank(t, color, dark, alpha) {
-  const c = ctx; c.save(); c.translate(t.x, t.y); c.globalAlpha = alpha;
+function drawTank(t, color, dark, alpha, scale = 1) {
+  const c = ctx; c.save(); c.translate(t.x, t.y); c.globalAlpha = alpha; if (scale !== 1) c.scale(scale, scale);
   c.fillStyle = 'rgba(40,25,10,.28)'; c.beginPath(); c.ellipse(4, 5, 19, 15, 0, 0, TAU); c.fill();
   c.rotate(t.body);
   for (const s of [-1, 1]) {
@@ -1485,11 +1768,12 @@ function drawTank(t, color, dark, alpha) {
   c.fillStyle = 'rgba(255,255,255,.3)'; c.beginPath(); c.arc(-2, -2.5, 3, 0, TAU); c.fill();
   c.restore();
 }
-function aimPath(t) {
-  const o = { x: t.x + Math.cos(t.turret) * 22, y: t.y + Math.sin(t.turret) * 22, dx: Math.cos(t.turret), dy: Math.sin(t.turret), bounces: 1 };
+function aimPath(t, bounces = 1, maxLen = 260) {
+  const reach = (t.r || R) + 8;
+  const o = { x: t.x + Math.cos(t.turret) * reach, y: t.y + Math.sin(t.turret) * reach, dx: Math.cos(t.turret), dy: Math.sin(t.turret), bounces };
   const pts = [[o.x, o.y]]; if (bb(o.x, o.y)) return pts;
   let len = 0;
-  while (len < 260) { const r = advance(o, 6); if (r === 'dead') break; if (r === 'bounce') pts.push([o.x, o.y]); len += 6; }
+  while (len < maxLen) { const r = advance(o, 6); if (r === 'dead') break; if (r === 'bounce') pts.push([o.x, o.y]); len += 6; }
   pts.push([o.x, o.y]); return pts;
 }
 const GLYPH_FONT = '700 11px "Chakra Petch", system-ui, sans-serif';
@@ -1502,6 +1786,7 @@ function render() {
   c.translate(sx, sy);
   c.drawImage(scv, -2, -2, W + 4, H + 4);
   if (G.state === 'title') { drawTitleScene(); return; }
+  if (G.state === 'reels' || G.state === 'skill') { drawReels(); return; }
   for (const s of G.scorch) {
     const g = c.createRadialGradient(s.x, s.y, 2, s.x, s.y, s.r);
     g.addColorStop(0, 'rgba(35,22,10,.42)'); g.addColorStop(1, 'rgba(35,22,10,0)');
@@ -1527,11 +1812,11 @@ function render() {
     c.fillStyle = '#2e2a25'; rrect(c, -15, -12, 30, 24, 4); c.fill();
     c.fillStyle = col; c.globalAlpha = .45; c.fillRect(-10, -3, 20, 6); c.restore();
     c.strokeStyle = 'rgba(30,20,10,.35)'; c.lineWidth = 4; c.beginPath(); c.arc(w.x, w.y, 24, 0, TAU); c.stroke();
-    if (w.prog > 0) { c.strokeStyle = col; c.beginPath(); c.arc(w.x, w.y, 24, -Math.PI / 2, -Math.PI / 2 + TAU * w.prog / 1.6); c.stroke(); }
+    if (w.prog > 0) { c.strokeStyle = col; c.beginPath(); c.arc(w.x, w.y, 24, -Math.PI / 2, -Math.PI / 2 + TAU * Math.min(1, w.prog * (1 + sk('medic')) / 1.6)); c.stroke(); }
     label(w.x, w.y - 32, `P${w.slot + 1} DOWN`, col, .9);
   }
   if (G.state === 'play' || G.state === 'intro') for (const t of G.tanks) if (t.alive && t.team === 'p') {
-    const pts = aimPath(t);
+    const pts = aimPath(t, 1 + sk('bounce'));
     c.save(); c.strokeStyle = slotColor(t.slot); c.globalAlpha = .55; c.lineWidth = 2; c.setLineDash([2, 7]); c.lineCap = 'round';
     c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const p of pts.slice(1)) c.lineTo(p[0], p[1]); c.stroke(); c.restore();
   }
@@ -1543,9 +1828,17 @@ function render() {
       c.fillStyle = col; c.globalAlpha = .25; c.beginPath(); c.ellipse(t.x, t.y + 2, 22, 18, 0, 0, TAU); c.fill(); c.globalAlpha = 1;
       drawTank(t, col, slotDark(t.slot), 1);
     } else {
+      if (t.charge > 0) {
+        // sniper laser warning
+        const pts = aimPath(t, t.boss ? 2 : t.spec.bounces, 900);
+        c.save(); c.strokeStyle = '#ff2d2d'; c.globalAlpha = .35 + .5 * (1 - t.charge / (t.boss ? .9 : t.spec.charge || .75)); c.lineWidth = 1.5; c.setLineDash([6, 4]);
+        c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const p of pts.slice(1)) c.lineTo(p[0], p[1]); c.stroke(); c.restore();
+      }
       const a = t.spec.ghost ? .07 + clamp(t.reveal, 0, 1) * .6 : 1;
-      drawTank(t, t.spec.color, t.spec.ghost ? '#9aa6ad' : 'rgba(20,14,8,.85)', a);
+      if (t.boss) drawTank(t, t.hit > 0 ? '#fff1d6' : t.spec.color, '#120c08', 1, t.r / R);
+      else drawTank(t, t.spec.color, t.spec.ghost ? '#9aa6ad' : 'rgba(20,14,8,.85)', a);
     }
+    if (t.team === 'p' && t.armor > 0) { c.strokeStyle = 'rgba(241,230,207,.75)'; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath(); c.arc(t.x, t.y, 21, 0, TAU); c.stroke(); c.setLineDash([]); }
   }
   for (const b of G.bullets) {
     const s = b.slot >= 0 ? G.slots[b.slot] : null, im = s && s.img && imgCache[s.img];
@@ -1555,10 +1848,12 @@ function render() {
       c.drawImage(im, b.x - 10, b.y - 10, 20, 20);
       continue;
     }
+    if (b.kind === 'pellet') { c.beginPath(); c.arc(b.x + 2, b.y + 3, 2.5, 0, TAU); c.fill(); c.fillStyle = '#2b2620'; c.beginPath(); c.arc(b.x, b.y, 2.6, 0, TAU); c.fill(); continue; }
     c.save(); c.translate(b.x, b.y); c.rotate(Math.atan2(b.dy, b.dx));
     c.beginPath(); c.ellipse(2, 4, 6, 3, 0, 0, TAU); c.fill();
-    c.fillStyle = b.rocket ? '#c4441a' : '#3a342c'; rrect(c, -6, -3, 12, 6, 3); c.fill();
-    c.fillStyle = b.rocket ? '#ffd27a' : '#f4eedd'; c.beginPath(); c.arc(3, 0, 2.2, 0, TAU); c.fill();
+    if (b.kind === 'snipe') { c.fillStyle = '#fff4d6'; rrect(c, -9, -1.8, 18, 3.6, 1.8); c.fill(); c.fillStyle = '#ff5a3c'; c.fillRect(5, -1.8, 4, 3.6); }
+    else if (b.kind === 'missile') { c.fillStyle = '#2d6e8e'; rrect(c, -8, -3.2, 16, 6.4, 3); c.fill(); c.fillStyle = '#d9e8ef'; c.beginPath(); c.arc(5, 0, 2.4, 0, TAU); c.fill(); c.fillStyle = '#1b3f52'; c.fillRect(-8, -5, 3, 10); }
+    else { c.fillStyle = b.rocket ? '#c4441a' : '#3a342c'; rrect(c, -6, -3, 12, 6, 3); c.fill(); c.fillStyle = b.rocket ? '#ffd27a' : '#f4eedd'; c.beginPath(); c.arc(3, 0, 2.2, 0, TAU); c.fill(); }
     c.restore();
   }
   for (const p of G.parts) {
@@ -1578,12 +1873,74 @@ function render() {
   }
   c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
   for (const t of G.tanks) if (t.alive && t.team === 'p') label(t.x, t.y - 30, `P${t.slot + 1}`, slotColor(t.slot), 1);
+  const boss = G.tanks.find(t => t.alive && t.boss);
+  if (boss && boss.maxhp) {
+    const bw = 380, bx = W / 2 - bw / 2, by = 18, k = clamp(boss.hp / boss.maxhp, 0, 1);
+    c.fillStyle = 'rgba(23,20,15,.85)'; rrect(c, bx - 10, by - 6, bw + 20, 34, 6); c.fill();
+    c.font = '400 13px Bungee, Impact, sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillStyle = '#f1e6cf';
+    c.fillText(boss.spec.name.toUpperCase(), bx, by + 5);
+    c.fillStyle = '#3a3126'; rrect(c, bx, by + 13, bw, 9, 4); c.fill();
+    c.fillStyle = k > .5 ? '#e5484d' : k > .25 ? '#f0802a' : '#f2b90f'; if (k > 0) { rrect(c, bx, by + 13, Math.max(8, bw * k), 9, 4); c.fill(); }
+  }
   const mineT = myKbTank();
   if (mineT && (G.state === 'play' || G.state === 'intro')) {
     c.strokeStyle = slotColor(mineT.slot); c.lineWidth = 2; c.beginPath(); c.arc(kb.mx, kb.my, 8, 0, TAU);
     c.moveTo(kb.mx - 13, kb.my); c.lineTo(kb.mx - 5, kb.my); c.moveTo(kb.mx + 5, kb.my); c.lineTo(kb.mx + 13, kb.my);
     c.moveTo(kb.mx, kb.my - 13); c.lineTo(kb.mx, kb.my - 5); c.moveTo(kb.mx, kb.my + 5); c.lineTo(kb.mx, kb.my + 13); c.stroke();
   }
+}
+const enemyName = k => (ETYPES[k] || ETYPES.a).name;
+function drawReels() {
+  const c = ctx;
+  c.fillStyle = 'rgba(18,15,11,.8)'; c.fillRect(-4, -4, W + 8, H + 8);
+  if (G.state === 'skill') return;
+  const lvl = G.level, boss = isBossLevel(lvl), pool = unlockedTypes(lvl), maxN = boss ? 1 : Math.min(4, 1 + Math.floor(lvl / 6));
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.font = '400 40px Bungee, Impact, sans-serif'; c.fillStyle = '#f1e6cf'; c.fillText(`LEVEL ${lvl}`, W / 2, 70);
+  c.font = '600 16px "Chakra Petch", system-ui, sans-serif'; c.fillStyle = boss ? '#ff8a7a' : '#a8987b';
+  c.fillText(boss ? `Boss level: ${BOSSES[bossIndex(lvl) % BOSSES.length].name} is coming, with an escort` : 'Spinning up the next wave', W / 2, 108);
+  const t = G.reelT;
+  G.reels.forEach((res, i) => {
+    const cx = W / 2 + (i - 1) * 270, top = 145, mw = 220, mh = 330;
+    // cabinet
+    c.fillStyle = '#3a2a1c'; rrect(c, cx - mw / 2, top, mw, mh, 14); c.fill();
+    c.strokeStyle = '#f2b90f'; c.lineWidth = 3; rrect(c, cx - mw / 2, top, mw, mh, 14); c.stroke();
+    for (let k = 0; k < 7; k++) { const on = Math.floor(G.time * 6 + k + i) % 2 === 0; c.fillStyle = on ? '#ffe08a' : '#7a5a1c'; c.beginPath(); c.arc(cx - 78 + k * 26, top + 18, 5, 0, TAU); c.fill(); }
+    // lever
+    c.strokeStyle = '#8a8a8a'; c.lineWidth = 5; const pull = t < REEL_STOPS[i][0] ? 30 : 0;
+    c.beginPath(); c.moveTo(cx + mw / 2, top + 120); c.lineTo(cx + mw / 2 + 18, top + 120 - 50 + pull); c.stroke();
+    c.fillStyle = '#e5484d'; c.beginPath(); c.arc(cx + mw / 2 + 18, top + 120 - 50 + pull, 9, 0, TAU); c.fill();
+    // enemy window
+    const ew = 176, eh = 170, ex = cx - ew / 2, ey = top + 38;
+    c.save(); c.fillStyle = '#f1e6cf'; rrect(c, ex, ey, ew, eh, 8); c.fill(); c.clip();
+    const stopA = REEL_STOPS[i][0];
+    const drawEnemy = (k, yy) => {
+      drawTank({ x: cx, y: yy - 14, body: 0, turret: 0, tread: 0, recoil: 0 }, ETYPES[k].color, 'rgba(20,14,8,.85)', 1, 2);
+      c.font = '400 17px Bungee, Impact, sans-serif'; c.fillStyle = '#2b2620'; c.textAlign = 'center'; c.fillText(enemyName(k).toUpperCase(), cx, yy + 50);
+    };
+    if (t < stopA) {
+      const ph = t * 9 + i * 2.3, idx = Math.floor(ph), fr = ph - idx;
+      drawEnemy(pool[idx % pool.length], ey + eh / 2 + fr * eh);
+      drawEnemy(pool[(idx + 1) % pool.length], ey + eh / 2 + fr * eh - eh);
+    } else {
+      const s2 = Math.min(1, (t - stopA) / .25), bounce = Math.sin(s2 * Math.PI) * 10 * (1 - s2);
+      drawEnemy(res.t, ey + eh / 2 + bounce);
+    }
+    c.restore();
+    // count window
+    const nw = 176, nh = 74, nx = cx - nw / 2, ny = ey + eh + 16, stopB = REEL_STOPS[i][1];
+    c.save(); c.fillStyle = '#17140f'; rrect(c, nx, ny, nw, nh, 8); c.fill(); c.clip();
+    c.font = '400 44px Bungee, Impact, sans-serif'; c.fillStyle = '#f2b90f'; c.textAlign = 'center';
+    if (t < stopB) {
+      const ph = t * 12 + i * 1.7, idx = Math.floor(ph), fr = ph - idx;
+      c.fillText('×' + (1 + idx % 9), cx, ny + nh / 2 + fr * nh);
+      c.fillText('×' + (1 + (idx + 1) % 9), cx, ny + nh / 2 + fr * nh - nh);
+    } else c.fillText('×' + res.n, cx, ny + nh / 2);
+    c.restore();
+    c.strokeStyle = '#f2b90f'; c.lineWidth = 2; rrect(c, nx, ny, nw, nh, 8); c.stroke();
+  });
+  c.font = '600 15px "Chakra Petch", system-ui, sans-serif'; c.fillStyle = '#a8987b'; c.textAlign = 'center';
+  c.fillText(t < REEL_STOPS[2][1] ? 'Press A or Enter to skip' : `Next wave: ${G.reels.map(r => `${r.n} ${enemyName(r.t)}`).join(' · ')}`, W / 2, 540);
 }
 function label(x, y, text, color, a) {
   const c = ctx; c.font = GLYPH_FONT; const w = c.measureText(text).width + 10;
@@ -1609,14 +1966,15 @@ function setText(el, v) { v = String(v); if (el._v !== v) { el._v = v; el.textCo
 function setAttr(el, k, v) { if (el.dataset[k] !== v) el.dataset[k] = v; }
 function updateHud() {
   const inGame = G.state !== 'title';
-  setText(hud.stage, inGame ? `${Math.min(G.stage + 1, STAGES.length)}/${STAGES.length}` : '–');
-  setText(hud.name, inGame ? STAGES[clamp(G.stage, 0, STAGES.length - 1)].name : '');
+  setText(hud.stage, inGame ? G.level : '–');
+  setText(hud.name, inGame ? (isBossLevel(G.level) ? `${G.layoutName} · Boss` : G.layoutName) : '');
   setText(hud.en, inGame ? G.tanks.filter(t => t.alive && t.team === 'e').length : '–');
   setText(hud.lives, inGame ? G.lives : '–');
   setText(hud.ff, G.ff ? 'Friendly fire on' : 'Friendly fire off'); setAttr(hud.ff, 'on', G.ff ? '1' : '0');
   hud.chips.forEach((chip, i) => {
     const s = G.slots[i];
-    const alive = G.tanks.some(t => t.alive && t.team === 'p' && t.slot === i);
+    const between = G.state === 'reels' || G.state === 'skill';
+    const alive = between || G.tanks.some(t => t.alive && t.team === 'p' && t.slot === i);
     setAttr(chip, 'state', !s ? 'empty' : (!inGame || alive) ? 'ok' : 'down');
     const col = s ? COLORS[s.color][1] : `var(--p${i + 1})`;
     if (chip._c !== col) { chip._c = col; chip.style.setProperty('--c', col); }
@@ -1664,17 +2022,34 @@ function overlayHTML() {
         ? `<div class="note">Playing with friends on other computers? Click <b>Play online</b> at the top.</div>`
         : `<div class="note">Online room <b>${esc(NET.code)}</b> · ${Math.max(1, NET.roster.length)} connected.${NET.voice ? ' Voice chat is on.' : ' Press <span class="k">V</span> or <span class="k">VIEW</span> to turn voice chat on.'}</div>`;
       return `<div class="panel title"><h1>Ricochet <span>Regiment</span></h1>
-        <p class="sub">Co-op tank combat for up to four players. Shells bounce off walls, mines clear crates, and a downed teammate can be revived by parking on their wreck.</p>
+        <p class="sub">Endless co-op tank combat for up to four players. Shells bounce off walls, mines clear crates, and a downed teammate can be revived by parking on their wreck. After every level the slot machines pick the next wave and the squad picks a skill. A boss arrives every 10 levels.</p>
         <div class="slots">${[0, 1, 2, 3].map(slotCard).join('')}</div>
         <div class="row"><span>${ffTxt}</span><span class="note">D-pad ◀ ▶ changes color, ▲ ▼ changes trail.</span></div>
         <div class="go">${joinedCount() ? `Press ${ST} or <span class="k">ENTER</span> to deploy` : `Press ${BA} to join`}</div>
         ${padLine}${netLine}</div>`;
     }
     case 'intro': {
-      const counts = {}; G.tanks.forEach(t => { if (t.team === 'e' && t.alive) counts[t.type] = (counts[t.type] || 0) + 1; });
-      const roster = Object.keys(counts).sort().map(k => `<span><i class="dot" style="--c:${ETYPES[k].color}"></i>${counts[k]} ${ETYPES[k].name}</span>`).join('');
+      const counts = {}, info = {};
+      G.tanks.forEach(t => { if (t.team === 'e' && t.alive) { counts[t.type] = (counts[t.type] || 0) + 1; info[t.type] = t.spec; } });
+      const keys = Object.keys(counts).sort((a, b) => (b.startsWith('boss') ? 1 : 0) - (a.startsWith('boss') ? 1 : 0) || a.localeCompare(b));
+      const roster = keys.map(k => `<span><i class="dot" style="--c:${info[k].color}"></i>${k.startsWith('boss') ? `<b>${info[k].name}</b>&nbsp;(boss)` : `${counts[k]} ${info[k].name}`}</span>`).join('');
       const free = joinedCount() < 4 ? `<div class="note">Not playing yet? Press ${BA} to drop in.</div>` : '';
-      return `<div class="panel banner"><div class="eyebrow">Stage ${G.stage + 1} of ${STAGES.length}</div><h2>${STAGES[clamp(G.stage, 0, STAGES.length - 1)].name}</h2><div class="roster">${roster}</div><div class="note">${G.lives} ${G.lives === 1 ? 'life' : 'lives'} left</div>${free}</div>`;
+      const boss = isBossLevel(G.level);
+      return `<div class="panel banner"><div class="eyebrow">Level ${G.level}${boss ? ' · Boss fight' : ''}</div><h2>${esc(G.layoutName)}</h2><div class="roster">${roster}</div><div class="note">${G.lives} ${G.lives === 1 ? 'life' : 'lives'} left</div>${free}</div>`;
+    }
+    case 'skill': {
+      const cards = G.skillChoices.map((id, i) => {
+        const S = SKILL[id]; if (!S) return '';
+        const have = sk(id), lvlTxt = S.max > 1 && S.max < 99 ? `<span class="note">Rank ${have + 1} of ${S.max}</span>` : '';
+        return `<button type="button" class="sk${G.cursor === i ? ' sel' : ''}" data-act="skill" data-i="${i}"><h4>${S.name}</h4><span>${S.desc}</span>${lvlTxt}</button>`;
+      }).join('');
+      const owned = Object.keys(G.skills).filter(id => SKILL[id] && id !== 'life').map(id => `${SKILL[id].name}${G.skills[id] > 1 ? ' ×' + G.skills[id] : ''}`).join(' · ');
+      const next = G.reels.map(r => `${r.n} ${enemyName(r.t)}`).join(' · ');
+      return `<div class="panel skillp"><div class="eyebrow">Level ${G.level} is next${isBossLevel(G.level) ? ' · Boss fight' : ''}</div><h2>Choose a skill</h2>
+        <div class="skills">${cards}</div>
+        <div class="note">Move with the stick, D-pad or arrow keys. Pick with ${BA}, <span class="k">ENTER</span> or a click. Anyone in the squad can choose.</div>
+        <div class="note">Up next: <b>${next}</b>${isBossLevel(G.level) ? ` plus <b>${BOSSES[bossIndex(G.level) % BOSSES.length].name}</b>` : ''}</div>
+        ${owned ? `<div class="note">Squad skills: ${owned}</div>` : ''}</div>`;
     }
     case 'paused':
       return `<div class="panel banner"><h2>Paused</h2>${G.msg ? `<div class="warn">${esc(G.msg)}</div>` : ''}
@@ -1682,16 +2057,15 @@ function overlayHTML() {
         <div class="row" style="justify-content:center"><span>${ffTxt}</span></div>
         <div class="row" style="justify-content:center"><span>${BB} <span class="k">Q</span> quit to title</span></div></div>`;
     case 'clear': {
-      const bonus = (G.stage + 1) % 3 === 0 && G.stage + 1 < STAGES.length ? '<div class="note">Bonus life earned</div>' : '';
-      return `<div class="panel banner"><div class="eyebrow">Stage ${G.stage + 1}</div><h2>Cleared</h2>${bonus}</div>`;
+      const bonus = G.bossKill ? '<div class="note">Boss destroyed. Bonus life earned.</div>' : '';
+      return `<div class="panel banner"><div class="eyebrow">Level ${G.level}</div><h2>${G.bossKill ? 'Boss down' : 'Cleared'}</h2>${bonus}</div>`;
     }
     case 'fail':
       return `<div class="panel banner"><div class="eyebrow">Squad wiped out</div><h2>${G.lives > 1 ? 'Try again' : 'Last life lost'}</h2><div class="note">${Math.max(0, G.lives - 1)} ${G.lives - 1 === 1 ? 'life' : 'lives'} left</div></div>`;
-    case 'gameover': case 'victory': {
+    case 'gameover': {
       const rows = G.slots.map((s, i) => s ? `<span style="color:${COLORS[s.color][1]}">P${i + 1}</span><span>${s.kills}</span><span>${s.deaths}</span>` : '').join('');
-      const st = STAGES[clamp(G.reached, 0, STAGES.length - 1)];
-      const head = G.state === 'victory' ? `<div class="eyebrow">All ${STAGES.length} stages cleared</div><h2>Victory</h2>` : `<div class="eyebrow">Reached stage ${G.reached + 1} · ${st.name}</div><h2>Game over</h2>`;
-      return `<div class="panel banner">${head}<div class="stats"><span class="h">Tank</span><span class="h">Kills</span><span class="h">Losses</span>${rows}</div><div class="go">Press ${BA} or <span class="k">ENTER</span> to continue</div></div>`;
+      const owned = Object.keys(G.skills).filter(id => SKILL[id]).map(id => `${SKILL[id].name}${G.skills[id] > 1 ? ' ×' + G.skills[id] : ''}`).join(' · ');
+      return `<div class="panel banner"><div class="eyebrow">The run ended on level ${G.level}</div><h2>Game over</h2><div class="stats"><span class="h">Tank</span><span class="h">Kills</span><span class="h">Losses</span>${rows}</div>${owned ? `<div class="note">Skills: ${owned}</div>` : ''}<div class="go">Press ${BA} or <span class="k">ENTER</span> to continue</div></div>`;
     }
   }
   return '';
@@ -1722,6 +2096,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 addEventListener('beforeunload', () => { try { if (NET.peer) NET.peer.destroy(); } catch (e) {} });
+if (location.hash === '#debug') window.RR_DEBUG = { G, loadLevel, genLayout, chooseSkill };
 resize(); renderNet();
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { staticDirty = true; });
