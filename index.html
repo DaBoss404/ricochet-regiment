@@ -126,6 +126,19 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .sk:hover{border-color:var(--muted)}
 .sk.sel{border-color:var(--accent);background:rgba(242,185,15,.12);box-shadow:inset 0 0 0 2px var(--accent)}
 .sk.sel h4{color:var(--accent)}
+.sk{--rc:#b9ab8e;border-top:3px solid var(--rc)}
+.sk .rar{font-size:.72em;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--rc)}
+.r-rare{--rc:#4f8dff}.r-epic{--rc:#b07cff}.r-legendary{--rc:#ff9a3d}.r-mythic{--rc:#ff4fd8}
+.sk.r-rare,.sk.r-epic,.sk.r-legendary{background:color-mix(in srgb,var(--rc) 10%,transparent)}
+.sk.r-legendary{box-shadow:0 0 18px color-mix(in srgb,var(--rc) 35%,transparent)}
+.sk.r-mythic{background:linear-gradient(135deg,rgba(255,79,216,.2),rgba(242,185,15,.16),rgba(79,141,255,.2));animation:myth 2.2s ease-in-out infinite}
+.sk.r-mythic h4{background:linear-gradient(90deg,#ff4fd8,#f2b90f,#4f8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sk.sel{border-color:var(--rc);box-shadow:inset 0 0 0 2px var(--rc),0 0 22px color-mix(in srgb,var(--rc) 40%,transparent);transform:translateY(-4px)}
+.sk.sel h4{color:var(--rc)}
+.sk.r-mythic.sel h4{color:transparent}
+.own.r-rare,.own.r-epic,.own.r-legendary,.own.r-mythic{color:var(--rc)}
+@keyframes myth{0%,100%{box-shadow:0 0 0 1px #ff4fd8,0 0 18px rgba(255,79,216,.45)}50%{box-shadow:0 0 0 1px #f2b90f,0 0 28px rgba(242,185,15,.55)}}
+@media (prefers-reduced-motion:reduce){.sk.r-mythic{animation:none}}
 @keyframes pulse{50%{opacity:.55}}
 @media (prefers-reduced-motion:reduce){.go{animation:none}}
 @media (max-width:700px){#legend{display:none}.title,.skillp{width:auto}.slots{grid-template-columns:repeat(2,1fr)}.skills{grid-template-columns:1fr}}
@@ -205,18 +218,50 @@ const BOSSES = [
   { name: 'Warden',     color: '#4a3a62', hp: 34, speed: 46, turn: 2.2, gap: 1.9, pref: 320, attacks: ['ring', 'snipe', 'fan', 'mines', 'snipe'] },
 ];
 const BOSS_R = 30;
+// Each skill card first rolls a rarity, then a skill of that rarity.
+const RARITY = {
+  common:    { label: 'Common',    w: 60 },
+  rare:      { label: 'Rare',      w: 26 },
+  epic:      { label: 'Epic',      w: 10 },
+  legendary: { label: 'Legendary', w: 3.5 },
+  mythic:    { label: 'Mythic',    w: .6 },
+};
 const SKILLS = [
-  { id: 'reload', name: 'Quick Loader',  desc: 'Fire 25% faster and carry 1 more shell.', max: 3 },
-  { id: 'bounce', name: 'Rubber Rounds', desc: 'Your shells bounce 1 more time.', max: 2 },
-  { id: 'speed',  name: 'Hot Shells',    desc: 'Your shells fly 20% faster.', max: 3 },
-  { id: 'treads', name: 'Racing Treads', desc: 'Your tanks drive 15% faster.', max: 3 },
-  { id: 'mines',  name: 'Mine Layer',    desc: 'Carry 1 more mine, and your mines blast 20% wider.', max: 3 },
-  { id: 'armor',  name: 'Plating',       desc: 'Every tank shrugs off its first hit each level.', max: 2 },
-  { id: 'medic',  name: 'Field Medic',   desc: 'Revive teammates twice as fast.', max: 2 },
-  { id: 'twin',   name: 'Twin Barrels',  desc: 'Every shot fires two shells side by side.', max: 1 },
-  { id: 'heavy',  name: 'Heavy Shells',  desc: 'Your shells hit bosses twice as hard.', max: 2 },
-  { id: 'slow',   name: 'Jammer',        desc: 'Enemy shells fly 12% slower.', max: 3 },
-  { id: 'life',   name: 'Spare Parts',   desc: 'The squad gains 2 extra lives.', max: 99 },
+  // common
+  { id: 'reload',   rar: 'common', name: 'Quick Loader',  desc: 'Fire 25% faster and carry 1 more shell.', max: 3 },
+  { id: 'speed',    rar: 'common', name: 'Hot Shells',    desc: 'Your shells fly 20% faster.', max: 3 },
+  { id: 'treads',   rar: 'common', name: 'Racing Treads', desc: 'Your tanks drive 15% faster.', max: 3 },
+  { id: 'mines',    rar: 'common', name: 'Mine Layer',    desc: 'Carry 1 more mine, and your mines blast 20% wider.', max: 3 },
+  { id: 'medic',    rar: 'common', name: 'Field Medic',   desc: 'Revive teammates twice as fast.', max: 2 },
+  { id: 'slow',     rar: 'common', name: 'Jammer',        desc: 'Enemy shells fly 12% slower.', max: 3 },
+  { id: 'magazine', rar: 'common', name: 'Deep Magazine', desc: 'Carry 2 more shells at once.', max: 3 },
+  { id: 'fuse',     rar: 'common', name: 'Hair Trigger',  desc: 'Your mines arm instantly and go off from farther away.', max: 1 },
+  { id: 'headstart',rar: 'common', name: 'Ambush',        desc: 'Enemies wait 2 more seconds before their first shot each level.', max: 2 },
+  { id: 'sights',   rar: 'common', name: 'Long Sights',   desc: 'Your aim guide reaches twice as far.', max: 1 },
+  // rare
+  { id: 'bounce',   rar: 'rare', name: 'Rubber Rounds', desc: 'Your shells bounce 1 more time.', max: 2 },
+  { id: 'armor',    rar: 'rare', name: 'Plating',       desc: 'Every tank shrugs off its first hit each level.', max: 2 },
+  { id: 'heavy',    rar: 'rare', name: 'Heavy Shells',  desc: 'Your shells hit bosses twice as hard.', max: 2 },
+  { id: 'life',     rar: 'rare', name: 'Spare Parts',   desc: 'The squad gains 2 extra lives.', max: 99 },
+  { id: 'pierce',   rar: 'rare', name: 'Piercing Rounds', desc: 'Your shells punch through 1 enemy and keep going.', max: 2 },
+  { id: 'shield',   rar: 'rare', name: 'Bubble Shield', desc: 'Start every level with 4 seconds of invincibility.', max: 2 },
+  { id: 'scav',     rar: 'rare', name: 'Scavenger',     desc: 'Every 15 enemies the squad destroys earns a life.', max: 1 },
+  { id: 'big',      rar: 'rare', name: 'Big Shells',    desc: 'Your shells hit tanks from farther away.', max: 2 },
+  { id: 'lucky',    rar: 'rare', name: 'Lucky Charm',   desc: 'Rarer skills show up more often.', max: 3 },
+  // epic
+  { id: 'twin',     rar: 'epic', name: 'Twin Barrels',  desc: 'Every shot fires two shells side by side.', max: 1 },
+  { id: 'triple',   rar: 'epic', name: 'Spread Shot',   desc: 'Every shot fires three shells in a fan.', max: 1 },
+  { id: 'homing',   rar: 'epic', name: 'Seeker Shells', desc: 'Your shells curve toward the nearest enemy.', max: 2 },
+  { id: 'blast',    rar: 'epic', name: 'Explosive Shells', desc: 'Your shells explode when they stop, hurting nearby enemies and crates.', max: 1 },
+  { id: 'adren',    rar: 'epic', name: 'Adrenaline',    desc: 'When a teammate goes down, everyone fires twice as fast and drives faster for 5 seconds.', max: 1 },
+  { id: 'cluster',  rar: 'epic', name: 'Cluster Mines', desc: 'Your mines burst into a ring of 8 shells.', max: 1 },
+  // legendary
+  { id: 'phoenix',  rar: 'legendary', name: 'Phoenix Core',    desc: 'Once per level, each tank survives a killing blow and explodes back to life.', max: 1 },
+  { id: 'reflect',  rar: 'legendary', name: 'Mirror Plating',  desc: 'Enemy shells have a 35% chance to bounce off you and fly back at them.', max: 2 },
+  { id: 'storm',    rar: 'legendary', name: 'Shell Storm',     desc: 'Every 6 seconds, each tank fires a ring of 8 shells on its own.', max: 2 },
+  { id: 'chain',    rar: 'legendary', name: 'Chain Reaction',  desc: 'Destroyed enemies explode and damage the enemies around them.', max: 1 },
+  // mythic
+  { id: 'mythic',   rar: 'mythic', name: 'Endless Ricochet', desc: 'Shells bounce 10 more times, pass through every enemy, and you fire twice as fast.', max: 1 },
 ];
 const SKILL = Object.fromEntries(SKILLS.map(s => [s.id, s]));
 const ARENAS = [
@@ -315,7 +360,8 @@ const store = {
 const G = { state: 'title', slots: [null, null, null, null], ff: false, level: 1, lives: 3, timer: 0,
   grid: [], spawns: null, tanks: [], bullets: [], mines: [], parts: [], marks: [], wrecks: [], scorch: [],
   shake: 0, time: 0, msg: '', idSeq: 0, images: {},
-  layoutName: '', lastLayout: -1, skills: {}, nextWave: [], reels: [], reelT: 0, skillChoices: [], cursor: 1, bossKill: false };
+  layoutName: '', lastLayout: -1, skills: {}, nextWave: [], reels: [], reelT: 0, skillChoices: [], cursor: 1, bossKill: false,
+  adren: 0, scavN: 0, phoenix: {} };
 const sk = id => G.skills[id] || 0;
 const isBossLevel = lvl => lvl % 10 === 0;
 const bossIndex = lvl => lvl / 10 - 1;
@@ -437,6 +483,8 @@ function playSfx(n) {
     case 'reel': tone(380, .07, 'square', .09); tone(760, .09, 'triangle', .08, null, .05); break;
     case 'snipe': tone(1800, .12, 'sawtooth', .07, 300); noise(.12, .2, 6000); break;
     case 'shotgun': noise(.22, .4, 2400); tone(160, .15, 'square', .1, 60); break;
+    case 'legend': [523, 784, 1046, 1568].forEach((f, i) => tone(f, .35, 'triangle', .12, null, i * .09)); break;
+    case 'mythic': [392, 523, 659, 784, 1046, 1318, 1568, 2093].forEach((f, i) => tone(f, .5, i % 2 ? 'sine' : 'triangle', .12, null, i * .07)); break;
   }
 }
 
@@ -546,6 +594,7 @@ function applyFx(e) {
     case 'ring': G.parts.push({ kind: 'ring', x: e.x, y: e.y, vx: 0, vy: 0, life: .5, max: .5, size: 8, grow: 90, color: e.c, drag: 0 }); break;
     case 'sc': G.scorch.push({ x: e.x, y: e.y, r: e.r }); break;
     case 'reset': G.parts = []; G.marks = []; G.scorch = []; break;
+    case 'txt': G.parts.push({ kind: 'text', x: e.x, y: e.y, vx: 0, vy: -28, life: 1.3, max: 1.3, size: 0, grow: 0, color: e.c, text: String(e.s).slice(0, 16), drag: 0 }); break;
   }
 }
 function puff(x, y, n, color, spd, size, life) {
@@ -690,12 +739,12 @@ function makeTank(x, y, team) {
 function spawnPlayer(k, at) {
   const sp = at || G.spawns.p[k] || G.spawns.p[0] || { x: 80, y: 80 + k * 80 };
   const t = makeTank(sp.x, sp.y, 'p'); t.slot = k; t.dev = G.slots[k].dev; t.shield = at ? 1.6 : 0;
-  if (!at) t.armor = sk('armor');
+  if (!at) { t.armor = sk('armor'); if (sk('shield')) t.shield = 4 * sk('shield'); }
   G.tanks.push(t); return t;
 }
 function makeEnemy(type, x, y) {
   const t = makeTank(x, y, 'e'); t.type = type; t.spec = ETYPES[type];
-  t.cool = rnd(1.2, 2.6);
+  t.cool = rnd(1.2, 2.6) + 2 * sk('headstart');
   t.cdK = Math.max(.65, 1 - (G.level - 1) * .012); // later levels fire a little more often
   t.ai = { aimT: Math.random() * .5, target: Math.PI, moveT: 0, dir: Math.random() * TAU, mineT: rnd(3, 6), burst: 0, fireCheck: 0, flee: 0, fleeFrom: null, charging: 0 };
   return t;
@@ -704,7 +753,7 @@ function makeBoss(idx, x, y) {
   const B = BOSSES[idx % BOSSES.length], tier = Math.floor(idx / BOSSES.length);
   const t = makeTank(x, y, 'e'); t.type = 'boss' + (idx % BOSSES.length); t.spec = B; t.boss = true; t.r = BOSS_R;
   t.maxhp = t.hp = Math.round(B.hp * (1 + .5 * tier) * (1 + .35 * (joinedCount() - 1)));
-  t.ai = { atkT: 2.4, atk: 0, dir: Math.PI, moveT: 0, flee: 0, charging: 0, tier };
+  t.ai = { atkT: 2.4 + 2 * sk('headstart'), atk: 0, dir: Math.PI, moveT: 0, flee: 0, charging: 0, tier };
   return t;
 }
 function areaClear(c, r) {
@@ -740,6 +789,7 @@ function loadLevel() {
   const extra = Math.round((joinedCount() - 1) * 0.7);
   for (let i = 0; i < extra && types.length; i++) types.push(types[Math.floor(Math.random() * types.length)]);
   placeEnemies(types);
+  G.phoenix = {}; G.adren = 0;
   staticDirty = true; G.state = 'intro'; G.timer = boss ? 3.2 : 2.6; G.bossKill = false;
 }
 // Three slot machines: each lands on an enemy type, then on how many of it come next level.
@@ -751,8 +801,19 @@ function rollReels(lvl) {
 const REEL_STOPS = [0, 1, 2].map(i => [1.0 + i * .55, 1.55 + i * .55]);
 const REEL_DONE = REEL_STOPS[2][1] + 1.3;
 function pickSkills() {
-  const open = SKILLS.filter(s => sk(s.id) < s.max).sort(() => Math.random() - .5);
-  return open.slice(0, 3).map(s => s.id);
+  const chosen = [];
+  // Deeper runs and Lucky Charm make rarer tiers more likely
+  const boost = (1 + .5 * sk('lucky')) * (1 + Math.min(1.5, (G.level - 1) * .03));
+  for (let tries = 0; chosen.length < 3 && tries < 80; tries++) {
+    const tiers = Object.keys(RARITY).filter(r => SKILLS.some(s => s.rar === r && sk(s.id) < s.max && !chosen.includes(s.id)));
+    if (!tiers.length) break;
+    const wt = r => RARITY[r].w * (r === 'common' ? 1 : boost);
+    let roll = Math.random() * tiers.reduce((a, r) => a + wt(r), 0), tier = tiers[0];
+    for (const r of tiers) { roll -= wt(r); if (roll <= 0) { tier = r; break; } }
+    const pool = SKILLS.filter(s => s.rar === tier && sk(s.id) < s.max && !chosen.includes(s.id));
+    chosen.push(pool[Math.floor(Math.random() * pool.length)].id);
+  }
+  return chosen;
 }
 function chooseSkill(i) {
   if (G.state !== 'skill' || G.timer > 0) return;
@@ -848,7 +909,7 @@ function shoot(t, ang, speed, bounces, kind = 'shell', o = {}) {
   t.recoil = 1;
   if (bb(tx, ty)) { if (o.fx !== false) { emit({ t: 'puff', x: r1(tx), y: r1(ty), n: 5 }); sfx('pop'); } return; }
   G.bullets.push({ id: ++G.idSeq, x: tx, y: ty, dx: Math.cos(ang), dy: Math.sin(ang), speed, bounces, owner: t, team: t.team,
-    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0 });
+    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0, pierce: o.pierce || 0, hitIds: [] });
   t.bullets++;
   if (o.fx !== false) {
     emit({ t: 'muz', x: r1(tx), y: r1(ty), a: r2(ang) });
@@ -876,7 +937,25 @@ function layMine(t) {
 }
 function killBullet(b, fx) {
   if (!b.alive) return; b.alive = false; b.owner.bullets = Math.max(0, b.owner.bullets - 1);
-  if (fx) { emit({ t: 'puff', x: r1(b.x), y: r1(b.y), n: 4 }); sfx('pop'); }
+  if (fx && b.team === 'p' && sk('blast')) shellBlast(b.x, b.y, b.owner);
+  else if (fx) { emit({ t: 'puff', x: r1(b.x), y: r1(b.y), n: 4 }); sfx('pop'); }
+}
+// Explosive Shells: a small blast that hurts enemies and breaks crates, never teammates
+function shellBlast(x, y, owner) {
+  const BR = 42;
+  emit({ t: 'boom', x: r1(x), y: r1(y), c: '#ffb04d', k: .55 }); sfx('pop');
+  for (const t of G.tanks) if (t.alive && t.team === 'e' && Math.hypot(t.x - x, t.y - y) < BR + (t.r || R) * .5) hurtTank(t, owner, t.boss ? 2 : 1);
+  for (let r = Math.floor((y - BR) / TS); r <= Math.floor((y + BR) / TS); r++) for (let c = Math.floor((x - BR) / TS); c <= Math.floor((x + BR) / TS); c++) {
+    if (r < 0 || c < 0 || r >= ROWS || c >= COLS || G.grid[r][c] !== 2) continue;
+    if (Math.hypot(c * TS + TS / 2 - x, r * TS + TS / 2 - y) < BR + 12) { G.grid[r][c] = 0; staticDirty = true; emit({ t: 'crate', x: c * TS + TS / 2, y: r * TS + TS / 2 }); }
+  }
+}
+// Shells that don't come from a tank's barrel (Cluster Mines)
+function looseShell(owner, x, y, ang, speed, bounces) {
+  if (bb(x, y)) return;
+  G.bullets.push({ id: ++G.idSeq, x, y, dx: Math.cos(ang), dy: Math.sin(ang), speed, bounces, owner, team: owner.team, slot: owner.team === 'p' ? owner.slot : -1,
+    kind: 'shell', rocket: false, life: 0, age: .3, bounced: true, alive: true, trailT: 0, pierce: sk('mythic') ? 99 : sk('pierce'), hitIds: [] });
+  owner.bullets++;
 }
 function canHit(b, t) {
   if (t.shield > 0) return false;
@@ -891,6 +970,13 @@ function hurtTank(t, killer, dmg) {
     t.hp -= dmg; t.hit = .12;
     emit({ t: 'spk', x: r1(t.x), y: r1(t.y), n: 6, v: 160 }); sfx('pop');
     if (t.hp <= 0) killTank(t, killer);
+    return;
+  }
+  if (t.team === 'p' && sk('phoenix') && !G.phoenix[t.slot]) {
+    G.phoenix[t.slot] = true; t.shield = 2;
+    emit({ t: 'boom', x: r1(t.x), y: r1(t.y), c: '#ff9a3d', k: .9 }); emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 26), s: 'PHOENIX', c: '#ffb04d' });
+    sfx('revive'); rumble(t.dev, .8, .8, 300);
+    for (const e of G.tanks) if (e.alive && e.team === 'e' && !e.boss && Math.hypot(e.x - t.x, e.y - t.y) < 80) hurtTank(e, t, 1);
     return;
   }
   if (t.team === 'p' && t.armor > 0) {
@@ -910,10 +996,16 @@ function killTank(t, killer) {
   if (t.team === 'p') {
     const s = G.slots[t.slot]; if (s) s.deaths++;
     G.wrecks.push({ x: t.x, y: t.y, slot: t.slot, prog: 0, body: t.body });
+    if (sk('adren')) { G.adren = 5; emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 26), s: 'ADRENALINE', c: '#ff6b5e' }); }
     rumble(t.dev, 1, 1, 550); sfx('die'); shake(9);
   } else {
     if (killer && killer.team === 'p' && G.slots[killer.slot]) { G.slots[killer.slot].kills++; rumble(killer.dev, .2, .5, 140); }
     sfx('boom'); shake(6);
+    if (sk('scav') && killer && killer.team === 'p' && ++G.scavN >= 15) { G.scavN = 0; G.lives++; emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 26), s: '+1 LIFE', c: '#9ad41f' }); sfx('revive'); }
+    if (sk('chain') && !t.boss) {
+      emit({ t: 'boom', x: r1(t.x), y: r1(t.y), c: '#ffd27a', k: .8 });
+      for (const e of G.tanks) if (e.alive && e.team === 'e' && Math.hypot(e.x - t.x, e.y - t.y) < 80 + (e.r || R) * .5) hurtTank(e, killer, e.boss ? 3 : 1);
+    }
   }
 }
 function explode(m) {
@@ -935,6 +1027,7 @@ function explode(m) {
     if (Math.hypot(cx - m.x, cy - m.y) < MR + 14) { G.grid[r][c] = 0; staticDirty = true; emit({ t: 'crate', x: cx, y: cy }); }
   }
   for (const b of G.bullets) if (b.alive && Math.hypot(b.x - m.x, b.y - m.y) < MR) killBullet(b, false);
+  if (m.team === 'p' && sk('cluster')) { const off = Math.random() * TAU; for (let k = 0; k < 8; k++) looseShell(m.owner, m.x + Math.cos(off + k / 8 * TAU) * 14, m.y + Math.sin(off + k / 8 * TAU) * 14, off + k / 8 * TAU, PBS, 1 + sk('bounce')); }
   for (const o of G.mines) if (o.alive && o !== m && Math.hypot(o.x - m.x, o.y - m.y) < MR + 10) o.fuse = Math.min(o.fuse, o.t + .15);
   emit({ t: 'boom', x: r1(m.x), y: r1(m.y), c: '#ff9a3d', k: 1.6 * MR / MINE_R });
   emit({ t: 'sc', x: r1(m.x), y: r1(m.y), r: 46 });
@@ -962,7 +1055,7 @@ function updatePlayer(t, dt, active) {
   const mag = Math.min(1, Math.hypot(inp.mx, inp.my));
   if (mag > .05) {
     steerBody(t, Math.atan2(inp.my, inp.mx), 8, dt);
-    const sp = PSPEED * (1 + .15 * sk('treads'));
+    const sp = PSPEED * (1 + .15 * sk('treads')) * (G.adren > 0 ? 1.3 : 1);
     moveTank(t, inp.mx * sp, inp.my * sp, dt);
   }
   if (inp.mouseAim) t.turret = Math.atan2(kb.my - t.y, kb.mx - t.x);
@@ -970,12 +1063,23 @@ function updatePlayer(t, dt, active) {
   else if (inp.aim !== null) t.turret += angDiff(inp.aim, t.turret) * Math.min(1, dt * 28);
   else if (mag > .5 && t.idleAim > .6) t.turret += angDiff(Math.atan2(inp.my, inp.mx), t.turret) * Math.min(1, dt * 6);
   t.idleAim = inp.aim === null && !inp.mouseAim ? (t.idleAim || 0) + dt : 0;
-  const twin = sk('twin') > 0, need = twin ? 2 : 1;
-  if (inp.fire && t.cool <= 0 && t.bullets + need <= PMAX + sk('reload')) {
-    const spd = PBS * (1 + .2 * sk('speed')), bnc = 1 + sk('bounce');
-    if (twin) { shoot(t, t.turret, spd, bnc, 'shell', { side: -5 }); shoot(t, t.turret, spd, bnc, 'shell', { side: 5, fx: false }); }
-    else shoot(t, t.turret, spd, bnc);
-    t.cool = PCD * Math.pow(.75, sk('reload')); rumble(t.dev, 0, .35, 70);
+  const god = sk('mythic') > 0;
+  const angles = sk('triple') ? [-.18, 0, .18] : [0], sides = sk('twin') ? [-5, 5] : [0];
+  const per = angles.length * sides.length, cap = (PMAX + sk('reload') + 2 * sk('magazine')) * per;
+  if (inp.fire && t.cool <= 0 && t.bullets + per <= cap) {
+    const spd = PBS * (1 + .2 * sk('speed')), bnc = 1 + sk('bounce') + (god ? 10 : 0), pierce = god ? 99 : sk('pierce');
+    let first = true;
+    for (const a of angles) for (const sd of sides) { shoot(t, t.turret + a, spd, bnc, 'shell', { side: sd, fx: first, pierce }); first = false; }
+    t.cool = PCD * Math.pow(.75, sk('reload')) * (god ? .5 : 1) * (G.adren > 0 ? .5 : 1); rumble(t.dev, 0, .35, 70);
+  }
+  if (sk('storm')) {
+    t.stormT = (t.stormT || 0) + dt;
+    if (t.stormT >= 6 / sk('storm')) {
+      t.stormT = 0;
+      const off = Math.random() * TAU;
+      for (let k = 0; k < 8; k++) shoot(t, off + k / 8 * TAU, PBS, 1 + sk('bounce'), 'shell', { fx: k === 0, pierce: god ? 99 : sk('pierce') });
+      emit({ t: 'ring', x: r1(t.x), y: r1(t.y), c: slotColor(t.slot) });
+    }
   }
   if (inp.mine) layMine(t);
 }
@@ -1127,6 +1231,15 @@ function updateBullets(dt) {
     if (!b.alive) continue;
     b.age += dt;
     if (b.life && b.age > b.life) { killBullet(b, false); emit({ t: 'puff', x: r1(b.x), y: r1(b.y), n: 2, z: 2 }); continue; }
+    if (b.team === 'p' && sk('homing')) {
+      let best = null, bd = 300;
+      for (const e of aliveTanks) if (e.team === 'e' && e.alive) { const d = Math.hypot(e.x - b.x, e.y - b.y); if (d < bd) { bd = d; best = e; } }
+      if (best) {
+        const cur = Math.atan2(b.dy, b.dx), want = Math.atan2(best.y - b.y, best.x - b.x);
+        const na = cur + clamp(angDiff(want, cur), -2.4 * sk('homing') * dt, 2.4 * sk('homing') * dt);
+        b.dx = Math.cos(na); b.dy = Math.sin(na);
+      }
+    }
     let remain = b.speed * dt;
     while (remain > 0 && b.alive) {
       const s = Math.min(4, remain); remain -= s;
@@ -1135,8 +1248,20 @@ function updateBullets(dt) {
       if (r === 'bounce') { b.bounced = true; sfx('bounce'); emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 4, v: 90 }); }
       for (const t of aliveTanks) {
         if (!t.alive) continue;
-        if ((t.x - b.x) ** 2 + (t.y - b.y) ** 2 < ((t.r || R) + 3) ** 2 && canHit(b, t)) {
-          killBullet(b, false); hurtTank(t, b.owner, b.team === 'p' ? 1 + sk('heavy') : 1); break;
+        const hr = (t.r || R) + 3 + (b.team === 'p' ? 5 * sk('big') : 0);
+        if ((t.x - b.x) ** 2 + (t.y - b.y) ** 2 < hr * hr && canHit(b, t) && !b.hitIds.includes(t.id)) {
+          if (b.team === 'e' && t.team === 'p' && sk('reflect') && Math.random() < .35 * sk('reflect')) {
+            // Mirror Plating: the shell flips sides and flies back out
+            const d = Math.hypot(b.x - t.x, b.y - t.y) || 1;
+            b.owner.bullets = Math.max(0, b.owner.bullets - 1);
+            b.owner = t; b.team = 'p'; b.slot = t.slot; b.dx = (b.x - t.x) / d; b.dy = (b.y - t.y) / d; b.bounced = true; b.hitIds = [t.id];
+            t.bullets++; emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 6, v: 120 }); sfx('bounce');
+            break;
+          }
+          hurtTank(t, b.owner, b.team === 'p' ? 1 + sk('heavy') : 1);
+          if (b.team === 'p' && t.team === 'e' && b.pierce > 0) { b.pierce--; b.hitIds.push(t.id); continue; }
+          if (b.team === 'p' && sk('blast')) shellBlast(b.x, b.y, b.owner);
+          killBullet(b, false); break;
         }
       }
     }
@@ -1164,8 +1289,9 @@ function updateMines(dt) {
     m.t += dt;
     if (m.t >= m.fuse) { explode(m); continue; }
     if (m.fuse - m.t < 2.2) { m.beep -= dt; if (m.beep <= 0) { m.beep = .22; sfx('blink'); } }
-    if (m.t > .8) for (const t of aliveTanks) {
-      if (t.alive && t.team !== m.team && (t.x - m.x) ** 2 + (t.y - m.y) ** 2 < ((t.r || R) + 18) ** 2) { explode(m); break; }
+    const quick = m.team === 'p' && sk('fuse');
+    if (m.t > (quick ? 0 : .8)) for (const t of aliveTanks) {
+      if (t.alive && t.team !== m.team && (t.x - m.x) ** 2 + (t.y - m.y) ** 2 < ((t.r || R) + (quick ? 34 : 18)) ** 2) { explode(m); break; }
     }
   }
   G.mines = G.mines.filter(m => m.alive);
@@ -1200,6 +1326,7 @@ function updateParts(dt) {
 }
 function simStep(dt, active) {
   aliveTanks = G.tanks.filter(t => t.alive);
+  G.adren = Math.max(0, G.adren - dt);
   for (const t of aliveTanks) {
     t.cool -= dt; t.recoil = Math.max(0, t.recoil - dt * 6); t.reveal -= dt; t.shield = Math.max(0, t.shield - dt);
     if (t.team === 'p') updatePlayer(t, dt, active); else if (t.boss) updateBoss(t, dt, active); else updateEnemy(t, dt, active);
@@ -1295,7 +1422,11 @@ function update(dt) {
         if (before < a && G.reelT >= a) sfx('reel');
         if (before < b && G.reelT >= b) sfx('reel');
       }
-      if (G.reelT >= REEL_DONE) { G.skillChoices = pickSkills(); G.cursor = 1; G.state = 'skill'; G.timer = .5; }
+      if (G.reelT >= REEL_DONE) {
+        G.skillChoices = pickSkills(); G.cursor = 1; G.state = 'skill'; G.timer = .5;
+        const top = G.skillChoices.map(id => SKILL[id].rar);
+        sfx(top.includes('mythic') ? 'mythic' : top.includes('legendary') ? 'legend' : 'tick');
+      }
       break;
     }
     case 'skill':
@@ -1816,7 +1947,7 @@ function render() {
     label(w.x, w.y - 32, `P${w.slot + 1} DOWN`, col, .9);
   }
   if (G.state === 'play' || G.state === 'intro') for (const t of G.tanks) if (t.alive && t.team === 'p') {
-    const pts = aimPath(t, 1 + sk('bounce'));
+    const pts = aimPath(t, 1 + sk('bounce') + (sk('mythic') ? 10 : 0), sk('sights') ? 520 : 260);
     c.save(); c.strokeStyle = slotColor(t.slot); c.globalAlpha = .55; c.lineWidth = 2; c.setLineDash([2, 7]); c.lineCap = 'round';
     c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const p of pts.slice(1)) c.lineTo(p[0], p[1]); c.stroke(); c.restore();
   }
@@ -1862,6 +1993,7 @@ function render() {
     else if (p.kind === 'dot') { c.globalAlpha = k * .9; c.fillStyle = p.color; c.beginPath(); c.arc(p.x, p.y, Math.max(.4, p.size * k), 0, TAU); c.fill(); }
     else if (p.kind === 'bubble') { c.globalAlpha = k * .8; c.strokeStyle = p.color; c.lineWidth = 1.5; c.beginPath(); c.arc(p.x, p.y, p.size, 0, TAU); c.stroke(); }
     else if (p.kind === 'debris') { c.save(); c.globalAlpha = Math.min(1, k * 2); c.translate(p.x, p.y); c.rotate(p.rot); c.fillStyle = p.color; c.fillRect(-p.size / 2, -p.size / 2, p.size, p.size); c.restore(); }
+    else if (p.kind === 'text') { c.globalAlpha = Math.min(1, k * 2); c.font = '400 15px Bungee, Impact, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 3; c.strokeStyle = 'rgba(23,20,15,.85)'; c.strokeText(p.text, p.x, p.y); c.fillStyle = p.color; c.fillText(p.text, p.x, p.y); }
     else if (p.kind === 'ring') { c.globalAlpha = k * .8; c.strokeStyle = p.color; c.lineWidth = 3 * k + 1; c.beginPath(); c.arc(p.x, p.y, p.size, 0, TAU); c.stroke(); }
   }
   c.globalCompositeOperation = 'lighter';
@@ -2041,9 +2173,9 @@ function overlayHTML() {
       const cards = G.skillChoices.map((id, i) => {
         const S = SKILL[id]; if (!S) return '';
         const have = sk(id), lvlTxt = S.max > 1 && S.max < 99 ? `<span class="note">Rank ${have + 1} of ${S.max}</span>` : '';
-        return `<button type="button" class="sk${G.cursor === i ? ' sel' : ''}" data-act="skill" data-i="${i}"><h4>${S.name}</h4><span>${S.desc}</span>${lvlTxt}</button>`;
+        return `<button type="button" class="sk r-${S.rar}${G.cursor === i ? ' sel' : ''}" data-act="skill" data-i="${i}"><span class="rar">${RARITY[S.rar].label}</span><h4>${S.name}</h4><span>${S.desc}</span>${lvlTxt}</button>`;
       }).join('');
-      const owned = Object.keys(G.skills).filter(id => SKILL[id] && id !== 'life').map(id => `${SKILL[id].name}${G.skills[id] > 1 ? ' ×' + G.skills[id] : ''}`).join(' · ');
+      const owned = Object.keys(G.skills).filter(id => SKILL[id] && id !== 'life').map(id => `<span class="own r-${SKILL[id].rar}">${SKILL[id].name}${G.skills[id] > 1 ? ' ×' + G.skills[id] : ''}</span>`).join(' · ');
       const next = G.reels.map(r => `${r.n} ${enemyName(r.t)}`).join(' · ');
       return `<div class="panel skillp"><div class="eyebrow">Level ${G.level} is next${isBossLevel(G.level) ? ' · Boss fight' : ''}</div><h2>Choose a skill</h2>
         <div class="skills">${cards}</div>
@@ -2096,7 +2228,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 addEventListener('beforeunload', () => { try { if (NET.peer) NET.peer.destroy(); } catch (e) {} });
-if (location.hash === '#debug') window.RR_DEBUG = { G, loadLevel, genLayout, chooseSkill };
+if (location.hash === '#debug') window.RR_DEBUG = { G, loadLevel, genLayout, chooseSkill, pickSkills, SKILLS };
 resize(); renderNet();
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { staticDirty = true; });
