@@ -194,7 +194,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 'use strict';
 // ---------- constants ----------
 const TS = 40, COLS = 24, ROWS = 16, W = TS * COLS, H = TS * ROWS, R = 14, TAU = Math.PI * 2;
-const PSPEED = 105, PBS = 255, PMAX = 5, PCD = 0.16, MINE_R = 72;
+const PSPEED = 105, PBS = 255, PMAX = 5, PCD = 0.16, MINE_R = 72, STEP = 4;
 const COLORS = [['Green', '#3fae4a'], ['Red', '#e5484d'], ['Blue', '#3e7bfa'], ['Yellow', '#f2b90f'], ['Orange', '#f0802a'], ['Purple', '#9b5de5'],
   ['Cyan', '#22c3d6'], ['Pink', '#f472b6'], ['Lime', '#9ad41f'], ['Teal', '#14a37f'], ['White', '#f4f1ea'], ['Black', '#2a2a2e']];
 const shade = (hex, k) => { const n = parseInt(hex.slice(1), 16); return `rgb(${Math.round((n >> 16) * k)},${Math.round((n >> 8 & 255) * k)},${Math.round((n & 255) * k)})`; };
@@ -211,7 +211,7 @@ const ETYPES = {
   g: { name: 'Ghost',    color: '#eef3f6', speed: 78, bs: 250, bounces: 1, max: 2, cd: 1.3, turn: 2.8, aimEvery: .35, smart: true, ghost: true, pref: 260, miss: .3, err: .12 },
   h: { name: 'Shotgun',  color: '#b5a642', speed: 64, bs: 230, bounces: 0, max: 5, cd: 2.2, turn: 2.6, aimEvery: .35, pellets: 5, spread: .5, life: .75, range: 280, pref: 150, miss: .3, err: .1 },
   m: { name: 'Missile',  color: '#2d6e8e', speed: 50, bs: 235, bounces: 2, max: 2, cd: 2.4, turn: 2.2, aimEvery: .4, kind: 'missile', smart: true, pref: 340, miss: .35, err: .15 },
-  s: { name: 'Sniper',   color: '#5c6b2f', speed: 30, bs: 480, bounces: 1, max: 1, cd: 3.4, turn: 1.6, aimEvery: .45, kind: 'snipe', smart: true, charge: .75, pref: 420, miss: .15, err: .05 },
+  s: { name: 'Sniper',   color: '#5c6b2f', speed: 30, bs: 650, bounces: 1, max: 1, cd: 3.4, turn: 1.6, aimEvery: .45, kind: 'snipe', smart: true, charge: .6, pref: 420, miss: .15, err: .05 },
 };
 // When each enemy type can start showing up on the slot machines
 const UNLOCK = { a: 1, b: 1, c: 3, h: 4, d: 5, e: 6, m: 7, f: 8, s: 9, g: 12 };
@@ -1230,7 +1230,7 @@ function updateBoss(t, dt, active) {
   const B = t.spec, ai = t.ai, target = nearestPlayer(t);
   if (ai.charging > 0) {
     ai.charging -= dt; t.charge = Math.max(0, ai.charging);
-    if (ai.charging <= 0) shoot(t, t.turret, 540 * F.jam(sk('slow')), 2, 'snipe');
+    if (ai.charging <= 0) shoot(t, t.turret, 650 * F.jam(sk('slow')), 2, 'snipe');
   } else if (target) {
     t.turret += clamp(angDiff(Math.atan2(target.y - t.y, target.x - t.x), t.turret), -B.turn * dt, B.turn * dt);
     ai.atkT -= dt * (1 + ai.tier * .15) / F.stat(sk('static'));
@@ -1298,14 +1298,15 @@ function updateBullets(dt) {
         b.dx = Math.cos(na); b.dy = Math.sin(na);
       }
     }
-    let remain = b.speed * dt * (b.team === 'e' && sk('warp') ? .65 : 1);
-    while (remain > 0 && b.alive) {
-      const s = Math.min(4, remain); remain -= s;
-      const r = advance(b, s);
+    // Shells always move in exact 4px steps, the same steps the aim guide uses, so they follow the guide exactly
+    b.acc = (b.acc || 0) + b.speed * dt * (b.team === 'e' && sk('warp') ? .65 : 1);
+    while (b.acc >= STEP && b.alive) {
+      b.acc -= STEP;
+      const r = advance(b, STEP);
       if (r === 'dead') { killBullet(b, true); break; }
       if (r === 'bounce') {
         b.bounced = true; sfx('bounce');
-        if (b.team === 'p' && sk('bboost')) b.speed = Math.min(b.base * 1.8, b.speed * (1 + F.bounceBoost(sk('bboost'))));
+        if (b.team === 'p' && sk('bboost')) b.speed = Math.min(b.base * 1.8, 600, b.speed * (1 + F.bounceBoost(sk('bboost'))));
         if (b.team === 'p' && sk('fission') && !b.split) {
           // Fission Shells: the first bounce splits the shell in two
           b.split = true; b.fam = b.id;
@@ -1340,7 +1341,8 @@ function updateBullets(dt) {
   for (let i = 0; i < bs.length; i++) {
     const a = bs[i]; if (!a.alive) continue;
     for (let j = i + 1; j < bs.length; j++) {
-      const b = bs[j]; if (!b.alive || (a.fam && a.fam === b.fam)) continue;
+      // Shells only cancel out shells from the other side, so fans, side-by-side shots, shotgun pellets and seekers don't destroy each other
+      const b = bs[j]; if (!b.alive || a.team === b.team) continue;
       if ((a.x - b.x) ** 2 + (a.y - b.y) ** 2 < 81) {
         killBullet(a, false); killBullet(b, false); sfx('pop');
         emit({ t: 'spk', x: r1(a.x), y: r1(a.y), n: 8, v: 140 }); emit({ t: 'puff', x: r1(a.x), y: r1(a.y), n: 4, v: 40, z: 4 });
@@ -1811,8 +1813,8 @@ function clientUpdate(dt) {
     if (t.trail > 8) { t.trail = 0; addMark(t); }
   }
   for (const b of G.bullets) {
-    let rem = b.speed * dt * (b.slot < 0 && sk('warp') ? .65 : 1);
-    while (rem > 0) { const st = Math.min(4, rem); rem -= st; if (advance(b, st) === 'dead') break; }
+    b.acc = (b.acc || 0) + b.speed * dt * (b.slot < 0 && sk('warp') ? .65 : 1);
+    while (b.acc >= STEP) { b.acc -= STEP; if (advance(b, STEP) === 'dead') { b.acc = 0; break; } }
     bulletTrail(b, dt);
   }
   for (const m of G.mines) m.t += dt;
@@ -2015,7 +2017,7 @@ function aimPath(t, bounces = 1, maxLen = 260) {
   const o = { x: t.x + Math.cos(t.turret) * reach, y: t.y + Math.sin(t.turret) * reach, dx: Math.cos(t.turret), dy: Math.sin(t.turret), bounces };
   const pts = [[o.x, o.y]]; if (bb(o.x, o.y)) return pts;
   let len = 0;
-  while (len < maxLen) { const r = advance(o, 6); if (r === 'dead') break; if (r === 'bounce') pts.push([o.x, o.y]); len += 6; }
+  while (len < maxLen) { const r = advance(o, STEP); if (r === 'dead') break; if (r === 'bounce') pts.push([o.x, o.y]); len += STEP; }
   pts.push([o.x, o.y]); return pts;
 }
 const GLYPH_FONT = '700 11px "Chakra Petch", system-ui, sans-serif';
@@ -2357,7 +2359,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 addEventListener('beforeunload', () => { try { if (NET.peer) NET.peer.destroy(); } catch (e) {} });
-if (location.hash === '#debug') window.RR_DEBUG = { G, loadLevel, genLayout, chooseSkill, pickSkills, SKILLS };
+if (location.hash === '#debug') window.RR_DEBUG = { G, loadLevel, genLayout, chooseSkill, pickSkills, SKILLS, aimPath, makeEnemy };
 resize(); renderNet();
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { staticDirty = true; });
