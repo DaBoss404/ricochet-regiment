@@ -211,10 +211,15 @@ const ETYPES = {
   g: { name: 'Ghost',    color: '#eef3f6', speed: 78, bs: 250, bounces: 1, max: 2, cd: 1.3, turn: 2.8, aimEvery: .35, smart: true, ghost: true, pref: 260, miss: .3, err: .12 },
   h: { name: 'Shotgun',  color: '#b5a642', speed: 64, bs: 230, bounces: 0, max: 5, cd: 2.2, turn: 2.6, aimEvery: .35, pellets: 5, spread: .5, life: .75, range: 280, pref: 150, miss: .3, err: .1 },
   m: { name: 'Missile',  color: '#2d6e8e', speed: 50, bs: 235, bounces: 2, max: 2, cd: 2.4, turn: 2.2, aimEvery: .4, kind: 'missile', smart: true, pref: 340, miss: .35, err: .15 },
+  k: { name: 'Spiker',   color: '#9a3d2a', speed: 88, dash: 180, bs: 0, bounces: 0, max: 0, cd: 99, turn: 3, aimEvery: 1, pref: 0, miss: 0, err: 0, ram: true },
+  w: { name: 'Bulwark',  color: '#3d6b5a', speed: 40, bs: 190, bounces: 1, max: 1, cd: 2.4, turn: 1.6, aimEvery: .5, pref: 260, miss: .35, err: .15, shield: true },
+  q: { name: 'Mortar',   color: '#556b7a', speed: 36, bs: 0, bounces: 0, max: 0, cd: 3.6, turn: 2, aimEvery: .5, pref: 380, miss: 0, err: 0, mortar: true },
+  x: { name: 'Hive',     color: '#8a6d1f', speed: 50, bs: 180, bounces: 1, max: 1, cd: 2.4, turn: 2, aimEvery: .45, pref: 280, miss: .4, err: .16, splits: 2 },
+  y: { name: 'Hiveling', color: '#c08f3a', r: 10, speed: 96, bs: 200, bounces: 0, max: 1, cd: 1.8, turn: 3, aimEvery: .4, pref: 180, miss: .45, err: .2 },
   s: { name: 'Sniper',   color: '#5c6b2f', speed: 30, bs: 650, bounces: 1, max: 1, cd: 3.4, turn: 1.6, aimEvery: .45, kind: 'snipe', smart: true, charge: .6, pref: 420, miss: .15, err: .05 },
 };
 // When each enemy type can start showing up on the slot machines
-const UNLOCK = { a: 1, b: 1, c: 3, h: 4, d: 5, e: 6, m: 7, f: 8, s: 9, g: 12 };
+const UNLOCK = { a: 1, b: 1, c: 3, h: 4, d: 5, k: 5, e: 6, m: 7, f: 8, w: 8, s: 9, q: 10, x: 11, g: 12 };
 const unlockedTypes = lvl => Object.keys(UNLOCK).filter(k => lvl >= UNLOCK[k]);
 const BOSSES = [
   { name: 'Juggernaut', color: '#6b2a2a', hp: 26, speed: 34, turn: 1.6, gap: 2.1, pref: 260, attacks: ['fan', 'mines', 'fan', 'ring'] },
@@ -519,6 +524,9 @@ function playSfx(n) {
     case 'tick': tone(900, .04, 'square', .05); break;
     case 'reel': tone(380, .07, 'square', .09); tone(760, .09, 'triangle', .08, null, .05); break;
     case 'snipe': tone(1800, .12, 'sawtooth', .07, 300); noise(.12, .2, 6000); break;
+    case 'rev': tone(70, .4, 'sawtooth', .12, 220); break;
+    case 'mortar': tone(110, .18, 'sine', .25, 60); noise(.15, .2, 900); break;
+    case 'clank': tone(1900, .06, 'square', .06, 900); tone(600, .08, 'triangle', .06); break;
     case 'shotgun': noise(.22, .4, 2400); tone(160, .15, 'square', .1, 60); break;
     case 'legend': [523, 784, 1046, 1568].forEach((f, i) => tone(f, .35, 'triangle', .12, null, i * .09)); break;
     case 'mythic': [392, 523, 659, 784, 1046, 1318, 1568, 2093].forEach((f, i) => tone(f, .5, i % 2 ? 'sine' : 'triangle', .12, null, i * .07)); break;
@@ -782,7 +790,7 @@ function spawnPlayer(k, at) {
   G.tanks.push(t); return t;
 }
 function makeEnemy(type, x, y) {
-  const t = makeTank(x, y, 'e'); t.type = type; t.spec = ETYPES[type];
+  const t = makeTank(x, y, 'e'); t.type = type; t.spec = ETYPES[type]; t.r = t.spec.r || R;
   t.cool = rnd(1.2, 2.6) + sk('headstart');
   t.cdK = Math.max(.65, 1 - (G.level - 1) * .012); // later levels fire a little more often
   t.ai = { aimT: Math.random() * .5, target: Math.PI, moveT: 0, dir: Math.random() * TAU, mineT: rnd(3, 6), burst: 0, fireCheck: 0, flee: 0, fleeFrom: null, charging: 0 };
@@ -931,10 +939,8 @@ function simulate(x, y, ang, bounces, shooter) {
     if (r === 'dead') return null;
     if (r === 'bounce') { bounced = true; continue; }
     for (const t of aliveTanks) {
-      if (t === shooter && !bounced) continue;
-      const d2 = (t.x - o.x) ** 2 + (t.y - o.y) ** 2;
-      if (t.team === 'p') { if (d2 < (R + 3) ** 2) return 'player'; }
-      else if (d2 < ((t.r || R) + 5) ** 2) return 'ally';
+      // enemy shells pass through other enemies, so only players matter here
+      if (t.team === 'p' && (t.x - o.x) ** 2 + (t.y - o.y) ** 2 < (R + 3) ** 2) return 'player';
     }
   }
   return null;
@@ -1001,7 +1007,7 @@ function looseShell(owner, x, y, ang, speed, bounces) {
 }
 function canHit(b, t) {
   if (t.shield > 0) return false;
-  if (t.boss && b.team === 'e') return false;
+  if (b.team === 'e' && t.team === 'e') return false; // enemies never hurt each other
   if (t === b.owner && !b.bounced && b.age < .25) return false;
   if (b.team === 'p' && t.team === 'p' && !G.ff) return false;
   return true;
@@ -1044,6 +1050,16 @@ function killTank(t, killer) {
     if (killer && killer.team === 'p' && G.slots[killer.slot]) { G.slots[killer.slot].kills++; rumble(killer.dev, .2, .5, 140); }
     sfx('boom'); shake(6);
     if (sk('scav') && killer && killer.team === 'p' && ++G.scavN >= F.scav(sk('scav'))) { G.scavN = 0; G.lives++; emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 26), s: '+1 LIFE', c: '#9ad41f' }); sfx('revive'); }
+    if (t.spec && t.spec.splits) {
+      // Hive: splits into small Hivelings
+      for (let k = 0; k < t.spec.splits; k++) {
+        const a = t.body + Math.PI / 2 + k * Math.PI;
+        let x = t.x + Math.cos(a) * 16, y = t.y + Math.sin(a) * 16;
+        if (!tankFree(x, y, 10)) { x = t.x; y = t.y; }
+        const h = makeEnemy('y', x, y); h.cool = rnd(1, 1.6); h.ai.dir = a; G.tanks.push(h);
+      }
+      emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 24), s: 'SPLIT!', c: '#e0b04a' });
+    }
     if (sk('chain') && !t.boss) {
       emit({ t: 'boom', x: r1(t.x), y: r1(t.y), c: '#ffd27a', k: .8 });
       for (const e of G.tanks) if (e.alive && e.team === 'e' && Math.hypot(e.x - t.x, e.y - t.y) < F.chain(sk('chain')) + (e.r || R) * .5) hurtTank(e, killer, 1);
@@ -1060,7 +1076,7 @@ function explode(m) {
     if (!t.alive || t.shield > 0) continue;
     if (Math.hypot(t.x - m.x, t.y - m.y) > MR + (t.r || R) * .3) continue;
     if (m.team === 'p' && t.team === 'p' && !G.ff) continue;
-    if (t.boss && m.team === 'e') continue;
+    if (t.team === 'e' && m.team === 'e') continue;
     hurtTank(t, m.owner, t.boss ? 5 * F.bossDmg(sk('heavy')) : 1);
   }
   const c0 = Math.floor((m.x - MR) / TS), c1 = Math.floor((m.x + MR) / TS);
@@ -1176,9 +1192,55 @@ function chooseDir(t, target) {
   }
   return best;
 }
+// Straight line with no walls, crates or pits in the way
+function clearPath(a, b) {
+  const d = Math.hypot(b.x - a.x, b.y - a.y), n = Math.ceil(d / 10);
+  for (let i = 1; i < n; i++) if (tileAt(a.x + (b.x - a.x) * i / n, a.y + (b.y - a.y) * i / n) !== 0) return false;
+  return true;
+}
+// Spiker: no gun. Chases you, revs up when it has a clear run, then charges.
+function updateSpiker(t, dt, target) {
+  const S = t.spec, ai = t.ai, tar = F.tar(sk('tar'));
+  ai.dashCd = (ai.dashCd || 1.5) - dt;
+  if (ai.stun > 0) { ai.stun -= dt; return; }
+  if (target) t.turret += angDiff(Math.atan2(target.y - t.y, target.x - t.x), t.turret) * Math.min(1, dt * 6);
+  if (ai.dashT > 0) {
+    ai.dashT -= dt;
+    steerBody(t, ai.dashDir, 12, dt);
+    const ox = t.x, oy = t.y;
+    moveTank(t, Math.cos(ai.dashDir) * S.dash * tar, Math.sin(ai.dashDir) * S.dash * tar, dt);
+    if (Math.hypot(t.x - ox, t.y - oy) < S.dash * tar * dt * .3) ai.dashT = 0; // hit a wall
+    return;
+  }
+  if (ai.rev > 0) {
+    ai.rev -= dt; t.charge = Math.max(0, ai.rev);
+    if (ai.rev <= 0 && target) { ai.dashT = .75; ai.dashDir = Math.atan2(target.y - t.y, target.x - t.x); ai.dashCd = 2.6; }
+    return;
+  }
+  if (target && ai.dashCd <= 0 && dist(target, t) < 300 && clearPath(t, target)) { ai.rev = .4; t.charge = .4; sfx('rev'); return; }
+  ai.moveT -= dt;
+  if (ai.moveT <= 0 || !tankFree(t.x + Math.cos(ai.dir) * 20, t.y + Math.sin(ai.dir) * 20)) {
+    ai.moveT = rnd(.25, .5);
+    if (target && clearPath(t, target)) ai.dir = Math.atan2(target.y - t.y, target.x - t.x);
+    else { const d = chooseDir(t, target); ai.dir = d === null ? ai.dir + Math.PI : d; }
+  }
+  if (steerBody(t, ai.dir, 6, dt) < .7) moveTank(t, Math.cos(ai.dir) * S.speed * tar, Math.sin(ai.dir) * S.speed * tar, dt);
+}
 function updateEnemy(t, dt, active) {
   if (!active) return;
   const S = t.spec, ai = t.ai, target = nearestPlayer(t);
+  if (S.ram) { updateSpiker(t, dt, target); return; }
+  if (S.mortar) {
+    // Mortar: lobs a shell over walls at where you are; it lands after a warning circle
+    if (target) t.turret += clamp(angDiff(Math.atan2(target.y - t.y, target.x - t.x), t.turret), -S.turn * dt, S.turn * dt);
+    if (target && t.cool <= 0) {
+      t.cool = S.cd * t.cdK * rnd(.8, 1.2);
+      G.strikes.push({ x: clamp(target.x + rnd(-25, 25), 20, W - 20), y: clamp(target.y + rnd(-25, 25), 20, H - 20), t: 1.4 / F.jam(sk('slow')), team: 'e', owner: t });
+      t.recoil = 1; emit({ t: 'muz', x: r1(t.x + Math.cos(t.turret) * 18), y: r1(t.y + Math.sin(t.turret) * 18), a: r2(t.turret) }); sfx('mortar');
+    }
+  }
+  if (S.mortar) { if (!S.speed) return; }
+  else {
   ai.aimT -= dt;
   if (ai.aimT <= 0) {
     ai.aimT = S.aimEvery * rnd(.7, 1.3);
@@ -1204,6 +1266,7 @@ function updateEnemy(t, dt, active) {
         else t.cool = S.cd * t.cdK * rnd(.8, 1.2);
       }
     }
+  }
   }
   if (!S.speed || ai.charging > 0) return;
   ai.moveT -= dt; ai.flee -= dt;
@@ -1278,6 +1341,15 @@ function separateTanks() {
       const pl = a.team === 'p' ? a : b, en = a.team === 'p' ? b : a;
       if (!en.boss && (pl.ramCd || 0) <= 0) { pl.ramCd = F.ram(sk('ram')); hurtTank(en, pl, 1); emit({ t: 'spk', x: r1(en.x), y: r1(en.y), n: 10, v: 160 }); if (!en.alive) continue; }
     }
+    if (a.team !== b.team) {
+      const pl = a.team === 'p' ? a : b, en = a.team === 'p' ? b : a;
+      if (en.spec && en.spec.ram && !(en.ai.stun > 0)) {
+        // Spiker contact: spikes hurt you, and it bounces off for a moment
+        hurtTank(pl, en, 1); en.ai.stun = .7; en.ai.dashT = 0;
+        emit({ t: 'spk', x: r1((a.x + b.x) / 2), y: r1((a.y + b.y) / 2), n: 10, v: 180 });
+        if (!pl.alive) continue;
+      }
+    }
     const aFix = (a.spec && !a.spec.speed) || a.boss, bFix = (b.spec && !b.spec.speed) || b.boss;
     const ka = aFix ? 0 : bFix ? 1 : .5, kb2 = bFix ? 0 : aFix ? 1 : .5;
     a.x -= nx * p * ka; a.y -= ny * p * ka; b.x += nx * p * kb2; b.y += ny * p * kb2;
@@ -1328,6 +1400,15 @@ function updateBullets(dt) {
             t.bullets++; emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 6, v: 120 }); sfx('bounce');
             break;
           }
+          if (b.team === 'p' && t.spec && t.spec.shield && Math.abs(angDiff(Math.atan2(b.y - t.y, b.x - t.x), t.turret)) < 1.05) {
+            // Bulwark: shells that hit the front shield bounce away
+            const nx = (b.x - t.x) / (Math.hypot(b.x - t.x, b.y - t.y) || 1), ny = (b.y - t.y) / (Math.hypot(b.x - t.x, b.y - t.y) || 1);
+            const dot = b.dx * nx + b.dy * ny;
+            if (dot < 0) { b.dx -= 2 * dot * nx; b.dy -= 2 * dot * ny; }
+            b.x = t.x + nx * (hr + 1); b.y = t.y + ny * (hr + 1);
+            emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 6, v: 120 }); sfx('clank');
+            break;
+          }
           hurtTank(t, b.owner, b.team === 'p' ? F.bossDmg(sk('heavy')) : 1);
           if (b.team === 'p' && t.team === 'e' && b.pierce > 0) { b.pierce--; b.hitIds.push(t.id); continue; }
           if (b.team === 'p' && sk('blast')) shellBlast(b.x, b.y, b.owner);
@@ -1371,7 +1452,7 @@ function updateOrbs() {
   }
 }
 function updateAirstrikes(dt) {
-  if (sk('airstrike')) {
+  if (sk('airstrike') && G.state === 'play') {
     G.strikeT = (G.strikeT || 0) + dt;
     if (G.strikeT >= F.airstrike(sk('airstrike'))) {
       G.strikeT = 0;
@@ -1380,9 +1461,15 @@ function updateAirstrikes(dt) {
     }
   }
   for (const s of G.strikes) {
-    s.t -= dt;
+    s.t -= s.team === 'e' && sk('warp') ? dt * .65 : dt;
     if (s.t > 0) continue;
     s.done = true;
+    if (s.team === 'e') {
+      emit({ t: 'boom', x: r1(s.x), y: r1(s.y), c: '#ffb04d', k: 1 }); emit({ t: 'sc', x: r1(s.x), y: r1(s.y), r: 32 }); sfx('boom'); shake(6);
+      for (const p of G.tanks) if (p.alive && p.team === 'p' && Math.hypot(p.x - s.x, p.y - s.y) < 46) hurtTank(p, s.owner, 1);
+      for (const b of G.bullets) if (b.alive && b.team === 'p' && Math.hypot(b.x - s.x, b.y - s.y) < 40) killBullet(b, false);
+      continue;
+    }
     const owner = aliveTanks.find(t => t.alive && t.team === 'p') || G.tanks.find(t => t.team === 'p');
     emit({ t: 'boom', x: r1(s.x), y: r1(s.y), c: '#ff9a3d', k: 1.3 }); emit({ t: 'sc', x: r1(s.x), y: r1(s.y), r: 40 }); sfx('boom'); shake(8);
     for (const e of G.tanks) if (e.alive && e.team === 'e' && Math.hypot(e.x - s.x, e.y - s.y) < 58 + (e.r || R) * .5) hurtTank(e, owner, e.boss ? 2 : 1);
@@ -1442,7 +1529,8 @@ function simStep(dt, active) {
     else if (t.boss) updateBoss(t, edt, active); else updateEnemy(t, edt, active);
   }
   separateTanks();
-  if (active) { updateOrbs(); updateAirstrikes(dt); }
+  if (active) updateOrbs();
+  updateAirstrikes(dt);
   updateBullets(dt);
   updateMines(dt);
   updateWrecks(dt, active);
@@ -1670,7 +1758,7 @@ function addRemoteInputs() {
 function sendSnapshot() {
   if (!Object.keys(NET.conns).length) { NET.events = []; return; }
   broadcast({ t: 'snap', st: G.state, lvl: G.level, lv: G.lives, ff: G.ff ? 1 : 0, tm: r2(G.timer), msg: G.msg, ln: G.layoutName,
-    sk: G.skills, rl: G.reels, as: G.strikes.map(s => [r1(s.x), r1(s.y), r2(s.t)]), rt: r2(G.reelT), sc: G.skillChoices, cur: G.cursor, nw: G.nextWave, bk: G.bossKill ? 1 : 0,
+    sk: G.skills, rl: G.reels, as: G.strikes.map(s => [r1(s.x), r1(s.y), r2(s.t), s.team === 'e' ? 1 : 0]), rt: r2(G.reelT), sc: G.skillChoices, cur: G.cursor, nw: G.nextWave, bk: G.bossKill ? 1 : 0,
     grid: G.grid.length ? G.grid.map(r => r.join('')).join('') : '',
     sl: G.slots.map(s => s ? [s.dev, s.kills, s.deaths, s.color, s.trail, s.img || ''] : null),
     tk: G.tanks.filter(t => t.alive).map(t => [t.id, r1(t.x), r1(t.y), r2(t.body), r2(t.turret), t.team === 'p' ? t.slot : t.type, r2(t.recoil), r2(Math.max(0, t.reveal)), r2(t.shield),
@@ -1734,7 +1822,7 @@ function onClientData(d) {
 function applySnap(s) {
   G.state = s.st; G.level = s.lvl | 0 || 1; G.lives = s.lv | 0; G.ff = !!s.ff; G.timer = +s.tm || 0; G.msg = s.msg || ''; G.layoutName = s.ln || '';
   G.skills = s.sk && typeof s.sk === 'object' ? s.sk : {}; G.reels = Array.isArray(s.rl) ? s.rl : []; G.skillChoices = Array.isArray(s.sc) ? s.sc : [];
-  G.strikes = Array.isArray(s.as) ? s.as.map(a => ({ x: a[0], y: a[1], t: a[2] })) : [];
+  G.strikes = Array.isArray(s.as) ? s.as.map(a => ({ x: a[0], y: a[1], t: a[2], team: a[3] ? 'e' : 'p' })) : [];
   G.cursor = s.cur | 0; G.nextWave = Array.isArray(s.nw) ? s.nw : []; G.bossKill = !!s.bk;
   if (G.state !== 'reels' || Math.abs(G.reelT - s.rt) > .25) G.reelT = +s.rt || 0;
   const grid = s.grid || '';
@@ -1752,7 +1840,7 @@ function applySnap(s) {
     t.charge = a[9] || 0; t.hp = a[10]; t.maxhp = a[11]; t.hit = a[12] || 0; t.armor = a[13] || 0;
     if (typeof a[5] === 'number') { t.team = 'p'; t.slot = a[5]; t.r = R; }
     else if (String(a[5]).startsWith('boss')) { t.team = 'e'; t.type = a[5]; t.boss = true; t.r = BOSS_R; t.spec = BOSSES[+String(a[5]).slice(4)] || BOSSES[0]; }
-    else { t.team = 'e'; t.type = a[5]; t.r = R; t.spec = ETYPES[a[5]] || ETYPES.a; }
+    else { t.team = 'e'; t.type = a[5]; t.spec = ETYPES[a[5]] || ETYPES.a; t.r = t.spec.r || R; }
     return t;
   });
   const ob = new Map(G.bullets.map(b => [b.id, b]));
@@ -1990,7 +2078,29 @@ function drawStatic() {
   c.fillStyle = v; c.fillRect(0, 0, W, H);
 }
 function rrect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
-function drawTank(t, color, dark, alpha, scale = 1) {
+function drawEnemyTank(t, alpha, mul = 1) {
+  const S = t.spec, sc = (t.r || R) / R * mul, c = ctx;
+  let jx = 0, jy = 0;
+  if (S.ram && t.charge > 0) { jx = rnd(-1.5, 1.5); jy = rnd(-1.5, 1.5); } // revving up
+  const tt = jx || jy ? Object.assign({}, t, { x: t.x + jx, y: t.y + jy }) : t;
+  if (S.ram) {
+    c.save(); c.translate(tt.x, tt.y); c.scale(sc, sc); c.rotate(t.body); c.globalAlpha = alpha;
+    for (let k = 0; k < 12; k++) {
+      const a = k / 12 * TAU;
+      c.fillStyle = '#d9dde2'; c.strokeStyle = '#3b3f45'; c.lineWidth = 1.2;
+      c.beginPath(); c.moveTo(Math.cos(a - .2) * 15, Math.sin(a - .2) * 15); c.lineTo(Math.cos(a) * 25, Math.sin(a) * 25); c.lineTo(Math.cos(a + .2) * 15, Math.sin(a + .2) * 15); c.closePath(); c.fill(); c.stroke();
+    }
+    c.restore();
+  }
+  drawTank(tt, S.color, S.ghost ? '#9aa6ad' : 'rgba(20,14,8,.85)', alpha, sc, { noGun: S.ram, mortar: S.mortar });
+  if (S.shield) {
+    c.save(); c.translate(t.x, t.y); c.scale(sc, sc); c.globalAlpha = alpha;
+    c.strokeStyle = '#2b2620'; c.lineWidth = 7; c.beginPath(); c.arc(0, 0, 23, t.turret - 1.05, t.turret + 1.05); c.stroke();
+    c.strokeStyle = '#c9d4d8'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, 23, t.turret - 1.05, t.turret + 1.05); c.stroke();
+    c.restore();
+  }
+}
+function drawTank(t, color, dark, alpha, scale = 1, opt = {}) {
   const c = ctx; c.save(); c.translate(t.x, t.y); c.globalAlpha = alpha; if (scale !== 1) c.scale(scale, scale);
   c.fillStyle = 'rgba(40,25,10,.28)'; c.beginPath(); c.ellipse(4, 5, 19, 15, 0, 0, TAU); c.fill();
   c.rotate(t.body);
@@ -2005,8 +2115,8 @@ function drawTank(t, color, dark, alpha, scale = 1) {
   c.fillStyle = 'rgba(255,255,255,.18)'; c.fillRect(-12, -7, 24, 3);
   c.rotate(-t.body + t.turret);
   const rc = (t.recoil || 0) * 4;
-  c.fillStyle = dark; rrect(c, 2 - rc, -3.5, 21, 7, 2); c.fill();
-  c.fillStyle = '#1d1a16'; c.fillRect(19 - rc, -3.5, 4, 7);
+  if (opt.mortar) { c.fillStyle = dark; rrect(c, 1 - rc, -5.5, 14, 11, 3); c.fill(); c.fillStyle = '#1d1a16'; c.beginPath(); c.arc(14 - rc, 0, 4, 0, TAU); c.fill(); }
+  else if (!opt.noGun) { c.fillStyle = dark; rrect(c, 2 - rc, -3.5, 21, 7, 2); c.fill(); c.fillStyle = '#1d1a16'; c.fillRect(19 - rc, -3.5, 4, 7); }
   c.fillStyle = color; c.beginPath(); c.arc(0, 0, 8.5, 0, TAU); c.fill();
   c.strokeStyle = dark; c.lineWidth = 1.6; c.stroke();
   c.fillStyle = 'rgba(255,255,255,.3)'; c.beginPath(); c.arc(-2, -2.5, 3, 0, TAU); c.fill();
@@ -2072,7 +2182,7 @@ function render() {
       c.fillStyle = col; c.globalAlpha = .25; c.beginPath(); c.ellipse(t.x, t.y + 2, 22, 18, 0, 0, TAU); c.fill(); c.globalAlpha = 1;
       drawTank(t, col, slotDark(t.slot), 1);
     } else {
-      if (t.charge > 0) {
+      if (t.charge > 0 && !t.spec.ram) {
         // sniper laser warning
         const pts = aimPath(t, t.boss ? 2 : t.spec.bounces, 900);
         c.save(); c.strokeStyle = '#ff2d2d'; c.globalAlpha = .35 + .5 * (1 - t.charge / (t.boss ? .9 : t.spec.charge || .75)); c.lineWidth = 1.5; c.setLineDash([6, 4]);
@@ -2080,7 +2190,7 @@ function render() {
       }
       const a = t.spec.ghost ? Math.min(1, F.thermal(sk('thermal')) + clamp(t.reveal, 0, 1) * .6) : 1;
       if (t.boss) drawTank(t, t.hit > 0 ? '#fff1d6' : t.spec.color, '#120c08', 1, t.r / R);
-      else drawTank(t, t.spec.color, t.spec.ghost ? '#9aa6ad' : 'rgba(20,14,8,.85)', a);
+      else drawEnemyTank(t, a);
     }
     if (t.team === 'p' && t.armor > 0) { c.strokeStyle = 'rgba(241,230,207,.75)'; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath(); c.arc(t.x, t.y, 21, 0, TAU); c.stroke(); c.setLineDash([]); }
   }
@@ -2124,8 +2234,9 @@ function render() {
     c.globalAlpha = 1; c.fillStyle = '#fff8e6'; c.beginPath(); c.arc(ox, oy, 4, 0, TAU); c.fill();
   }
   for (const s of G.strikes) {
-    const k = clamp(s.t / 1.1, 0, 1), rr = 18 + 40 * k;
-    c.strokeStyle = '#e5484d'; c.lineWidth = 2.5; c.globalAlpha = .9;
+    const k = clamp(s.t / (s.team === 'e' ? 1.4 : 1.1), 0, 1), rr = (s.team === 'e' ? 30 : 18) + 40 * k;
+    if (s.team === 'e') { c.fillStyle = 'rgba(240,128,42,.18)'; c.beginPath(); c.arc(s.x, s.y, 46, 0, TAU); c.fill(); }
+    c.strokeStyle = s.team === 'e' ? '#f0802a' : '#e5484d'; c.lineWidth = 2.5; c.globalAlpha = .9;
     c.beginPath(); c.arc(s.x, s.y, rr, 0, TAU); c.moveTo(s.x - rr - 8, s.y); c.lineTo(s.x + rr + 8, s.y); c.moveTo(s.x, s.y - rr - 8); c.lineTo(s.x, s.y + rr + 8); c.stroke();
     c.globalAlpha = 1;
   }
@@ -2172,7 +2283,7 @@ function drawReels() {
     c.save(); c.fillStyle = '#f1e6cf'; rrect(c, ex, ey, ew, eh, 8); c.fill(); c.clip();
     const stopA = REEL_STOPS[i][0];
     const drawEnemy = (k, yy) => {
-      drawTank({ x: cx, y: yy - 14, body: 0, turret: 0, tread: 0, recoil: 0 }, ETYPES[k].color, 'rgba(20,14,8,.85)', 1, 2);
+      drawEnemyTank({ x: cx, y: yy - 14, body: 0, turret: 0, tread: 0, recoil: 0, spec: ETYPES[k], r: R }, 1, 1.6);
       c.font = '400 17px Bungee, Impact, sans-serif'; c.fillStyle = '#2b2620'; c.textAlign = 'center'; c.fillText(enemyName(k).toUpperCase(), cx, yy + 50);
     };
     if (t < stopA) {
@@ -2359,7 +2470,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 addEventListener('beforeunload', () => { try { if (NET.peer) NET.peer.destroy(); } catch (e) {} });
-if (location.hash === '#debug') window.RR_DEBUG = { G, loadLevel, genLayout, chooseSkill, pickSkills, SKILLS, aimPath, makeEnemy };
+if (location.hash === '#debug') window.RR_DEBUG = { G, loadLevel, genLayout, chooseSkill, pickSkills, SKILLS, aimPath, makeEnemy, hurt: hurtTank };
 resize(); renderNet();
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { staticDirty = true; });

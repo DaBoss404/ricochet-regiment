@@ -2,7 +2,7 @@
 
 A top-down co-op tank game for 1–4 players in the browser. Shells bounce off walls, mines clear crates, and you can revive a downed teammate by parking on their wreck.
 
-Runs are endless. After every level, three slot machines spin to decide the next wave (each lands on an enemy type, then on how many of it), and the squad picks one of three skills. Every 10th level is a boss fight.
+Runs are endless. After every level, three slot machines spin to decide the next wave (each lands on an enemy type, then on how many of it), and the squad picks one of three skills. Every 10th level is a boss fight. Enemy shells and mines never hurt other enemies.
 
 There are 47 skills across five rarities: Common, Rare, Epic, Legendary and Mythic. Most skills can be upgraded many times (up to 10 ranks), and each card shows exactly what the next rank changes. Rarer cards get a little more likely the deeper the run goes, and the Lucky Charm skill boosts them further.
 
