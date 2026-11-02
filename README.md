@@ -1,12 +1,12 @@
 # Ricochet Regiment
 
-A top-down co-op tank game for 1–4 players in the browser. Shells bounce off walls, mines clear crates, and you can revive a downed teammate by parking on their wreck.
+A top-down co-op tank game for 1–4 players in the browser. Shells bounce off walls and mines clear crates. A destroyed tank sits out until the next level.
 
 Runs are endless. After every level, three slot machines spin to decide the next wave (each lands on an enemy type, then on how many of it), and the squad picks one of three skills. Every 10th level is a boss fight. Enemy shells and mines never hurt other enemies.
 
 Destroy 20 of an enemy type (Hornet, Missile, Sniper, Shotgun, Mortar, Spiker or Bulwark) to unlock it as a playable tank. Unlock progress is saved in your browser and carries across runs. Pick your tank on the title screen with LB/RB, Z/C or the arrow buttons.
 
-There are 48 skills across five rarities: Common, Rare, Epic, Legendary and Mythic. Most skills can be upgraded many times (up to 10 ranks), and each card shows exactly what the next rank changes. Rarer cards get a little more likely the deeper the run goes, and the Lucky Charm skill boosts them further.
+There are 45 skills across five rarities: Common, Rare, Epic, Legendary and Mythic. Most skills can be upgraded many times (up to 10 ranks), and each card shows exactly what the next rank changes. Rarer cards get a little more likely the deeper the run goes, and the Lucky Charm skill boosts them further.
 
 The game is a single static page (`index.html`), so any static host works (this repo deploys as-is on Vercel).
 
@@ -23,7 +23,7 @@ The game is a single static page (`index.html`), so any static host works (this 
 | Friendly fire on/off | Y | F |
 | Voice chat on/off (online) | View | V |
 
-On the title screen, each player can change their tank color (D-pad left/right or the arrow buttons), their shell trail (D-pad up/down or the arrow buttons), and upload an image to use as their shell. Your choices are saved in the browser for each controller.
+On the title screen, each player can change their tank color (D-pad left/right or the arrow buttons), their shell trail (D-pad up/down or the arrow buttons), and their tank type once unlocked (LB/RB, Z/C or the arrow buttons). Your choices are saved in the browser for each controller.
 
 ## Online play
 

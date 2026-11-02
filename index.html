@@ -187,7 +187,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     <div class="btnrow"><button id="net-leave" class="pbtn ghost" type="button" hidden>Leave room</button><button id="net-close" class="pbtn ghost" type="button">Close</button></div>
   </div>
 </div>
-<input id="file-in" type="file" accept="image/*" hidden>
 
 <script>
 (() => {
@@ -239,14 +238,14 @@ const RARITY = {
 const pct = v => Math.round(v * 100) + '%', secs = v => (Math.round(v * 10) / 10) + 's';
 const F = {
   fireRate: n => 1 + .08 * n, shellSpeed: n => 1 + .07 * n, drive: n => 1 + .05 * n,
-  mines: n => 2 + n, mineSize: n => 1 + .07 * n, revive: n => 1.6 / (1 + .2 * n),
+  mines: n => 2 + n, mineSize: n => 1 + .07 * n,
   jam: n => Math.max(.6, 1 - .04 * n), mag: n => PMAX + n, trigger: n => 18 + 8 * n,
   sights: n => 260 * (1 + .5 * n), bounces: n => 1 + n, bossDmg: n => 1 + .5 * n,
   scav: n => 22 - 2 * n, big: n => 3 * n, sides: n => n + 1, fan: n => 1 + 2 * n,
   blast: n => Math.round(34 * (1 + .15 * (n - 1))), adren: n => 2 + 1.5 * n, cluster: n => 4 + 2 * n,
   reflect: n => 1 - Math.pow(.8, n), storm: n => 10 - n, chain: n => 60 + 12 * (n - 1),
   tar: n => Math.max(.7, 1 - .05 * n), stat: n => 1 + .06 * n, thermal: n => Math.min(.9, .07 + .3 * n),
-  reach: n => 34 + 10 * n, reviveShield: n => 1.6 + 1.2 * n, momentum: n => .4 * n, shield: n => 2 * n,
+  momentum: n => .4 * n, shield: n => 2 * n,
   recharge: n => 30 - 4 * n, ram: n => 5 - n, bounceBoost: n => .06 * n, airstrike: n => 16 - 2 * n,
   homing: n => 1.5 * n, breaker: n => .6 + .3 * n,
 };
@@ -258,7 +257,6 @@ const SKILLS = [
   { id: 'treads',   rar: 'common', name: 'Racing Treads', desc: 'Your tanks drive faster.', max: 10, stat: ['Drive speed', n => pct(F.drive(n))] },
   { id: 'mines',    rar: 'common', name: 'Mine Layer',    desc: 'Lay more mines at once.', max: 6, stat: ['Mines at once', n => F.mines(n)] },
   { id: 'blastr',   rar: 'common', name: 'Big Bang',      desc: 'Your mines blast a wider area.', max: 8, stat: ['Mine blast size', n => pct(F.mineSize(n))] },
-  { id: 'medic',    rar: 'common', name: 'Field Medic',   desc: 'Revive teammates faster.', max: 8, stat: ['Revive time', n => secs(F.revive(n))] },
   { id: 'slow',     rar: 'common', name: 'Jammer',        desc: 'Enemy shells fly slower.', max: 8, stat: ['Enemy shell speed', n => pct(F.jam(n))] },
   { id: 'magazine', rar: 'common', name: 'Deep Magazine', desc: 'Carry more shells at once.', max: 6, stat: ['Shells at once', n => F.mag(n)] },
   { id: 'fuse',     rar: 'common', name: 'Hair Trigger',  desc: 'Your mines arm instantly and go off from farther away.', max: 4, stat: ['Mine trigger range', n => F.trigger(n) + 'px'] },
@@ -267,9 +265,7 @@ const SKILLS = [
   { id: 'tar',      rar: 'common', name: 'Tar Treads',    desc: 'Enemy tanks drive slower.', max: 6, stat: ['Enemy drive speed', n => pct(F.tar(n))] },
   { id: 'static',   rar: 'common', name: 'Static Field',  desc: 'Enemies take longer to reload.', max: 6, stat: ['Enemy reload time', n => pct(F.stat(n))] },
   { id: 'thermal',  rar: 'common', name: 'Thermal Optics',desc: 'See Ghost tanks more clearly.', max: 3, stat: ['Ghost visibility', n => pct(F.thermal(n))] },
-  { id: 'reach',    rar: 'common', name: 'Long Arms',     desc: 'Revive teammates from farther away.', max: 4, stat: ['Revive range', n => F.reach(n) + 'px'] },
   { id: 'breaker',  rar: 'common', name: 'Shield Breaker', desc: 'Bulwark shields stay down longer when they drop.', max: 6, stat: ['Bulwark shield down', n => secs(F.breaker(n))] },
-  { id: 'revshield',rar: 'common', name: 'Second Breath', desc: 'Revived teammates get a longer shield.', max: 4, stat: ['Shield after revive', n => secs(F.reviveShield(n))] },
   // rare
   { id: 'bounce',   rar: 'rare', name: 'Rubber Rounds',  desc: 'Your shells bounce more times.', max: 5, stat: ['Bounces', n => F.bounces(n)] },
   { id: 'armor',    rar: 'rare', name: 'Plating',        desc: 'Every tank shrugs off hits each level.', max: 3, stat: ['Hits blocked per level', n => n] },
@@ -402,7 +398,7 @@ const store = {
 // ---------- game state ----------
 const G = { state: 'title', slots: [null, null, null, null], ff: false, level: 1, lives: 3, timer: 0,
   grid: [], spawns: null, tanks: [], bullets: [], mines: [], parts: [], marks: [], wrecks: [], scorch: [],
-  shake: 0, time: 0, msg: '', idSeq: 0, images: {},
+  shake: 0, time: 0, msg: '', idSeq: 0,
   layoutName: '', lastLayout: -1, skills: {}, nextWave: [], reels: [], reelT: 0, skillChoices: [], cursor: 1, bossKill: false,
   adren: 0, scavN: 0, phoenix: {}, strikes: [], strikeT: 0 };
 const sk = id => G.skills[id] || 0;
@@ -444,47 +440,20 @@ function cycleChassis(i, d) {
 // ---------- player customization (saved per device on each computer) ----------
 let PREFS = store.get('rr-prefs-v1', {}) || {};
 function savePrefsFor(dev, s) {
-  PREFS[localKey(dev)] = { color: s.color, trail: s.trail, imgData: s.img ? (G.images[s.img] || null) : null, chassis: s.chassis || 'std' };
+  PREFS[localKey(dev)] = { color: s.color, trail: s.trail, chassis: s.chassis || 'std' };
   store.set('rr-prefs-v1', PREFS);
 }
-const imgCache = {};
-function loadImg(id, data) { if (imgCache[id]) return; const im = new Image(); im.src = data; imgCache[id] = im; }
-function registerImage(data) {
-  for (const id in G.images) if (G.images[id] === data) return id;
-  const id = 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  G.images[id] = data; loadImg(id, data);
-  if (NET.mode === 'host') broadcast({ t: 'img', id, data });
-  return id;
-}
 const wrap = (v, n) => ((v % n) + n) % n;
-const validImg = d => typeof d === 'string' && d.length < 200000 && /^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(d);
 function applyPref(i, patch) {
   const s = G.slots[i]; if (!s || !patch) return;
   if (Number.isInteger(patch.color)) s.color = wrap(patch.color, COLORS.length);
   if (Number.isInteger(patch.trail)) s.trail = wrap(patch.trail, TRAILS.length);
   if (typeof patch.chassis === 'string' && CHASSIS[patch.chassis]) s.chassis = patch.chassis;
-  if ('imgData' in patch) {
-    const d = patch.imgData;
-    s.img = validImg(d) ? registerImage(d) : null;
-  }
   if (isMine(s.dev)) savePrefsFor(s.dev, s);
 }
 function setPref(i, patch) {
   if (NET.mode === 'client') send({ t: 'pref', slot: i, patch }); else applyPref(i, patch);
   playSfx('tick');
-}
-function shrinkImage(file) {
-  return new Promise((res, rej) => {
-    const url = URL.createObjectURL(file), im = new Image();
-    im.onload = () => {
-      const S = 48, c = document.createElement('canvas'); c.width = c.height = S;
-      const x = c.getContext('2d'), k = Math.min(S / im.width, S / im.height), w = im.width * k, h = im.height * k;
-      x.drawImage(im, (S - w) / 2, (S - h) / 2, w, h);
-      URL.revokeObjectURL(url); res(c.toDataURL('image/png'));
-    };
-    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('bad image')); };
-    im.src = url;
-  });
 }
 
 // ---------- canvas ----------
@@ -785,13 +754,12 @@ const slotOf = dev => G.slots.findIndex(s => s && s.dev === dev);
 const joinedCount = () => G.slots.filter(Boolean).length;
 function join(dev) {
   const i = G.slots.findIndex(s => !s); if (i < 0) return -1;
-  const s = { dev, kills: 0, deaths: 0, conn: true, color: i, trail: 0, img: null, chassis: 'std' };
+  const s = { dev, kills: 0, deaths: 0, conn: true, color: i, trail: 0, chassis: 'std' };
   if (isMine(dev)) {
     const p = PREFS[localKey(dev)];
     if (p) {
       if (Number.isInteger(p.color)) s.color = wrap(p.color, COLORS.length);
       if (Number.isInteger(p.trail)) s.trail = wrap(p.trail, TRAILS.length);
-      if (validImg(p.imgData)) s.img = registerImage(p.imgData);
       if (p.chassis && unlockedChassis().includes(p.chassis)) s.chassis = p.chassis;
     }
   }
@@ -817,7 +785,6 @@ function spawnPlayer(k, at) {
   const sp = at || G.spawns.p[k] || G.spawns.p[0] || { x: 80, y: 80 + k * 80 };
   const t = makeTank(sp.x, sp.y, 'p'); t.slot = k; t.dev = G.slots[k].dev; t.shield = at ? 1.6 : 0;
   if (!at) { t.armor = sk('armor'); if (sk('shield')) t.shield = F.shield(sk('shield')); }
-  else t.shield = F.reviveShield(sk('revshield'));
   t.armorMax = sk('armor');
   G.tanks.push(t); return t;
 }
@@ -1563,22 +1530,9 @@ function updateMines(dt) {
   }
   G.mines = G.mines.filter(m => m.alive);
 }
-function updateWrecks(dt, active) {
-  for (const w of G.wrecks) {
-    if (!G.slots[w.slot]) { w.dead = true; continue; }
-    const helper = active && aliveTanks.find(t => t.alive && t.team === 'p' && Math.hypot(t.x - w.x, t.y - w.y) < F.reach(sk('reach')));
-    if (helper) {
-      const before = w.prog; w.prog += dt;
-      if (Math.floor(before * 4) !== Math.floor(w.prog * 4)) { sfx('tick'); rumble(helper.dev, 0, .25, 60); }
-    } else w.prog = Math.max(0, w.prog - dt * .6);
-    if (w.prog >= F.revive(sk('medic'))) {
-      w.dead = true;
-      const t = spawnPlayer(w.slot, { x: w.x, y: w.y }); t.body = w.body; collideTank(t);
-      sfx('revive'); rumble(t.dev, .4, .7, 250);
-      emit({ t: 'ring', x: r1(w.x), y: r1(w.y), c: slotColor(w.slot) });
-    }
-  }
-  G.wrecks = G.wrecks.filter(w => !w.dead);
+// Destroyed players stay down until the next level; their wreck is just scenery
+function updateWrecks() {
+  G.wrecks = G.wrecks.filter(w => G.slots[w.slot]);
 }
 function updateParts(dt) {
   for (const p of G.parts) {
@@ -1607,7 +1561,7 @@ function simStep(dt, active) {
   updateAirstrikes(dt);
   updateBullets(dt);
   updateMines(dt);
-  updateWrecks(dt, active);
+  updateWrecks();
   updateParts(dt);
 }
 
@@ -1782,7 +1736,6 @@ function onIncomingConn(conn) {
   conn.on('open', () => {
     if (Object.keys(NET.conns).length >= 3) { try { conn.send({ t: 'full' }); } catch (e) {} setTimeout(() => conn.close(), 400); return; }
     NET.conns[conn.peer] = { conn, name: 'Player', voice: false, input: {}, used: {} };
-    for (const id in G.images) conn.send({ t: 'img', id, data: G.images[id] });
     updateRoster();
   });
   conn.on('data', d => onHostData(conn.peer, d));
@@ -1834,7 +1787,7 @@ function sendSnapshot() {
   broadcast({ t: 'snap', st: G.state, lvl: G.level, lv: G.lives, ff: G.ff ? 1 : 0, tm: r2(G.timer), msg: G.msg, ln: G.layoutName,
     sk: G.skills, rl: G.reels, as: G.strikes.map(s => [r1(s.x), r1(s.y), r2(s.t), s.team === 'e' ? 1 : 0, s.mortar ? 1 : 0]), rt: r2(G.reelT), sc: G.skillChoices, cur: G.cursor, nw: G.nextWave, bk: G.bossKill ? 1 : 0,
     grid: G.grid.length ? G.grid.map(r => r.join('')).join('') : '',
-    sl: G.slots.map(s => s ? [s.dev, s.kills, s.deaths, s.color, s.trail, s.img || '', s.chassis || 'std'] : null),
+    sl: G.slots.map(s => s ? [s.dev, s.kills, s.deaths, s.color, s.trail, s.chassis || 'std'] : null),
     tk: G.tanks.filter(t => t.alive).map(t => [t.id, r1(t.x), r1(t.y), r2(t.body), r2(t.turret), t.team === 'p' ? t.slot : t.type, r2(t.recoil), r2(Math.max(0, t.reveal)), r2(t.shield),
       r2(t.charge || 0), t.boss ? t.hp : 0, t.boss ? t.maxhp : 0, r2(t.hit || 0), t.armor || 0, t.shState || 0]),
     bl: G.bullets.filter(b => b.alive).map(b => [b.id, r1(b.x), r1(b.y), r3(b.dx), r3(b.dy), b.speed, b.bounces, b.kind, b.slot]),
@@ -1888,7 +1841,6 @@ function onClientData(d) {
   if (!d || typeof d !== 'object') return;
   switch (d.t) {
     case 'snap': applySnap(d); break;
-    case 'img': if (validImg(d.data) && /^[a-z0-9]{1,40}$/.test(d.id)) { G.images[d.id] = d.data; loadImg(d.id, d.data); } break;
     case 'roster': NET.roster = Array.isArray(d.list) ? d.list : []; onRosterChanged(); break;
     case 'full': leaveRoom('That room is full.'); break;
   }
@@ -1905,7 +1857,7 @@ function applySnap(s) {
     if (grid.length === ROWS * COLS) for (let r = 0; r < ROWS; r++) { G.grid.push([]); for (let c = 0; c < COLS; c++) G.grid[r].push(+grid[r * COLS + c] || 0); }
     staticDirty = true;
   }
-  G.slots = [0, 1, 2, 3].map(i => { const a = s.sl && s.sl[i]; return a ? { dev: a[0], kills: a[1], deaths: a[2], color: wrap(a[3] | 0, COLORS.length), trail: wrap(a[4] | 0, TRAILS.length), img: a[5] || null, chassis: CHASSIS[a[6]] ? a[6] : 'std', conn: true } : null; });
+  G.slots = [0, 1, 2, 3].map(i => { const a = s.sl && s.sl[i]; return a ? { dev: a[0], kills: a[1], deaths: a[2], color: wrap(a[3] | 0, COLORS.length), trail: wrap(a[4] | 0, TRAILS.length), chassis: CHASSIS[a[5]] ? a[5] : 'std', conn: true } : null; });
   const old = new Map(G.tanks.map(t => [t.id, t]));
   G.tanks = (s.tk || []).map(a => {
     let t = old.get(a[0]);
@@ -1934,13 +1886,12 @@ function applySnap(s) {
     if (!NET.prefSent[sl.dev]) {
       NET.prefSent[sl.dev] = now;
       const p = PREFS[k];
-      if (p) send({ t: 'pref', slot: i, patch: { color: p.color, trail: p.trail, imgData: p.imgData || null, chassis: unlockedChassis().includes(p.chassis) ? p.chassis : 'std' } });
+      if (p) send({ t: 'pref', slot: i, patch: { color: p.color, trail: p.trail, chassis: unlockedChassis().includes(p.chassis) ? p.chassis : 'std' } });
       return;
     }
     if (now - NET.prefSent[sl.dev] < 1500) return;
-    const p = PREFS[k] || {}, imgData = sl.img ? G.images[sl.img] : null;
-    if (sl.img && !imgData) return;
-    if (p.color !== sl.color || p.trail !== sl.trail || (p.chassis || 'std') !== sl.chassis || (p.imgData || null) !== (imgData || null)) savePrefsFor(sl.dev, sl);
+    const p = PREFS[k] || {};
+    if (p.color !== sl.color || p.trail !== sl.trail || (p.chassis || 'std') !== sl.chassis) savePrefsFor(sl.dev, sl);
   });
   for (const dev in NET.prefSent) if (!G.slots.some(sl => sl && sl.dev === dev)) delete NET.prefSent[dev];
 }
@@ -2090,7 +2041,6 @@ nameIn.addEventListener('change', () => {
 });
 
 // ---------- customization clicks on the title screen ----------
-const fileIn = $('#file-in'); let pendingSlot = -1;
 ov.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   b.blur(); unlockAudio();
@@ -2100,15 +2050,7 @@ ov.addEventListener('click', e => {
     case 'col': setPref(i, { color: s.color + +b.dataset.d }); break;
     case 'trail': setPref(i, { trail: s.trail + +b.dataset.d }); break;
     case 'ch': cycleChassis(i, +b.dataset.d); break;
-    case 'img': pendingSlot = i; fileIn.click(); break;
-    case 'noimg': setPref(i, { imgData: null }); break;
   }
-});
-fileIn.addEventListener('change', async () => {
-  const f = fileIn.files && fileIn.files[0]; fileIn.value = '';
-  const i = pendingSlot; pendingSlot = -1;
-  if (!f || i < 0 || !G.slots[i]) return;
-  try { setPref(i, { imgData: await shrinkImage(f) }); } catch (e) { /* not an image the browser can read */ }
 });
 
 // ---------- rendering ----------
@@ -2242,8 +2184,6 @@ function render() {
     c.save(); c.translate(w.x, w.y); c.rotate(w.body);
     c.fillStyle = '#2e2a25'; rrect(c, -15, -12, 30, 24, 4); c.fill();
     c.fillStyle = col; c.globalAlpha = .45; c.fillRect(-10, -3, 20, 6); c.restore();
-    c.strokeStyle = 'rgba(30,20,10,.35)'; c.lineWidth = 4; c.beginPath(); c.arc(w.x, w.y, 24, 0, TAU); c.stroke();
-    if (w.prog > 0) { c.strokeStyle = col; c.beginPath(); c.arc(w.x, w.y, 24, -Math.PI / 2, -Math.PI / 2 + TAU * Math.min(1, w.prog / F.revive(sk('medic')))); c.stroke(); }
     label(w.x, w.y - 32, `P${w.slot + 1} DOWN`, col, .9);
   }
   if (G.state === 'play' || G.state === 'intro') for (const t of G.tanks) if (t.alive && t.team === 'p') {
@@ -2280,13 +2220,7 @@ function render() {
     if (t.team === 'p' && t.armor > 0) { c.strokeStyle = 'rgba(241,230,207,.75)'; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath(); c.arc(t.x, t.y, 21, 0, TAU); c.stroke(); c.setLineDash([]); }
   }
   for (const b of G.bullets) {
-    const s = b.slot >= 0 ? G.slots[b.slot] : null, im = s && s.img && imgCache[s.img];
     c.fillStyle = 'rgba(40,25,10,.25)';
-    if (im && im.complete && im.naturalWidth) {
-      c.beginPath(); c.ellipse(b.x + 2, b.y + 6, 8, 4, 0, 0, TAU); c.fill();
-      c.drawImage(im, b.x - 10, b.y - 10, 20, 20);
-      continue;
-    }
     if (b.kind === 'pellet') { c.beginPath(); c.arc(b.x + 2, b.y + 3, 2.5, 0, TAU); c.fill(); c.fillStyle = '#2b2620'; c.beginPath(); c.arc(b.x, b.y, 2.6, 0, TAU); c.fill(); continue; }
     c.save(); c.translate(b.x, b.y); c.rotate(Math.atan2(b.dy, b.dx));
     c.beginPath(); c.ellipse(2, 4, 6, 3, 0, 0, TAU); c.fill();
@@ -2421,7 +2355,7 @@ function setAttr(el, k, v) { if (el.dataset[k] !== v) el.dataset[k] = v; }
 function updateHud() {
   const inGame = G.state !== 'title';
   setText(hud.stage, inGame ? G.level : '–');
-  setText(hud.name, inGame ? (isBossLevel(G.level) ? `${G.layoutName} · Boss` : G.layoutName) : '');
+  setText(hud.name, inGame && isBossLevel(G.level) ? 'Boss' : '');
   setText(hud.en, inGame ? G.tanks.filter(t => t.alive && t.team === 'e').length : '–');
   setText(hud.lives, inGame ? G.lives : '–');
   setText(hud.ff, G.ff ? 'Friendly fire on' : 'Friendly fire off'); setAttr(hud.ff, 'on', G.ff ? '1' : '0');
@@ -2449,19 +2383,17 @@ function devLabel(dev) {
 function slotCard(i) {
   const s = G.slots[i];
   if (!s) return `<div class="slot"><div class="pn">P${i + 1}</div><div class="dv">Press ${BA} to join</div><div class="note">or <span class="k">SPACE</span> on keyboard</div></div>`;
-  const col = COLORS[s.color], tr = TRAILS[s.trail], img = s.img && G.images[s.img];
-  const thumb = img ? `<span class="thumb" style="background-image:url('${img}')"></span>` : '';
+  const col = COLORS[s.color], tr = TRAILS[s.trail];
   let cust;
   if (isMine(s.dev)) {
     const arrow = (act, d, label) => `<button type="button" class="arr" data-act="${act}" data-slot="${i}" data-d="${d}" aria-label="${label}">${d < 0 ? '‹' : '›'}</button>`;
     cust = `<div class="cust">
       <div class="crow">${arrow('col', -1, 'Previous color')}<span class="nm"><i class="sw" style="--c:${col[1]}"></i> ${col[0]}</span>${arrow('col', 1, 'Next color')}</div>
       <div class="crow">${arrow('trail', -1, 'Previous trail')}<span class="nm">${tr[1]} trail</span>${arrow('trail', 1, 'Next trail')}</div>
-      <div class="crow">${arrow('ch', -1, 'Previous tank')}<span class="nm" title="${esc(CHASSIS[slotChassis(i)].desc)}">${CHASSIS[slotChassis(i)].name} tank</span>${arrow('ch', 1, 'Next tank')}</div>
-      <div class="crow">${thumb || '<span class="thumb"></span>'}<button type="button" class="mini" data-act="img" data-slot="${i}">${img ? 'Change shell' : 'Shell image'}</button>${img ? `<button type="button" class="mini" data-act="noimg" data-slot="${i}" aria-label="Remove shell image">✕</button>` : ''}</div>
+      <div class="crow">${arrow('ch', -1, 'Previous tank')}<span class="nm" title="${esc(CHASSIS[slotChassis(i)].desc)}">${CHASSIS[slotChassis(i)].name}</span>${arrow('ch', 1, 'Next tank')}</div>
     </div><div class="note">${localKey(s.dev) === 'kb' ? '<span class="k">ESC</span>' : BB} to leave</div>`;
   } else {
-    cust = `<div class="cust"><div class="crow"><span class="nm" style="text-align:left"><i class="sw" style="--c:${col[1]}"></i> ${col[0]} · ${tr[1]} trail</span>${thumb}</div><div class="crow"><span class="nm" style="text-align:left">${CHASSIS[slotChassis(i)].name} tank</span></div></div>`;
+    cust = `<div class="cust"><div class="crow"><span class="nm" style="text-align:left"><i class="sw" style="--c:${col[1]}"></i> ${col[0]} · ${tr[1]} trail</span></div><div class="crow"><span class="nm" style="text-align:left">${CHASSIS[slotChassis(i)].name} tank</span></div></div>`;
   }
   return `<div class="slot on" style="--c:${col[1]}"><div class="pn">P${i + 1}</div><div class="dv">${esc(devLabel(s.dev))}</div>${cust}</div>`;
 }
@@ -2477,7 +2409,7 @@ function overlayHTML() {
         ? `<div class="note">Playing with friends on other computers? Click <b>Play online</b> at the top.</div>`
         : `<div class="note">Online room <b>${esc(NET.code)}</b> · ${Math.max(1, NET.roster.length)} connected.${NET.voice ? ' Voice chat is on.' : ' Press <span class="k">V</span> or <span class="k">VIEW</span> to turn voice chat on.'}</div>`;
       return `<div class="panel title"><h1>Ricochet <span>Regiment</span></h1>
-        <p class="sub">Endless co-op tank combat for up to four players. Shells bounce off walls, mines clear crates, and a downed teammate can be revived by parking on their wreck. After every level the slot machines pick the next wave and the squad picks a skill. A boss arrives every 10 levels.</p>
+        <p class="sub">Endless co-op tank combat for up to four players. Shells bounce off walls, mines clear crates, and a destroyed tank sits out until the next level. After every level the slot machines pick the next wave and the squad picks a skill. A boss arrives every 10 levels.</p>
         <div class="slots">${[0, 1, 2, 3].map(slotCard).join('')}</div>
         <div class="row"><span>${ffTxt}</span><span class="note">D-pad ◀ ▶ color, ▲ ▼ trail, <span class="k">LB</span> <span class="k">RB</span> or <span class="k">Z</span> <span class="k">C</span> tank.</span></div>
         <div class="go">${joinedCount() ? `Press ${ST} or <span class="k">ENTER</span> to deploy` : `Press ${BA} to join`}</div>
@@ -2491,7 +2423,7 @@ function overlayHTML() {
       const roster = keys.map(k => `<span><i class="dot" style="--c:${info[k].color}"></i>${k.startsWith('boss') ? `<b>${info[k].name}</b>&nbsp;(boss)` : `${counts[k]} ${info[k].name}`}</span>`).join('');
       const free = joinedCount() < 4 ? `<div class="note">Not playing yet? Press ${BA} to drop in.</div>` : '';
       const boss = isBossLevel(G.level);
-      return `<div class="panel banner"><div class="eyebrow">Level ${G.level}${boss ? ' · Boss fight' : ''}</div><h2>${esc(G.layoutName)}</h2><div class="roster">${roster}</div><div class="note">${G.lives} ${G.lives === 1 ? 'life' : 'lives'} left</div>${free}</div>`;
+      return `<div class="panel banner">${boss ? '<div class="eyebrow">Boss fight</div>' : ''}<h2>Level ${G.level}</h2><div class="roster">${roster}</div><div class="note">${G.lives} ${G.lives === 1 ? 'life' : 'lives'} left</div>${free}</div>`;
     }
     case 'skill': {
       const cards = G.skillChoices.map((id, i) => {
