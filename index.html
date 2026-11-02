@@ -451,13 +451,33 @@ const CHASSIS = {
   g:   { name: 'Ghost',    desc: 'Enemies lose track of you unless you fired in the last 2 seconds or get close.', stealth: true },
   j:   { name: 'Blinker',  desc: 'No mines. The mine button teleports you a short way instead.', blink: true },
   // secret: unlocked only by unlocking every other tank
-  mini: { name: 'Minigun', desc: 'Secret tank. Hold fire to spray shells nonstop: no reload, no shell limit.', minigun: true },
+  mini: { name: 'Minigun', desc: 'Secret tank. Hold fire to spray shells for up to 5 seconds, then it overheats for 5 seconds.', minigun: true },
+  // Elite tanks: the Standard tank with upgrades only, no downsides. Unlocked by milestones saved on this computer.
+  vet:  { name: 'Veteran',   desc: 'Elite. Fires 33% faster and carries 1 more shell.', elite: true, cd: .75, ammoAdd: 1, unlock: { level: 5 } },
+  reb:  { name: 'Rebound',   desc: 'Elite. Shells bounce once more and fly 15% faster.', elite: true, bnc: 1, spd: 1.15, unlock: { level: 8 } },
+  iron: { name: 'Ironclad',  desc: 'Elite. Shrugs off the first hit every level.', elite: true, armor: 1, unlock: { level: 11 } },
+  twn:  { name: 'Twinfire',  desc: 'Elite. Fires two shells side by side with no slower reload.', elite: true, sidesAdd: 1, unlock: { level: 13 } },
+  hunt: { name: 'Hunter',    desc: 'Elite. Shells bounce once more and curve toward enemies.', elite: true, bnc: 1, home: 1.5, unlock: { level: 16 } },
+  spr:  { name: 'Sprinter',  desc: 'Elite. Drives 30% faster and fires 10% faster.', elite: true, drive: 1.3, cd: .9, unlock: { kills: 100 } },
+  prc:  { name: 'Piercer',   desc: 'Elite. Shells punch through an enemy and fly 20% faster.', elite: true, pierce: 1, spd: 1.2, unlock: { kills: 250 } },
+  cmd:  { name: 'Commander', desc: 'Elite. Faster fire, faster shells, an extra bounce, an extra shell, and shrugs off the first hit every level.', elite: true, cd: .8, spd: 1.1, bnc: 1, ammoAdd: 1, armor: 1, unlock: { level: 25 } },
 };
-const CHASSIS_ORDER = ['std', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j', 'mini'];
-const KILL_TANKS = CHASSIS_ORDER.filter(k => k !== 'std' && k !== 'mini');
+const CHASSIS_ORDER = ['std', 'vet', 'reb', 'iron', 'twn', 'hunt', 'spr', 'prc', 'cmd', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j', 'mini'];
+const KILL_TANKS = CHASSIS_ORDER.filter(k => k !== 'std' && k !== 'mini' && !CHASSIS[k].unlock);
+const ELITE_TANKS = CHASSIS_ORDER.filter(k => CHASSIS[k].unlock);
+let BEST = Object.assign({ level: 0, kills: 0 }, store.get('rr-best-v1', {}) || {});
+const eliteOk = k => { const u = CHASSIS[k].unlock; return u.level ? BEST.level >= u.level : BEST.kills >= u.kills; };
+const eliteNeed = k => { const u = CHASSIS[k].unlock; return u.level ? `reach level ${u.level}` : `${Math.min(BEST.kills, u.kills)}/${u.kills} total kills`; };
+// After a best-ever record improves, announce any elite tanks it unlocked
+function saveBest(before) {
+  store.set('rr-best-v1', BEST);
+  const fresh = unlockedChassis().filter(k => !before.includes(k));
+  fresh.forEach((k, i) => { G.parts.push({ kind: 'text', x: W / 2, y: H / 2 - 90 + i * 22, vx: 0, vy: -14, life: 3.5, max: 3.5, size: 0, grow: 0, color: '#f2b90f', text: CHASSIS[k].name.toUpperCase() + ' UNLOCKED', drag: 0 }); });
+  if (fresh.length) playSfx('legend');
+}
 const allTanksUnlocked = () => KILL_TANKS.every(k => (KILLS[k] || 0) >= KILL_NEED);
 let KILLS = store.get('rr-kills-v1', {}) || {};
-const unlockedChassis = () => CHASSIS_ORDER.filter(k => k === 'std' || (k === 'mini' ? allTanksUnlocked() : (KILLS[k] || 0) >= KILL_NEED));
+const unlockedChassis = () => CHASSIS_ORDER.filter(k => k === 'std' || (k === 'mini' ? allTanksUnlocked() : CHASSIS[k].unlock ? eliteOk(k) : (KILLS[k] || 0) >= KILL_NEED));
 const slotChassis = i => (G.slots[i] && CHASSIS[G.slots[i].chassis]) ? G.slots[i].chassis : 'std';
 const chassisOf = t => CHASSIS[slotChassis(t.slot)];
 function cycleChassis(i, d) {
@@ -667,7 +687,8 @@ function applyFx(e) {
     case 'reset': G.parts = []; G.marks = []; G.scorch = []; break;
     case 'kc':
       // count kills toward tank unlocks on the computer that owns the player who made the kill
-      if (isMine(e.dev) && CHASSIS[e.k]) {
+      if (isMine(e.dev)) { const before = unlockedChassis(); BEST.kills++; saveBest(before); }
+      if (isMine(e.dev) && CHASSIS[e.k] && KILL_TANKS.includes(e.k)) {
         KILLS[e.k] = (KILLS[e.k] || 0) + 1; store.set('rr-kills-v1', KILLS);
         if (KILLS[e.k] === KILL_NEED) { G.parts.push({ kind: 'text', x: e.x, y: e.y - 30, vx: 0, vy: -20, life: 2.5, max: 2.5, size: 0, grow: 0, color: '#ff9a3d', text: CHASSIS[e.k].name.toUpperCase() + ' UNLOCKED', drag: 0 }); playSfx('legend');
           if (allTanksUnlocked()) { G.parts.push({ kind: 'text', x: e.x, y: e.y - 6, vx: 0, vy: -20, life: 4, max: 4, size: 0, grow: 0, color: '#ff4fd8', text: 'SECRET TANK UNLOCKED: MINIGUN', drag: 0 }); playSfx('mythic'); }
@@ -820,8 +841,8 @@ function makeTank(x, y, team) {
 function spawnPlayer(k, at) {
   const sp = at || G.spawns.p[k] || G.spawns.p[0] || { x: 80, y: 80 + k * 80 };
   const t = makeTank(sp.x, sp.y, 'p'); t.slot = k; t.dev = G.slots[k].dev; t.shield = at ? 1.6 : 0;
-  if (!at) { t.armor = sk('armor'); if (sk('shield')) t.shield = F.shield(sk('shield')); }
-  t.armorMax = sk('armor');
+  if (!at) { t.armor = sk('armor') + (chassisOf(t).armor || 0); if (sk('shield')) t.shield = F.shield(sk('shield')); }
+  t.armorMax = sk('armor') + (chassisOf(t).armor || 0);
   G.tanks.push(t); return t;
 }
 function makeEnemy(type, x, y) {
@@ -1089,7 +1110,7 @@ function killTank(t, killer) {
     rumble(t.dev, 1, 1, 550); sfx('die'); shake(9);
   } else {
     if (killer && killer.team === 'p' && G.slots[killer.slot]) { G.slots[killer.slot].kills++; rumble(killer.dev, .2, .5, 140); }
-    if (killer && killer.team === 'p' && killer.dev && CHASSIS[t.type]) emit({ t: 'kc', dev: killer.dev, k: t.type, x: r1(t.x), y: r1(t.y) });
+    if (killer && killer.team === 'p' && killer.dev) emit({ t: 'kc', dev: killer.dev, k: t.type, x: r1(t.x), y: r1(t.y) });
     sfx('boom'); shake(6);
     if (sk('scav') && killer && killer.team === 'p' && ++G.scavN >= F.scav(sk('scav'))) { G.scavN = 0; G.lives++; emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 26), s: '+1 LIFE', c: '#9ad41f' }); sfx('revive'); }
     if (t.spec && t.spec.splits) {
@@ -1177,8 +1198,16 @@ function updatePlayer(t, dt, active) {
   if (ch.ram) {
     if (inp.fire && t.dashCd <= 0) { t.dashT = F.dashLen(sk('dashlen')); t.dashCd = F.dashCd(sk('dashcd')) * rateK; sfx('rev'); rumble(t.dev, .4, .3, 150); }
   } else if (ch.minigun) {
-    // Minigun (secret): hold fire for a nonstop stream, no reload and no shell limit
-    if (inp.fireHeld && t.cool <= 0 && t.bullets < 90) {
+    // Minigun (secret): fire for up to 5 seconds, then it overheats for 5 seconds. Heat drains while you're not firing.
+    if (t.overheat > 0) {
+      t.overheat -= dt;
+      if (t.overheat <= 0) { t.overheat = 0; t.heat = 0; sfx('tick'); }
+    } else if (inp.fireHeld) {
+      t.heat = (t.heat || 0) + dt;
+      if (t.heat >= 5) { t.overheat = 5; emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 26), s: 'OVERHEATED', c: '#ff5a3c' }); sfx('clank'); rumble(t.dev, .6, .3, 250); }
+    } else t.heat = Math.max(0, (t.heat || 0) - dt);
+    t.hv = t.overheat > 0 ? 1 + t.overheat / 5 : (t.heat || 0) / 5;
+    if (inp.fireHeld && !(t.overheat > 0) && t.cool <= 0 && t.bullets < 90) {
       shoot(t, t.turret + rnd(-.07, .07), Math.min(600, PBS * 1.1 * F.shellSpeed(sk('speed'))), F.bounces(sk('bounce')) + (god ? 6 : 0), 'shell',
         { fx: false, pierce: god ? 99 : sk('pierce'), side: ((t.spin = (t.spin || 0) + 1) % 3 - 1) * 3 });
       t.cool = .04; t.recoil = .5;
@@ -1236,13 +1265,13 @@ function updatePlayer(t, dt, active) {
 }
 // The shape of one shot for a player's tank: fan angles, side offsets, and how many shells it can have out
 function volleyShape(ch) {
-  const nf = ch.pellets || ch.swarm ? 0 : sk('triple'), ns = F.sides(sk('twin'));
+  const nf = ch.pellets || ch.swarm ? 0 : sk('triple'), ns = F.sides(sk('twin')) + (ch.sidesAdd || 0);
   const angles = ch.pellets ? Array.from({ length: ch.pellets }, (_, k) => (k / (ch.pellets - 1) - .5) * ch.spread)
     : ch.swarm ? Array.from({ length: ch.swarm }, (_, k) => (k / (ch.swarm - 1) - .5) * ch.spread)
     : Array.from({ length: F.fan(nf) }, (_, k) => (k - nf) * .16);
   const sides = Array.from({ length: ns }, (_, k) => (k - (ns - 1) / 2) * 8);
   const per = angles.length * sides.length;
-  return { angles, sides, per, cap: (ch.ammo || F.mag(sk('magazine'))) * per };
+  return { angles, sides, per, cap: ((ch.ammo || F.mag(sk('magazine'))) + (ch.ammoAdd || 0)) * per };
 }
 function fireVolley(t, ch, v, god, rateK, burstShot) {
   const spd = Math.min(600, PBS * (ch.spd || 1) * F.shellSpeed(sk('speed')));
@@ -1258,7 +1287,7 @@ function fireVolley(t, ch, v, god, rateK, burstShot) {
     if (sk('echo')) G.echoes.push({ t: .3, owner: t, x: t.x, y: t.y, ang, sp, bnc, kind: ch.kind || 'shell', o: Object.assign({}, o, { fx: first }) });
     first = false;
   }
-  if (!burstShot) t.cool = PCD * (ch.cd || 1) * rateK * (1 + .12 * (v.per / (ch.pellets || ch.swarm || 1) - 1));
+  if (!burstShot) t.cool = PCD * (ch.cd || 1) * rateK * (1 + .12 * (v.per / (ch.pellets || ch.swarm || 1) / (1 + (ch.sidesAdd || 0)) - 1));
   rumble(t.dev, 0, .35, 70);
 }
 // Echo Shots: replay a shell from where it was fired
@@ -1973,7 +2002,7 @@ function sendSnapshot() {
     grid: G.grid.length ? G.grid.map(r => r.join('')).join('') : '',
     sl: G.slots.map(s => s ? [s.dev, s.kills, s.deaths, s.color, s.trail, s.chassis || 'std'] : null),
     tk: G.tanks.filter(t => t.alive).map(t => [t.id, r1(t.x), r1(t.y), r2(t.body), r2(t.turret), t.team === 'p' ? t.slot : t.type, r2(t.recoil), r2(Math.max(0, t.reveal)), r2(t.shield),
-      r2(t.charge || 0), t.boss ? t.hp : 0, t.boss ? t.maxhp : 0, r2(t.hit || 0), t.armor || 0, t.shState || 0, r1(t.bx || 0), r1(t.by || 0)]),
+      r2(t.charge || 0), t.boss ? t.hp : 0, t.boss ? t.maxhp : 0, r2(t.hit || 0), t.armor || 0, t.shState || 0, r1(t.bx || 0), r1(t.by || 0), r2(t.hv || 0)]),
     bl: G.bullets.filter(b => b.alive).map(b => [b.id, r1(b.x), r1(b.y), r3(b.dx), r3(b.dy), b.speed, b.bounces, b.kind, b.slot, b.big ? 1 : 0]),
     mn: G.mines.map(m => [r1(m.x), r1(m.y), m.team === 'p' ? m.slot : m.type, r2(m.t), r2(m.fuse)]),
     wr: G.wrecks.map(w => [r1(w.x), r1(w.y), w.slot, r2(w.prog), r2(w.body)]),
@@ -2047,7 +2076,7 @@ function applySnap(s) {
     let t = old.get(a[0]);
     if (!t) t = { id: a[0], x: a[1], y: a[2], body: a[3], turret: a[4], tread: 0, trail: 0 };
     t.tx = a[1]; t.ty = a[2]; t.tb = a[3]; t.tt = a[4]; t.recoil = a[6]; t.reveal = a[7]; t.shield = a[8]; t.alive = true;
-    t.charge = a[9] || 0; t.hp = a[10]; t.maxhp = a[11]; t.hit = a[12] || 0; t.armor = a[13] || 0; t.shState = a[14] || 0; t.bx = a[15] || 0; t.by = a[16] || 0;
+    t.charge = a[9] || 0; t.hp = a[10]; t.maxhp = a[11]; t.hit = a[12] || 0; t.armor = a[13] || 0; t.shState = a[14] || 0; t.bx = a[15] || 0; t.by = a[16] || 0; t.hv = a[17] || 0;
     if (typeof a[5] === 'number') { t.team = 'p'; t.slot = a[5]; t.r = R; }
     else if (String(a[5]).startsWith('boss')) { t.team = 'e'; t.type = a[5]; t.boss = true; t.r = BOSS_R; t.spec = BOSSES[+String(a[5]).slice(4)] || BOSSES[0]; }
     else { t.team = 'e'; t.type = a[5]; t.spec = ETYPES[a[5]] || ETYPES.a; t.r = t.spec.r || R; }
@@ -2295,6 +2324,20 @@ function drawStyledTank(t, S, color, dark, alpha, mul = 1) {
     c.restore();
   }
   drawTank(tt, color, dark, alpha, sc, { noGun: S.ram, mortar: S.mortar, minigun: S.minigun });
+  if (S.minigun && t.hv > 0) {
+    // heat bar: fills while firing; red and draining while overheated
+    const over = t.hv > 1, k = over ? t.hv - 1 : t.hv;
+    c.save(); c.globalAlpha = alpha; c.fillStyle = 'rgba(23,20,15,.8)'; rrect(c, t.x - 17, t.y + 21, 34, 6, 3); c.fill();
+    c.fillStyle = over ? (Math.sin(G.time * 20) > 0 ? '#ff3b2f' : '#a82418') : k > .7 ? '#ff7a2e' : '#f2b90f';
+    if (k > 0) { rrect(c, t.x - 16, t.y + 22, Math.max(3, 32 * k), 4, 2); c.fill(); }
+    c.restore();
+  }
+  if (S.elite) {
+    // gold chevrons mark an elite tank
+    c.save(); c.translate(t.x, t.y); c.scale(sc, sc); c.rotate(t.body); c.globalAlpha = alpha; c.strokeStyle = '#f2b90f'; c.lineWidth = 2;
+    for (const o of [-11, -7]) { c.beginPath(); c.moveTo(o - 2, -5); c.lineTo(o + 2, 0); c.lineTo(o - 2, 5); c.stroke(); }
+    c.restore();
+  }
   if (S.minigun) {
     c.save(); c.translate(t.x, t.y); c.scale(sc, sc); c.globalAlpha = alpha * .8;
     c.strokeStyle = '#f2b90f'; c.lineWidth = 2; c.setLineDash([5, 4]); c.lineDashOffset = -G.time * 30;
@@ -2628,6 +2671,7 @@ function overlayHTML() {
         <div class="slots">${[0, 1, 2, 3].map(slotCard).join('')}</div>
         <div class="row"><span>${ffTxt}</span><span class="note">D-pad ◀ ▶ color, ▲ ▼ trail, <span class="k">LB</span> <span class="k">RB</span> or <span class="k">Z</span> <span class="k">C</span> tank.</span></div>
         <div class="go">${joinedCount() ? `Press ${ST} or <span class="k">ENTER</span> to deploy` : `Press ${BA} to join`}</div>
+        <div class="note">Elite tanks: ${ELITE_TANKS.map(k => eliteOk(k) ? `<b>${CHASSIS[k].name} ✓</b>` : `${CHASSIS[k].name} (${eliteNeed(k)})`).join(' · ')}</div>
         <div class="note">Tank unlocks (destroy ${KILL_NEED} of a type to play as it): ${KILL_TANKS.map(k => (KILLS[k] || 0) >= KILL_NEED ? `<b>${CHASSIS[k].name} ✓</b>` : `${CHASSIS[k].name} ${KILLS[k] || 0}/${KILL_NEED}`).join(' · ')} · ${allTanksUnlocked() ? '<b class="secret">Minigun ✓</b>' : '<b>???</b> (unlock every other tank)'}</div>
         ${padLine}${netLine}</div>`;
     }
@@ -2693,6 +2737,7 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now;
   pollPads(); buildInputs();
+  if (G.state === 'intro' && G.level > BEST.level && G.slots.some(sl => sl && isMine(sl.dev))) { const before = unlockedChassis(); BEST.level = G.level; saveBest(before); }
   if (NET.mode !== 'off') for (const dev in INP) if (INP[dev].voice) { toggleVoice(); break; }
   if (G.state === 'title') for (const dev in INP) {
     // tank choice is checked on the computer that owns the controller, since unlocks are saved there
