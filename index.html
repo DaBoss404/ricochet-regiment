@@ -877,7 +877,7 @@ function rollReels(lvl) {
 }
 const REEL_STOPS = [0, 1, 2].map(i => [1.0 + i * .55, 1.55 + i * .55]);
 const REEL_DONE = REEL_STOPS[2][1] + 1.3;
-const SKILL_EVERY = 5; // the squad picks a skill after every 5th level
+const SKILL_EVERY = 3; // the squad picks a skill after every 3rd level
 function pickSkills() {
   const chosen = [];
   // Deeper runs and Lucky Charm make rarer tiers more likely
@@ -906,7 +906,8 @@ function chooseSkill(i) {
 function startGame() {
   if (!joinedCount()) return;
   G.slots.forEach(s => { if (s) { s.kills = 0; s.deaths = 0; } });
-  G.lives = 3; G.level = 1; G.skills = {}; G.lastLayout = -1;
+  // the Spiker can't shoot, so a squad with a Spiker in it starts with 5 lives instead of 3
+  G.lives = G.slots.some((sl, i) => sl && slotChassis(i) === 'k') ? 5 : 3; G.level = 1; G.skills = {}; G.lastLayout = -1;
   G.nextWave = [{ t: 'a', n: 2 }];
   loadLevel(); sfx('join');
 }
