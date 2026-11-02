@@ -140,6 +140,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .sk.sel{border-color:var(--rc);box-shadow:inset 0 0 0 2px var(--rc),0 0 22px color-mix(in srgb,var(--rc) 40%,transparent);transform:translateY(-4px)}
 .sk.sel h4{color:var(--rc)}
 .sk.r-mythic.sel h4{color:transparent}
+.secret{background:linear-gradient(90deg,#ff4fd8,#f2b90f,#4f8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
 .own.r-rare,.own.r-epic,.own.r-legendary,.own.r-mythic{color:var(--rc)}
 @keyframes myth{0%,100%{box-shadow:0 0 0 1px #ff4fd8,0 0 18px rgba(255,79,216,.45)}50%{box-shadow:0 0 0 1px #f2b90f,0 0 28px rgba(242,185,15,.55)}}
 @media (prefers-reduced-motion:reduce){.sk.r-mythic{animation:none}}
@@ -449,10 +450,14 @@ const CHASSIS = {
   w:   { name: 'Bulwark',  desc: 'A front shield blocks enemy shells. Drives and reloads a bit slower.', shield: true, drive: .85, cd: 1.3 },
   g:   { name: 'Ghost',    desc: 'Enemies lose track of you unless you fired in the last 2 seconds or get close.', stealth: true },
   j:   { name: 'Blinker',  desc: 'No mines. The mine button teleports you a short way instead.', blink: true },
+  // secret: unlocked only by unlocking every other tank
+  mini: { name: 'Minigun', desc: 'Secret tank. Hold fire to spray shells nonstop: no reload, no shell limit.', minigun: true },
 };
-const CHASSIS_ORDER = ['std', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j'];
+const CHASSIS_ORDER = ['std', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j', 'mini'];
+const KILL_TANKS = CHASSIS_ORDER.filter(k => k !== 'std' && k !== 'mini');
+const allTanksUnlocked = () => KILL_TANKS.every(k => (KILLS[k] || 0) >= KILL_NEED);
 let KILLS = store.get('rr-kills-v1', {}) || {};
-const unlockedChassis = () => CHASSIS_ORDER.filter(k => k === 'std' || (KILLS[k] || 0) >= KILL_NEED);
+const unlockedChassis = () => CHASSIS_ORDER.filter(k => k === 'std' || (k === 'mini' ? allTanksUnlocked() : (KILLS[k] || 0) >= KILL_NEED));
 const slotChassis = i => (G.slots[i] && CHASSIS[G.slots[i].chassis]) ? G.slots[i].chassis : 'std';
 const chassisOf = t => CHASSIS[slotChassis(t.slot)];
 function cycleChassis(i, d) {
@@ -664,7 +669,9 @@ function applyFx(e) {
       // count kills toward tank unlocks on the computer that owns the player who made the kill
       if (isMine(e.dev) && CHASSIS[e.k]) {
         KILLS[e.k] = (KILLS[e.k] || 0) + 1; store.set('rr-kills-v1', KILLS);
-        if (KILLS[e.k] === KILL_NEED) { G.parts.push({ kind: 'text', x: e.x, y: e.y - 30, vx: 0, vy: -20, life: 2.5, max: 2.5, size: 0, grow: 0, color: '#ff9a3d', text: CHASSIS[e.k].name.toUpperCase() + ' UNLOCKED', drag: 0 }); playSfx('legend'); }
+        if (KILLS[e.k] === KILL_NEED) { G.parts.push({ kind: 'text', x: e.x, y: e.y - 30, vx: 0, vy: -20, life: 2.5, max: 2.5, size: 0, grow: 0, color: '#ff9a3d', text: CHASSIS[e.k].name.toUpperCase() + ' UNLOCKED', drag: 0 }); playSfx('legend');
+          if (allTanksUnlocked()) { G.parts.push({ kind: 'text', x: e.x, y: e.y - 6, vx: 0, vy: -20, life: 4, max: 4, size: 0, grow: 0, color: '#ff4fd8', text: 'SECRET TANK UNLOCKED: MINIGUN', drag: 0 }); playSfx('mythic'); }
+        }
       }
       break;
     case 'txt': G.parts.push({ kind: 'text', x: e.x, y: e.y, vx: 0, vy: -28, life: 1.3, max: 1.3, size: 0, grow: 0, color: e.c, text: String(e.s).slice(0, 24), drag: 0 }); break;
@@ -987,7 +994,7 @@ function shoot(t, ang, speed, bounces, kind = 'shell', o = {}) {
   t.recoil = 1;
   if (bb(tx, ty)) { if (o.fx !== false) { emit({ t: 'puff', x: r1(tx), y: r1(ty), n: 5 }); sfx('pop'); } return; }
   G.bullets.push({ id: ++G.idSeq, x: tx, y: ty, dx: Math.cos(ang), dy: Math.sin(ang), speed, bounces, owner: t, team: t.team,
-    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0, pierce: o.pierce || 0, hitIds: [], base: speed, fis: !!o.fis, home: o.home || 0, big: !!o.big });
+    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0, pierce: o.pierce || 0, hitIds: [], base: speed, fis: o.fis || false, home: o.home || 0, big: !!o.big });
   t.bullets++; t.lastShot = G.time;
   if (o.fx !== false && kind !== 'flame') {
     emit({ t: 'muz', x: r1(tx), y: r1(ty), a: r2(ang) });
@@ -1169,6 +1176,15 @@ function updatePlayer(t, dt, active) {
   const god = sk('mythic') > 0, rateK = 1 / F.fireRate(sk('reload')) / (god ? 1.5 : 1) * (G.adren > 0 ? .65 : 1);
   if (ch.ram) {
     if (inp.fire && t.dashCd <= 0) { t.dashT = F.dashLen(sk('dashlen')); t.dashCd = F.dashCd(sk('dashcd')) * rateK; sfx('rev'); rumble(t.dev, .4, .3, 150); }
+  } else if (ch.minigun) {
+    // Minigun (secret): hold fire for a nonstop stream, no reload and no shell limit
+    if (inp.fireHeld && t.cool <= 0 && t.bullets < 90) {
+      shoot(t, t.turret + rnd(-.07, .07), Math.min(600, PBS * 1.1 * F.shellSpeed(sk('speed'))), F.bounces(sk('bounce')) + (god ? 6 : 0), 'shell',
+        { fx: false, pierce: god ? 99 : sk('pierce'), side: ((t.spin = (t.spin || 0) + 1) % 3 - 1) * 3 });
+      t.cool = .04; t.recoil = .5;
+      if (t.spin % 3 === 0) { sfx('fire'); emit({ t: 'muz', x: r1(t.x + Math.cos(t.turret) * 24), y: r1(t.y + Math.sin(t.turret) * 24), a: r2(t.turret) }); }
+      rumble(t.dev, .1, .25, 50);
+    }
   } else if (ch.flame) {
     // Scorcher: hold fire for a stream of short-lived flames
     if (inp.fireHeld && t.cool <= 0 && t.bullets < 16 + 2 * sk('magazine')) {
@@ -1560,9 +1576,8 @@ function updateBullets(dt) {
         if (((b.team === 'p' && sk('fission')) || b.fis) && !b.split) {
           // Fission Shells / Splitter tanks: the first bounce splits the shell in two
           b.split = true; b.fam = b.id;
-          const a = Math.atan2(b.dy, b.dx), c2 = Object.assign({}, b, { id: ++G.idSeq, dx: Math.cos(a + .35), dy: Math.sin(a + .35), hitIds: b.hitIds.slice(), free: true, trailT: 0 });
-          b.dx = Math.cos(a - .35); b.dy = Math.sin(a - .35);
-          G.bullets.push(c2);
+          const a = Math.atan2(b.dy, b.dx), piece = off => Object.assign({}, b, { id: ++G.idSeq, dx: Math.cos(a + off), dy: Math.sin(a + off), hitIds: b.hitIds.slice(), free: true, trailT: 0 });
+          G.bullets.push(piece(.35)); b.dx = Math.cos(a - .35); b.dy = Math.sin(a - .35);
         }
         emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 4, v: 90 }); }
       for (const t of aliveTanks) {
@@ -2279,7 +2294,12 @@ function drawStyledTank(t, S, color, dark, alpha, mul = 1) {
     }
     c.restore();
   }
-  drawTank(tt, color, dark, alpha, sc, { noGun: S.ram, mortar: S.mortar });
+  drawTank(tt, color, dark, alpha, sc, { noGun: S.ram, mortar: S.mortar, minigun: S.minigun });
+  if (S.minigun) {
+    c.save(); c.translate(t.x, t.y); c.scale(sc, sc); c.globalAlpha = alpha * .8;
+    c.strokeStyle = '#f2b90f'; c.lineWidth = 2; c.setLineDash([5, 4]); c.lineDashOffset = -G.time * 30;
+    c.beginPath(); c.arc(0, 0, 21, 0, TAU); c.stroke(); c.restore();
+  }
   if (S.shield && t.shState !== 2) {
     c.save(); c.translate(t.x, t.y); c.scale(sc, sc);
     c.globalAlpha = alpha * (t.shState === 1 ? (Math.sin(G.time * 45) > 0 ? 1 : .2) : 1); // flickers just before it drops
@@ -2303,7 +2323,11 @@ function drawTank(t, color, dark, alpha, scale = 1, opt = {}) {
   c.fillStyle = 'rgba(255,255,255,.18)'; c.fillRect(-12, -7, 24, 3);
   c.rotate(-t.body + t.turret);
   const rc = (t.recoil || 0) * 4;
-  if (opt.mortar) { c.fillStyle = dark; rrect(c, 1 - rc, -5.5, 14, 11, 3); c.fill(); c.fillStyle = '#1d1a16'; c.beginPath(); c.arc(14 - rc, 0, 4, 0, TAU); c.fill(); }
+  if (opt.minigun) {
+    // three barrels that look like they're spinning
+    for (let k = -1; k <= 1; k++) { c.fillStyle = (Math.floor(G.time * 30) + k) % 2 ? '#3a342c' : '#6b6255'; rrect(c, 3 - rc, k * 3.4 - 1.6, 22, 3.2, 1.4); c.fill(); }
+    c.fillStyle = '#1d1a16'; c.fillRect(22 - rc, -5.2, 3, 10.4);
+  } else if (opt.mortar) { c.fillStyle = dark; rrect(c, 1 - rc, -5.5, 14, 11, 3); c.fill(); c.fillStyle = '#1d1a16'; c.beginPath(); c.arc(14 - rc, 0, 4, 0, TAU); c.fill(); }
   else if (!opt.noGun) { c.fillStyle = dark; rrect(c, 2 - rc, -3.5, 21, 7, 2); c.fill(); c.fillStyle = '#1d1a16'; c.fillRect(19 - rc, -3.5, 4, 7); }
   c.fillStyle = color; c.beginPath(); c.arc(0, 0, 8.5, 0, TAU); c.fill();
   c.strokeStyle = dark; c.lineWidth = 1.6; c.stroke();
@@ -2604,7 +2628,7 @@ function overlayHTML() {
         <div class="slots">${[0, 1, 2, 3].map(slotCard).join('')}</div>
         <div class="row"><span>${ffTxt}</span><span class="note">D-pad ◀ ▶ color, ▲ ▼ trail, <span class="k">LB</span> <span class="k">RB</span> or <span class="k">Z</span> <span class="k">C</span> tank.</span></div>
         <div class="go">${joinedCount() ? `Press ${ST} or <span class="k">ENTER</span> to deploy` : `Press ${BA} to join`}</div>
-        <div class="note">Tank unlocks (destroy ${KILL_NEED} of a type to play as it): ${CHASSIS_ORDER.slice(1).map(k => (KILLS[k] || 0) >= KILL_NEED ? `<b>${CHASSIS[k].name} ✓</b>` : `${CHASSIS[k].name} ${KILLS[k] || 0}/${KILL_NEED}`).join(' · ')}</div>
+        <div class="note">Tank unlocks (destroy ${KILL_NEED} of a type to play as it): ${KILL_TANKS.map(k => (KILLS[k] || 0) >= KILL_NEED ? `<b>${CHASSIS[k].name} ✓</b>` : `${CHASSIS[k].name} ${KILLS[k] || 0}/${KILL_NEED}`).join(' · ')} · ${allTanksUnlocked() ? '<b class="secret">Minigun ✓</b>' : '<b>???</b> (unlock every other tank)'}</div>
         ${padLine}${netLine}</div>`;
     }
     case 'intro': {

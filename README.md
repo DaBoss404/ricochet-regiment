@@ -4,7 +4,7 @@ A top-down co-op tank game for 1–4 players in the browser. Shells bounce off w
 
 Runs are endless. After every level, three slot machines spin to decide the next wave (each lands on an enemy type, then on how many of it), and after every 3rd level the squad picks one of three skills. Every 10th level is a boss fight. If the squad is wiped out, you replay the same map. Enemy shells and mines never hurt other enemies.
 
-Destroy 20 of an enemy type to unlock it as a playable tank: Hornet, Missile, Sniper, Shotgun, Brute, Splitter, Hive, Scorcher, Mortar, Spiker, Bulwark, Ghost or Blinker. Each plays differently, and the Spiker has its own skills. A squad with a Spiker in it starts with 5 lives instead of 3. Unlock progress is saved in your browser and carries across runs. Pick your tank on the title screen with LB/RB, Z/C or the arrow buttons.
+Destroy 20 of an enemy type to unlock it as a playable tank: Hornet, Missile, Sniper, Shotgun, Brute, Splitter, Hive, Scorcher, Mortar, Spiker, Bulwark, Ghost or Blinker. Each plays differently, and the Spiker has its own skills. Unlock every one of them to reveal a secret tank. A squad with a Spiker in it starts with 5 lives instead of 3. Unlock progress is saved in your browser and carries across runs. Pick your tank on the title screen with LB/RB, Z/C or the arrow buttons.
 
 There are 56 skills across five rarities: Common, Rare, Epic, Legendary and Mythic. Most skills can be upgraded many times (up to 10 ranks), and each card shows exactly what the next rank changes. Rarer cards get a little more likely the deeper the run goes, and the Lucky Charm skill boosts them further.
 
