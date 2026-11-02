@@ -453,14 +453,14 @@ const CHASSIS = {
   // secret: unlocked only by unlocking every other tank
   mini: { name: 'Minigun', desc: 'Secret tank. Hold fire to spray shells for up to 5 seconds, then it overheats for 5 seconds.', minigun: true },
   // Elite tanks: the Standard tank with upgrades only, no downsides. Unlocked by milestones saved on this computer.
-  vet:  { name: 'Veteran',   desc: 'Elite. Fires 33% faster and carries 1 more shell.', elite: true, cd: .75, ammoAdd: 1, unlock: { level: 5 } },
-  reb:  { name: 'Rebound',   desc: 'Elite. Shells bounce once more and fly 15% faster.', elite: true, bnc: 1, spd: 1.15, unlock: { level: 8 } },
-  iron: { name: 'Ironclad',  desc: 'Elite. Shrugs off the first hit every level.', elite: true, armor: 1, unlock: { level: 11 } },
-  twn:  { name: 'Twinfire',  desc: 'Elite. Fires two shells side by side with no slower reload.', elite: true, sidesAdd: 1, unlock: { level: 13 } },
-  hunt: { name: 'Hunter',    desc: 'Elite. Shells bounce once more and curve toward enemies.', elite: true, bnc: 1, home: 1.5, unlock: { level: 16 } },
-  spr:  { name: 'Sprinter',  desc: 'Elite. Drives 30% faster and fires 10% faster.', elite: true, drive: 1.3, cd: .9, unlock: { kills: 100 } },
-  prc:  { name: 'Piercer',   desc: 'Elite. Shells punch through an enemy and fly 20% faster.', elite: true, pierce: 1, spd: 1.2, unlock: { kills: 250 } },
-  cmd:  { name: 'Commander', desc: 'Elite. Faster fire, faster shells, an extra bounce, an extra shell, and shrugs off the first hit every level.', elite: true, cd: .8, spd: 1.1, bnc: 1, ammoAdd: 1, armor: 1, unlock: { level: 25 } },
+  vet:  { name: 'Boomerang', desc: 'Elite. Throws a blade that flies out, curves back to you, and slices every enemy it passes both ways.', elite: true, wpn: 'boomer', kind: 'boomer', spd: 1.2, bnc: 3, pierce: 99, ammo: 2, cd: 1.3, life: 3, unlock: { level: 5 } },
+  reb:  { name: 'Sawblade',  desc: 'Elite. A slow spinning saw that cuts through every enemy and bounces 3 times.', elite: true, wpn: 'saw', kind: 'saw', spd: .7, bnc: 2, pierce: 99, ammo: 3, cd: 1.6, hr: 6, unlock: { level: 8 } },
+  iron: { name: 'Grenadier', desc: 'Elite. Bouncing grenades that explode after a second, or the moment they touch an enemy.', elite: true, wpn: 'grenade', kind: 'grenade', spd: .85, bnc: 2, life: 1.1, ammo: 3, cd: 2.2, unlock: { level: 11 } },
+  twn:  { name: 'Flak',      desc: 'Elite. Shells burst into 8 fragments in mid-air.', elite: true, wpn: 'flak', kind: 'shell', spd: 1.1, life: .55, cd: 1.6, unlock: { level: 13 } },
+  hunt: { name: 'Tesla',     desc: 'Elite. An instant lightning bolt that leaps between up to 3 enemies.', elite: true, tesla: true, cd: 4.4, unlock: { level: 16 } },
+  spr:  { name: 'Lancer',    desc: 'Elite. An instant rail beam that goes straight through every enemy in a line.', elite: true, lance: true, cd: 5, unlock: { kills: 100 } },
+  prc:  { name: 'Cluster',   desc: 'Elite. Fast rockets that burst into 5 shells when they hit a wall.', elite: true, wpn: 'cluster', kind: 'rocket', spd: 1.3, bnc: -1, cd: 2, unlock: { kills: 250 } },
+  cmd:  { name: 'Plasma',    desc: 'Elite. A big plasma orb that passes through enemies and explodes where it stops.', elite: true, wpn: 'plasma', kind: 'plasma', spd: .75, bnc: -1, pierce: 99, ammo: 2, life: 2.2, cd: 2.4, hr: 6, unlock: { level: 25 } },
 };
 const CHASSIS_ORDER = ['std', 'vet', 'reb', 'iron', 'twn', 'hunt', 'spr', 'prc', 'cmd', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j', 'mini'];
 const KILL_TANKS = CHASSIS_ORDER.filter(k => k !== 'std' && k !== 'mini' && !CHASSIS[k].unlock);
@@ -569,6 +569,7 @@ function playSfx(n) {
     case 'charge': tone(500, .33, 'sawtooth', .05, 1800); break;
     case 'blinkport': tone(1200, .15, 'sine', .1, 300); tone(300, .15, 'sine', .08, 1200, .05); break;
     case 'hole': tone(80, 1.4, 'sawtooth', .12, 30); noise(1.4, .15, 400); break;
+    case 'zap': noise(.15, .25, 7000); tone(1800, .1, 'square', .05, 600); break;
     case 'rev': tone(70, .4, 'sawtooth', .12, 220); break;
     case 'mortar': tone(110, .18, 'sine', .25, 60); noise(.15, .2, 900); break;
     case 'clank': tone(1900, .06, 'square', .06, 900); tone(600, .08, 'triangle', .06); break;
@@ -695,6 +696,17 @@ function applyFx(e) {
         }
       }
       break;
+    case 'beam': G.parts.push({ kind: 'line', pts: e.pts, x: 0, y: 0, vx: 0, vy: 0, life: .22, max: .22, size: 5, grow: 0, color: e.c, drag: 0 }); break;
+    case 'bolt': {
+      // jagged lightning between the points
+      const pts = [];
+      for (let i = 0; i < e.pts.length - 1; i++) {
+        const [ax, ay] = e.pts[i], [bx, by] = e.pts[i + 1], n = Math.max(2, Math.round(Math.hypot(bx - ax, by - ay) / 18));
+        for (let k = 0; k < n; k++) { const f = k / n, j = k ? rnd(-9, 9) : 0; pts.push([ax + (bx - ax) * f + j * (ay - by) / (Math.hypot(bx - ax, by - ay) || 1), ay + (by - ay) * f + j * (bx - ax) / (Math.hypot(bx - ax, by - ay) || 1)]); }
+      }
+      pts.push(e.pts[e.pts.length - 1]);
+      G.parts.push({ kind: 'line', pts, x: 0, y: 0, vx: 0, vy: 0, life: .25, max: .25, size: 3, grow: 0, color: e.c, drag: 0 }); break;
+    }
     case 'txt': G.parts.push({ kind: 'text', x: e.x, y: e.y, vx: 0, vy: -28, life: 1.3, max: 1.3, size: 0, grow: 0, color: e.c, text: String(e.s).slice(0, 24), drag: 0 }); break;
   }
 }
@@ -719,6 +731,8 @@ function explosionParts(x, y, color, k) {
 function bulletTrail(b, dt) {
   b.trailT = (b.trailT || 0) - dt; if (b.trailT > 0) return;
   const x = b.x - b.dx * 6, y = b.y - b.dy * 6, P = G.parts;
+  if (b.kind === 'plasma') { b.trailT = .02; P.push({ kind: 'fire', x: b.x, y: b.y, vx: rnd(-15, 15), vy: rnd(-15, 15), life: .3, max: .3, size: 5, grow: 2, color: '#b07cff', drag: 2 }); return; }
+  if (b.kind === 'saw' || b.kind === 'boomer' || b.kind === 'grenade') { b.trailT = 1; return; }
   if (b.kind === 'flame') { b.trailT = .03; P.push({ kind: 'fire', x: b.x, y: b.y, vx: rnd(-20, 20), vy: rnd(-20, 20), life: .2, max: .2, size: rnd(3, 6), grow: 6, color: Math.random() < .5 ? '#ff7a2e' : '#ffc24d', drag: 2 }); return; }
   if (b.kind === 'pellet') { b.trailT = .04; P.push({ kind: 'smoke', x, y, vx: 0, vy: 0, life: .3, max: .3, size: 1.5, grow: 5, color: '#a99c86', drag: 2 }); return; }
   if (b.kind === 'snipe') { b.trailT = .008; P.push({ kind: 'dot', x, y, vx: 0, vy: 0, life: .35, max: .35, size: 2.2, grow: 0, color: '#fff4d6', drag: 0 }); return; }
@@ -1015,7 +1029,7 @@ function shoot(t, ang, speed, bounces, kind = 'shell', o = {}) {
   t.recoil = 1;
   if (bb(tx, ty)) { if (o.fx !== false) { emit({ t: 'puff', x: r1(tx), y: r1(ty), n: 5 }); sfx('pop'); } return; }
   G.bullets.push({ id: ++G.idSeq, x: tx, y: ty, dx: Math.cos(ang), dy: Math.sin(ang), speed, bounces, owner: t, team: t.team,
-    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0, pierce: o.pierce || 0, hitIds: [], base: speed, fis: o.fis || false, home: o.home || 0, big: !!o.big });
+    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0, pierce: o.pierce || 0, hitIds: [], base: speed, fis: o.fis || false, home: o.home || 0, big: !!o.big, wpn: o.wpn || null, hr: o.hr || 0 });
   t.bullets++; t.lastShot = G.time;
   if (o.fx !== false && kind !== 'flame') {
     emit({ t: 'muz', x: r1(tx), y: r1(ty), a: r2(ang) });
@@ -1047,10 +1061,10 @@ function killBullet(b, fx) {
   else if (fx) { emit({ t: 'puff', x: r1(b.x), y: r1(b.y), n: 4 }); sfx('pop'); }
 }
 // Explosive Shells: a small blast that hurts enemies and breaks crates, never teammates
-function shellBlast(x, y, owner) {
-  const BR = F.blast(sk('blast'));
-  emit({ t: 'boom', x: r1(x), y: r1(y), c: '#ffb04d', k: .55 }); sfx('pop');
-  for (const t of G.tanks) if (t.alive && t.team === 'e' && Math.hypot(t.x - x, t.y - y) < BR + (t.r || R) * .5) hurtTank(t, owner, 1);
+function shellBlast(x, y, owner, size, bossDmg) {
+  const BR = size || F.blast(sk('blast'));
+  emit({ t: 'boom', x: r1(x), y: r1(y), c: '#ffb04d', k: BR / 70 }); sfx(size ? 'boom' : 'pop');
+  for (const t of G.tanks) if (t.alive && t.team === 'e' && Math.hypot(t.x - x, t.y - y) < BR + (t.r || R) * .5) hurtTank(t, owner, t.boss ? (bossDmg || 1) : 1);
   for (let r = Math.floor((y - BR) / TS); r <= Math.floor((y + BR) / TS); r++) for (let c = Math.floor((x - BR) / TS); c <= Math.floor((x + BR) / TS); c++) {
     if (r < 0 || c < 0 || r >= ROWS || c >= COLS || G.grid[r][c] !== 2) continue;
     if (Math.hypot(c * TS + TS / 2 - x, r * TS + TS / 2 - y) < BR + 12) { G.grid[r][c] = 0; staticDirty = true; emit({ t: 'crate', x: c * TS + TS / 2, y: r * TS + TS / 2 }); }
@@ -1061,10 +1075,48 @@ function shellRing(owner, x, y, count) {
   for (let k = 0; k < count; k++) { const a = o + k / count * TAU; looseShell(owner, x + Math.cos(a) * 14, y + Math.sin(a) * 14, a, PBS * F.shellSpeed(sk('speed')), F.bounces(sk('bounce'))); }
 }
 // Shells that don't come from a tank's barrel (Cluster Mines, Carnage)
-function looseShell(owner, x, y, ang, speed, bounces) {
+function looseShell(owner, x, y, ang, speed, bounces, life) {
   if (bb(x, y)) return;
   G.bullets.push({ id: ++G.idSeq, x, y, dx: Math.cos(ang), dy: Math.sin(ang), speed, bounces, owner, team: owner.team, slot: owner.team === 'p' ? owner.slot : -1,
-    kind: 'shell', rocket: false, life: 0, age: .3, bounced: true, alive: true, trailT: 0, pierce: sk('mythic') ? 99 : sk('pierce'), hitIds: [], base: speed, free: true, split: true });
+    kind: 'shell', rocket: false, life: life || 0, age: life ? 0 : .3, bounced: true, alive: true, trailT: 0, pierce: sk('mythic') ? 99 : sk('pierce'), hitIds: [], base: speed, free: true, split: true });
+}
+// What special elite shells do when they stop (hit a wall for the last time or run out of time)
+function shellEnd(b) {
+  const o = b.owner, boss = F.bossDmg(sk('heavy'));
+  switch (b.wpn) {
+    case 'grenade': shellBlast(b.x, b.y, o, 58, 2 * boss); break;
+    case 'plasma': shellBlast(b.x, b.y, o, 66, 3 * boss); break;
+    case 'flak': { const a0 = Math.random() * TAU; for (let k = 0; k < 8; k++) { const a = a0 + k / 8 * TAU; looseShell(o, b.x, b.y, a, 270, 0, .45); } emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 10, v: 160 }); sfx('pop'); break; }
+    case 'cluster': { const back = Math.atan2(-b.dy, -b.dx); for (let k = 0; k < 5; k++) { const a = back + (k / 4 - .5) * 1.8; looseShell(o, b.x - b.dx * 6, b.y - b.dy * 6, a, 280, 1); } emit({ t: 'boom', x: r1(b.x), y: r1(b.y), c: '#ffb04d', k: .5 }); sfx('pop'); break; }
+  }
+}
+// Tesla: instant lightning to the nearest enemy roughly in front, then it leaps to up to 2 more
+function teslaShot(t) {
+  const hit = [], pts = [[r1(t.x + Math.cos(t.turret) * 22), r1(t.y + Math.sin(t.turret) * 22)]];
+  let from = { x: t.x, y: t.y };
+  for (let n = 0; n < 3; n++) {
+    const range = n === 0 ? 340 : 180;
+    const c = aliveTanks.filter(e => e.alive && e.team === 'e' && !hit.includes(e) && dist(e, from) < range && clearPath(from, e)
+      && (n > 0 || Math.abs(angDiff(Math.atan2(e.y - t.y, e.x - t.x), t.turret)) < .6)).sort((a, b) => dist(a, from) - dist(b, from))[0];
+    if (!c) break;
+    hit.push(c); pts.push([r1(c.x), r1(c.y)]); from = c;
+  }
+  if (!hit.length) pts.push([r1(t.x + Math.cos(t.turret) * 120), r1(t.y + Math.sin(t.turret) * 120)]);
+  emit({ t: 'bolt', pts, c: '#9fe8ff' }); sfx('zap');
+  for (const e of hit) hurtTank(e, t, e.boss ? 2 * F.bossDmg(sk('heavy')) : 1);
+}
+// Lancer: instant straight beam to the first wall, through every enemy and enemy shell on the way
+function lanceShot(t) {
+  const dx = Math.cos(t.turret), dy = Math.sin(t.turret);
+  let x = t.x + dx * 22, y = t.y + dy * 22; const sx = x, sy = y;
+  while (!bb(x, y) && x > 0 && y > 0 && x < W && y < H) { x += dx * 4; y += dy * 4; }
+  for (const e of aliveTanks) {
+    if (!e.alive || e.team !== 'e') continue;
+    const u = clamp(((e.x - sx) * dx + (e.y - sy) * dy), 0, Math.hypot(x - sx, y - sy));
+    if (Math.hypot(sx + dx * u - e.x, sy + dy * u - e.y) < (e.r || R) + 4) hurtTank(e, t, e.boss ? 2 * F.bossDmg(sk('heavy')) : 1);
+  }
+  for (const b of G.bullets) if (b.alive && b.team === 'e') { const u = clamp((b.x - sx) * dx + (b.y - sy) * dy, 0, Math.hypot(x - sx, y - sy)); if (Math.hypot(sx + dx * u - b.x, sy + dy * u - b.y) < 7) killBullet(b, false); }
+  emit({ t: 'beam', pts: [[r1(sx), r1(sy)], [r1(x), r1(y)]], c: slotColor(t.slot) }); emit({ t: 'spk', x: r1(x), y: r1(y), n: 8, v: 140 }); sfx('snipe');
 }
 function canHit(b, t) {
   if (t.shield > 0) return false;
@@ -1197,6 +1249,8 @@ function updatePlayer(t, dt, active) {
   const god = sk('mythic') > 0, rateK = 1 / F.fireRate(sk('reload')) / (god ? 1.5 : 1) * (G.adren > 0 ? .65 : 1);
   if (ch.ram) {
     if (inp.fire && t.dashCd <= 0) { t.dashT = F.dashLen(sk('dashlen')); t.dashCd = F.dashCd(sk('dashcd')) * rateK; sfx('rev'); rumble(t.dev, .4, .3, 150); }
+  } else if (ch.tesla || ch.lance) {
+    if (inp.fire && t.cool <= 0) { if (ch.tesla) teslaShot(t); else lanceShot(t); t.cool = PCD * ch.cd * rateK; t.recoil = 1; rumble(t.dev, .2, .4, 90); }
   } else if (ch.minigun) {
     // Minigun (secret): fire for up to 5 seconds, then it overheats for 5 seconds. Heat drains while you're not firing.
     if (t.overheat > 0) {
@@ -1281,7 +1335,7 @@ function fireVolley(t, ch, v, god, rateK, burstShot) {
   if (sk('overcharge') && t.shotN % F.overcharge(sk('overcharge')) === 0) { big = true; pierce += 3; }
   let first = true;
   for (const a of v.angles) for (const sd of v.sides) {
-    const o = { side: sd, fx: first, pierce, life: ch.life, fis: ch.fis, home: ch.home, big };
+    const o = { side: sd, fx: first, pierce, life: ch.life, fis: ch.fis, home: ch.home, big, wpn: ch.wpn, hr: ch.hr };
     const ang = t.turret + a + (ch.pellets ? rnd(-.03, .03) : 0), sp = spd * (ch.pellets ? rnd(.92, 1.08) : 1);
     shoot(t, ang, sp, bnc, ch.kind || 'shell', o);
     if (sk('echo')) G.echoes.push({ t: .3, owner: t, x: t.x, y: t.y, ang, sp, bnc, kind: ch.kind || 'shell', o: Object.assign({}, o, { fx: first }) });
@@ -1298,7 +1352,7 @@ function updateEchoes(dt) {
     if (bb(x, y)) continue;
     G.bullets.push({ id: ++G.idSeq, x, y, dx: Math.cos(e.ang), dy: Math.sin(e.ang), speed: e.sp, bounces: e.bnc, owner: e.owner, team: 'p', slot: e.owner.slot,
       kind: e.kind, rocket: e.kind === 'rocket' || e.kind === 'missile', life: e.o.life || 0, age: .3, bounced: false, alive: true, trailT: 0,
-      pierce: e.o.pierce, hitIds: [], base: e.sp, free: true, fis: e.o.fis, home: e.o.home, big: e.o.big });
+      pierce: e.o.pierce, hitIds: [], base: e.sp, free: true, fis: e.o.fis, home: e.o.home, big: e.o.big, wpn: e.o.wpn || null, hr: e.o.hr || 0 });
     if (e.o.fx) sfx('fire');
   }
   G.echoes = G.echoes.filter(e => !e.done);
@@ -1582,7 +1636,16 @@ function updateBullets(dt) {
   for (const b of G.bullets) {
     if (!b.alive) continue;
     b.age += dt;
-    if (b.life && b.age > b.life) { killBullet(b, false); emit({ t: 'puff', x: r1(b.x), y: r1(b.y), n: 2, z: 2 }); continue; }
+    if (b.life && b.age > b.life) { if (b.wpn) shellEnd(b); killBullet(b, false); if (!b.wpn) emit({ t: 'puff', x: r1(b.x), y: r1(b.y), n: 2, z: 2 }); continue; }
+    if (b.wpn === 'boomer') {
+      // Boomerang: after a moment it turns back toward its tank and can hit everything again on the way
+      if (!b.back && b.age > 1) { b.back = true; b.hitIds = []; }
+      if (b.back && b.owner.alive) {
+        const cur = Math.atan2(b.dy, b.dx), want = Math.atan2(b.owner.y - b.y, b.owner.x - b.x), na = cur + clamp(angDiff(want, cur), -9 * dt, 9 * dt);
+        b.dx = Math.cos(na); b.dy = Math.sin(na);
+        if (dist(b, b.owner) < 22) { killBullet(b, false); continue; } // caught
+      }
+    }
     const homeK = b.team === 'p' ? F.homing(sk('homing')) + (b.home || 0) : 0;
     if (homeK > 0) {
       let best = null, bd = 220;
@@ -1598,7 +1661,7 @@ function updateBullets(dt) {
     while (b.acc >= STEP && b.alive) {
       b.acc -= STEP;
       const r = advance(b, STEP);
-      if (r === 'dead') { killBullet(b, true); break; }
+      if (r === 'dead') { if (b.wpn) shellEnd(b); killBullet(b, !b.wpn); break; }
       if (r === 'bounce') {
         b.bounced = true; sfx('bounce');
         if (b.team === 'p' && sk('bboost')) b.speed = Math.min(b.base * 1.8, 600, b.speed * (1 + F.bounceBoost(sk('bboost'))));
@@ -1611,7 +1674,7 @@ function updateBullets(dt) {
         emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 4, v: 90 }); }
       for (const t of aliveTanks) {
         if (!t.alive) continue;
-        const hr = (t.r || R) + 3 + (b.team === 'p' ? F.big(sk('big')) : 0) + (b.big ? 6 : 0);
+        const hr = (t.r || R) + 3 + (b.team === 'p' ? F.big(sk('big')) : 0) + (b.big ? 6 : 0) + (b.hr || 0);
         if ((t.x - b.x) ** 2 + (t.y - b.y) ** 2 < hr * hr && canHit(b, t) && !b.hitIds.includes(t.id)) {
           if (b.team === 'e' && t.team === 'p' && sk('reflect') && Math.random() < F.reflect(sk('reflect'))) {
             // Mirror Plating: the shell flips sides and flies back out
@@ -1633,7 +1696,9 @@ function updateBullets(dt) {
             break;
           }
           hurtTank(t, b.owner, b.team === 'p' ? F.bossDmg(sk('heavy')) + (b.bounced ? sk('bankshot') : 0) + (b.big ? 2 : 0) : 1);
+          if (b.wpn === 'grenade' && t.team === 'e') { shellEnd(b); killBullet(b, false); break; }
           if (b.team === 'p' && t.team === 'e' && b.pierce > 0) { b.pierce--; b.hitIds.push(t.id); continue; }
+          if (b.wpn === 'cluster') shellEnd(b);
           if (b.team === 'p' && sk('blast')) shellBlast(b.x, b.y, b.owner);
           killBullet(b, false); break;
         }
@@ -2431,7 +2496,7 @@ function render() {
       c.beginPath(); c.arc(mx, my, 50, 0, TAU); c.stroke(); c.setLineDash([]); c.beginPath(); c.arc(mx, my, 4, 0, TAU); c.stroke(); c.restore();
       continue;
     }
-    const pts = aimPath(t, Math.max(0, F.bounces(sk('bounce')) + (ch.bnc || 0)) + (sk('mythic') ? 6 : 0), ch.pellets ? 150 : ch.flame ? 100 : F.sights(sk('sights')) * (ch.sight || 1));
+    const pts = ch.lance ? aimPath(t, 0, 1400) : ch.tesla ? aimPath(t, 0, 340) : aimPath(t, Math.max(0, F.bounces(sk('bounce')) + (ch.bnc || 0)) + (sk('mythic') ? 6 : 0), ch.pellets ? 150 : ch.flame ? 100 : F.sights(sk('sights')) * (ch.sight || 1));
     c.save(); c.strokeStyle = slotColor(t.slot); c.globalAlpha = .55; c.lineWidth = 2; c.setLineDash([2, 7]); c.lineCap = 'round';
     if (t.charge > 0) { c.strokeStyle = '#ff2d2d'; c.globalAlpha = .9; c.lineWidth = 2.5; c.setLineDash([]); } // Sniper charge-up laser
     c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const p of pts.slice(1)) c.lineTo(p[0], p[1]); c.stroke(); c.restore();
@@ -2463,6 +2528,27 @@ function render() {
   }
   for (const b of G.bullets) {
     c.fillStyle = 'rgba(40,25,10,.25)';
+    if (b.kind === 'saw' || b.kind === 'boomer') {
+      c.save(); c.translate(b.x, b.y); c.rotate(G.time * 18);
+      c.fillStyle = 'rgba(40,25,10,.25)'; c.beginPath(); c.arc(3, 4, 8, 0, TAU); c.fill();
+      if (b.kind === 'saw') {
+        c.fillStyle = '#c9d4d8'; c.beginPath();
+        for (let q = 0; q < 16; q++) { const a = q / 16 * TAU, r = q % 2 ? 6.5 : 9; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+        c.closePath(); c.fill(); c.fillStyle = '#3a342c'; c.beginPath(); c.arc(0, 0, 2.5, 0, TAU); c.fill();
+      } else {
+        c.strokeStyle = slotColor(b.slot); c.lineWidth = 3.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(-8, -6); c.quadraticCurveTo(0, 0, -8, 6); c.moveTo(-8, -6); c.lineTo(6, 0); c.lineTo(-8, 6); c.stroke();
+      }
+      c.restore(); continue;
+    }
+    if (b.kind === 'grenade') {
+      c.beginPath(); c.arc(b.x + 2, b.y + 3, 4.5, 0, TAU); c.fill();
+      c.fillStyle = '#3f5a2a'; c.beginPath(); c.arc(b.x, b.y, 4.5, 0, TAU); c.fill();
+      c.fillStyle = Math.sin(G.time * 25) > 0 ? '#ff3b2f' : '#7a1d16'; c.beginPath(); c.arc(b.x, b.y, 1.6, 0, TAU); c.fill(); continue;
+    }
+    if (b.kind === 'plasma') {
+      c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = .55; c.fillStyle = '#b07cff'; c.beginPath(); c.arc(b.x, b.y, 10 + Math.sin(G.time * 20) * 1.5, 0, TAU); c.fill();
+      c.globalAlpha = .9; c.fillStyle = '#f0e2ff'; c.beginPath(); c.arc(b.x, b.y, 4.5, 0, TAU); c.fill(); c.restore(); continue;
+    }
     if (b.kind === 'flame') {
       c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = .75; c.fillStyle = '#ff8a2e'; c.beginPath(); c.arc(b.x, b.y, 5, 0, TAU); c.fill();
       c.fillStyle = '#ffe08a'; c.beginPath(); c.arc(b.x, b.y, 2.5, 0, TAU); c.fill(); c.restore(); continue;
@@ -2481,6 +2567,13 @@ function render() {
     else if (p.kind === 'dot') { c.globalAlpha = k * .9; c.fillStyle = p.color; c.beginPath(); c.arc(p.x, p.y, Math.max(.4, p.size * k), 0, TAU); c.fill(); }
     else if (p.kind === 'bubble') { c.globalAlpha = k * .8; c.strokeStyle = p.color; c.lineWidth = 1.5; c.beginPath(); c.arc(p.x, p.y, p.size, 0, TAU); c.stroke(); }
     else if (p.kind === 'debris') { c.save(); c.globalAlpha = Math.min(1, k * 2); c.translate(p.x, p.y); c.rotate(p.rot); c.fillStyle = p.color; c.fillRect(-p.size / 2, -p.size / 2, p.size, p.size); c.restore(); }
+    else if (p.kind === 'line') {
+      c.save(); c.globalAlpha = k; c.lineCap = 'round'; c.lineJoin = 'round';
+      for (const [w, col] of [[p.size * k + 2, p.color], [Math.max(1, p.size * k * .35), '#ffffff']]) {
+        c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(p.pts[0][0], p.pts[0][1]); for (const q of p.pts.slice(1)) c.lineTo(q[0], q[1]); c.stroke();
+      }
+      c.restore();
+    }
     else if (p.kind === 'text') { c.globalAlpha = Math.min(1, k * 2); c.font = '400 15px Bungee, Impact, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 3; c.strokeStyle = 'rgba(23,20,15,.85)'; c.strokeText(p.text, p.x, p.y); c.fillStyle = p.color; c.fillText(p.text, p.x, p.y); }
     else if (p.kind === 'ring') { c.globalAlpha = k * .8; c.strokeStyle = p.color; c.lineWidth = 3 * k + 1; c.beginPath(); c.arc(p.x, p.y, p.size, 0, TAU); c.stroke(); }
   }
