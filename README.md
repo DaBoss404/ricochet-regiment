@@ -4,7 +4,9 @@ A top-down co-op tank game for 1–4 players in the browser. Shells bounce off w
 
 Runs are endless. After every level, three slot machines spin to decide the next wave (each lands on an enemy type, then on how many of it), and the squad picks one of three skills. Every 10th level is a boss fight. Enemy shells and mines never hurt other enemies.
 
-There are 47 skills across five rarities: Common, Rare, Epic, Legendary and Mythic. Most skills can be upgraded many times (up to 10 ranks), and each card shows exactly what the next rank changes. Rarer cards get a little more likely the deeper the run goes, and the Lucky Charm skill boosts them further.
+Destroy 20 of an enemy type (Hornet, Missile, Sniper, Shotgun, Mortar, Spiker or Bulwark) to unlock it as a playable tank. Unlock progress is saved in your browser and carries across runs. Pick your tank on the title screen with LB/RB, Z/C or the arrow buttons.
+
+There are 48 skills across five rarities: Common, Rare, Epic, Legendary and Mythic. Most skills can be upgraded many times (up to 10 ranks), and each card shows exactly what the next rank changes. Rarer cards get a little more likely the deeper the run goes, and the Lucky Charm skill boosts them further.
 
 The game is a single static page (`index.html`), so any static host works (this repo deploys as-is on Vercel).
 
