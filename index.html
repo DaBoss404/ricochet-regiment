@@ -131,6 +131,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .sk .stat b{color:var(--ink);font-size:1.15em;font-variant-numeric:tabular-nums}
 .sk .stat b.to{color:var(--rc)}
 .sk .stat .arrow{color:var(--muted);padding:0 .2em}
+.mini.danger{border-color:#7a2a24;color:#ffb4a8}
+.mini.danger:hover{border-color:var(--p2)}
 .sk .rar{font-size:.72em;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--rc)}
 .r-rare{--rc:#4f8dff}.r-epic{--rc:#b07cff}.r-legendary{--rc:#ff9a3d}.r-mythic{--rc:#ff4fd8}
 .sk.r-rare,.sk.r-epic,.sk.r-legendary{background:color-mix(in srgb,var(--rc) 10%,transparent)}
@@ -219,10 +221,14 @@ const ETYPES = {
   z: { name: 'Scorcher', color: '#7f1d1d', speed: 72, bs: 230, bounces: 0, max: 14, cd: .07, turn: 2.6, aimEvery: .3, pref: 120, miss: 0, err: .18, flame: true, range: 190, life: .45 },
   v: { name: 'Splitter', color: '#2c8c99', speed: 52, bs: 195, bounces: 1, max: 2, cd: 1.9, turn: 2.4, aimEvery: .4, smart: true, fis: true, pref: 300, miss: .35, err: .14 },
   j: { name: 'Blinker',  color: '#2d3a8c', speed: 40, bs: 220, bounces: 1, max: 1, cd: 1.6, turn: 4, aimEvery: .3, smart: true, blink: 3.6, pref: 260, miss: .3, err: .12 },
+  n: { name: 'Heavy',    color: '#3b4a5c', r: 18, hp: 3, speed: 30, bs: 180, bounces: 1, max: 2, cd: 2.2, turn: 1.6, aimEvery: .4, smart: true, pref: 260, miss: .35, err: .14 },
+  l: { name: 'Laser',    color: '#dc2626', speed: 40, bs: 0, bounces: 0, max: 1, cd: 3.4, turn: 1.8, aimEvery: .35, laser: true, charge: .7, pref: 340, miss: 0, err: .04 },
+  i: { name: 'Bouncer',  color: '#65a30d', speed: 55, bs: 210, bounces: 4, max: 2, cd: 1.8, turn: 2.4, aimEvery: .35, smart: true, accel: .12, pref: 300, miss: .35, err: .12 },
+  u: { name: 'Summoner', color: '#b45309', speed: 35, bs: 170, bounces: 1, max: 1, cd: 2.8, turn: 1.8, aimEvery: .5, summon: 6, pref: 360, miss: .45, err: .2 },
   s: { name: 'Sniper',   color: '#5c6b2f', speed: 30, bs: 650, bounces: 1, max: 1, cd: 3.4, turn: 1.6, aimEvery: .45, kind: 'snipe', smart: true, charge: .6, pref: 420, miss: .15, err: .05 },
 };
 // When each enemy type can start showing up on the slot machines
-const UNLOCK = { a: 1, b: 1, c: 3, h: 4, d: 5, k: 5, e: 6, m: 7, z: 7, f: 8, w: 8, s: 9, v: 9, q: 10, x: 11, g: 12, j: 13 };
+const UNLOCK = { a: 1, b: 1, c: 3, h: 4, d: 5, k: 5, e: 6, n: 6, m: 7, z: 7, f: 8, w: 8, i: 8, s: 9, v: 9, q: 10, x: 11, l: 11, g: 12, j: 13, u: 14 };
 const unlockedTypes = lvl => Object.keys(UNLOCK).filter(k => lvl >= UNLOCK[k]);
 const BOSSES = [
   { name: 'Juggernaut', color: '#6b2a2a', hp: 26, speed: 34, turn: 1.6, gap: 2.1, pref: 260, attacks: ['fan', 'mines', 'fan', 'ring'] },
@@ -258,44 +264,44 @@ const F = {
 const off = (n, f) => n ? f(n) : 'Off';
 const SKILLS = [
   // common
-  { id: 'reload',   rar: 'common', name: 'Quick Loader',  desc: 'Fire faster.', max: 10, stat: ['Fire rate', n => pct(F.fireRate(n))] },
-  { id: 'speed',    rar: 'common', name: 'Hot Shells',    desc: 'Your shells fly faster.', max: 10, stat: ['Shell speed', n => pct(F.shellSpeed(n))] },
+  { id: 'reload', gun: true,   rar: 'common', name: 'Quick Loader',  desc: 'Fire faster.', max: 10, stat: ['Fire rate', n => pct(F.fireRate(n))] },
+  { id: 'speed', gun: true,    rar: 'common', name: 'Hot Shells',    desc: 'Your shells fly faster.', max: 10, stat: ['Shell speed', n => pct(F.shellSpeed(n))] },
   { id: 'treads',   rar: 'common', name: 'Racing Treads', desc: 'Your tanks drive faster.', max: 10, stat: ['Drive speed', n => pct(F.drive(n))] },
   { id: 'mines',    rar: 'common', name: 'Mine Layer',    desc: 'Lay more mines at once.', max: 6, stat: ['Mines at once', n => F.mines(n)] },
   { id: 'blastr',   rar: 'common', name: 'Big Bang',      desc: 'Your mines blast a wider area.', max: 8, stat: ['Mine blast size', n => pct(F.mineSize(n))] },
   { id: 'slow',     rar: 'common', name: 'Jammer',        desc: 'Enemy shells fly slower.', max: 8, stat: ['Enemy shell speed', n => pct(F.jam(n))] },
-  { id: 'magazine', rar: 'common', name: 'Deep Magazine', desc: 'Carry more shells at once.', max: 6, stat: ['Shells at once', n => F.mag(n)] },
+  { id: 'magazine', gun: true, rar: 'common', name: 'Deep Magazine', desc: 'Carry more shells at once.', max: 6, stat: ['Shells at once', n => F.mag(n)] },
   { id: 'fuse',     rar: 'common', name: 'Hair Trigger',  desc: 'Your mines arm instantly and go off from farther away.', max: 4, stat: ['Mine trigger range', n => F.trigger(n) + 'px'] },
   { id: 'headstart',rar: 'common', name: 'Ambush',        desc: 'Enemies wait longer before their first shot each level.', max: 4, stat: ['Enemy first-shot delay', n => '+' + n + 's'] },
-  { id: 'sights',   rar: 'common', name: 'Long Sights',   desc: 'Your aim guide reaches farther.', max: 4, stat: ['Aim guide length', n => pct(F.sights(n) / 260)] },
+  { id: 'sights', gun: true,   rar: 'common', name: 'Long Sights',   desc: 'Your aim guide reaches farther.', max: 4, stat: ['Aim guide length', n => pct(F.sights(n) / 260)] },
   { id: 'tar',      rar: 'common', name: 'Tar Treads',    desc: 'Enemy tanks drive slower.', max: 6, stat: ['Enemy drive speed', n => pct(F.tar(n))] },
   { id: 'static',   rar: 'common', name: 'Static Field',  desc: 'Enemies take longer to reload.', max: 6, stat: ['Enemy reload time', n => pct(F.stat(n))] },
   { id: 'breaker',  rar: 'common', name: 'Shield Breaker', desc: 'Bulwark shields stay down longer when they drop.', max: 6, stat: ['Bulwark shield down', n => secs(F.breaker(n))] },
   // rare
-  { id: 'bounce',   rar: 'rare', name: 'Rubber Rounds',  desc: 'Your shells bounce more times.', max: 5, stat: ['Bounces', n => F.bounces(n)] },
+  { id: 'bounce', gun: true,   rar: 'rare', name: 'Rubber Rounds',  desc: 'Your shells bounce more times.', max: 5, stat: ['Bounces', n => F.bounces(n)] },
   { id: 'armor',    rar: 'rare', name: 'Plating',        desc: 'Every tank shrugs off hits each level.', max: 3, stat: ['Hits blocked per level', n => n] },
   { id: 'heavy',    rar: 'rare', name: 'Heavy Shells',   desc: 'Your shells hit bosses harder.', max: 8, stat: ['Boss damage per shell', n => F.bossDmg(n)] },
   { id: 'life',     rar: 'rare', name: 'Spare Parts',    desc: 'The squad gains an extra life.', max: 99, stat: ['Lives', () => G.lives, () => G.lives + 1] },
-  { id: 'pierce',   rar: 'rare', name: 'Piercing Rounds',desc: 'Your shells punch through enemies and keep going.', max: 3, stat: ['Enemies pierced', n => n] },
+  { id: 'pierce', gun: true,   rar: 'rare', name: 'Piercing Rounds',desc: 'Your shells punch through enemies and keep going.', max: 3, stat: ['Enemies pierced', n => n] },
   { id: 'shield',   rar: 'rare', name: 'Bubble Shield',  desc: 'Start every level invincible for a few seconds.', max: 4, stat: ['Start-of-level shield', n => secs(F.shield(n))] },
   { id: 'scav',     rar: 'rare', name: 'Scavenger',      desc: 'Earn a life every so many kills.', max: 5, stat: ['Kills per extra life', n => n ? F.scav(n) : 'Never'] },
-  { id: 'big',      rar: 'rare', name: 'Big Shells',     desc: 'Your shells hit tanks from farther away.', max: 5, stat: ['Extra hit range', n => '+' + F.big(n) + 'px'] },
+  { id: 'big', gun: true,      rar: 'rare', name: 'Big Shells',     desc: 'Your shells hit tanks from farther away.', max: 5, stat: ['Extra hit range', n => '+' + F.big(n) + 'px'] },
   { id: 'lucky',    rar: 'rare', name: 'Lucky Charm',    desc: 'Rarer skills show up more often.', max: 5, stat: ['Rare skill boost', n => '+' + 40 * n + '%'] },
   { id: 'momentum', rar: 'rare', name: 'Momentum',       desc: 'Each kill shields the tank that made it.', max: 4, stat: ['Shield per kill', n => secs(F.momentum(n))] },
   { id: 'trophy',   rar: 'rare', name: 'Trophy Hunter',  desc: 'Beating a boss gives more lives.', max: 3, stat: ['Lives per boss', n => 1 + n] },
   { id: 'rigged',   rar: 'rare', name: 'Rigged Reels',   desc: 'Some slot machines can only roll 1 enemy.', max: 2, stat: ['Reels stuck on ×1', n => n + ' of 3'] },
-  { id: 'bankshot', rar: 'rare', name: 'Bank Shot',      desc: 'Shells that have bounced hit bosses harder.', max: 3, stat: ['Extra boss damage after a bounce', n => '+' + n] },
-  { id: 'parry',    rar: 'rare', name: 'Parry',          desc: 'Your shells destroy enemy shells and keep flying.', max: 1, stat: ['Shells survive clashes', n => n ? 'Yes' : 'No'] },
+  { id: 'bankshot', gun: true, rar: 'rare', name: 'Bank Shot',      desc: 'Shells that have bounced hit bosses harder.', max: 3, stat: ['Extra boss damage after a bounce', n => '+' + n] },
+  { id: 'parry', gun: true,    rar: 'rare', name: 'Parry',          desc: 'Your shells destroy enemy shells and keep flying.', max: 1, stat: ['Shells survive clashes', n => n ? 'Yes' : 'No'] },
   { id: 'recharge', rar: 'rare', name: 'Auto Repair',    desc: 'Lost plating grows back during a level.', max: 4, stat: ['Plating returns every', n => n ? secs(F.recharge(n)) : 'Never'] },
   // epic
-  { id: 'twin',     rar: 'epic', name: 'Twin Barrels',   desc: 'Fire more shells side by side, but reload a little slower.', max: 2, stat: ['Side-by-side shells', n => F.sides(n)] },
-  { id: 'triple',   rar: 'epic', name: 'Spread Shot',    desc: 'Fire a fan of shells, but reload a little slower.', max: 2, stat: ['Shells per fan', n => F.fan(n)] },
-  { id: 'blast',    rar: 'epic', name: 'Explosive Shells', desc: 'Your shells explode when they stop, hurting enemies and crates.', max: 4, stat: ['Blast size', n => off(n, x => F.blast(x) + 'px')] },
+  { id: 'twin', gun: true,     rar: 'epic', name: 'Twin Barrels',   desc: 'Fire more shells side by side, but reload a little slower.', max: 2, stat: ['Side-by-side shells', n => F.sides(n)] },
+  { id: 'triple', gun: true,   rar: 'epic', name: 'Spread Shot',    desc: 'Fire a fan of shells, but reload a little slower.', max: 2, stat: ['Shells per fan', n => F.fan(n)] },
+  { id: 'blast', gun: true,    rar: 'epic', name: 'Explosive Shells', desc: 'Your shells explode when they stop, hurting enemies and crates.', max: 4, stat: ['Blast size', n => off(n, x => F.blast(x) + 'px')] },
   { id: 'adren',    rar: 'epic', name: 'Adrenaline',     desc: 'When a teammate goes down, everyone fires and drives faster for a moment.', max: 4, stat: ['Adrenaline time', n => off(n, x => secs(F.adren(x)))] },
-  { id: 'cluster',  rar: 'epic', name: 'Cluster Mines',  desc: 'Your mines burst into a ring of shells.', max: 4, stat: ['Shells per mine', n => n ? F.cluster(n) : 0] },
+  { id: 'cluster', gun: true,  rar: 'epic', name: 'Cluster Mines',  desc: 'Your mines burst into a ring of shells.', max: 4, stat: ['Shells per mine', n => n ? F.cluster(n) : 0] },
   { id: 'ram',      rar: 'epic', name: 'Ram Plating',    desc: 'Driving into a regular enemy destroys it.', max: 3, stat: ['Ram cooldown', n => off(n, x => secs(F.ram(x)))] },
-  { id: 'bboost',   rar: 'epic', name: 'Slingshot',      desc: 'Your shells speed up every time they bounce.', max: 4, stat: ['Speed gained per bounce', n => '+' + pct(F.bounceBoost(n))] },
-  { id: 'sentry',   rar: 'epic', name: 'Sentry Mines',   desc: 'Your mines shoot at enemies that come near.', max: 3, stat: ['Each mine fires every', n => off(n, x => secs(F.sentry(x)))] },
+  { id: 'bboost', gun: true,   rar: 'epic', name: 'Slingshot',      desc: 'Your shells speed up every time they bounce.', max: 4, stat: ['Speed gained per bounce', n => '+' + pct(F.bounceBoost(n))] },
+  { id: 'sentry', gun: true,   rar: 'epic', name: 'Sentry Mines',   desc: 'Your mines shoot at enemies that come near.', max: 3, stat: ['Each mine fires every', n => off(n, x => secs(F.sentry(x)))] },
   // Spiker-only skills: these only show up when someone in the squad drives a Spiker
   { id: 'dashlen',  rar: 'common', req: 'k', name: 'Long Charge',    desc: 'Spiker dashes last longer.', max: 4, stat: ['Dash length', n => secs(F.dashLen(n))] },
   { id: 'dashcd',   rar: 'common', req: 'k', name: 'Quick Recovery', desc: 'Spiker dashes recharge faster.', max: 5, stat: ['Dash cooldown', n => secs(F.dashCd(n))] },
@@ -304,21 +310,21 @@ const SKILLS = [
   { id: 'spikeshot',rar: 'epic',   req: 'k', name: 'Spike Burst',    desc: 'A dash ends by firing a ring of spikes.', max: 3, stat: ['Spikes per dash', n => n ? F.spikeShot(n) : 0] },
   { id: 'ironhide', rar: 'epic',   req: 'k', name: 'Iron Hide',      desc: 'Spikers can\'t be hurt while dashing.', max: 1, stat: ['Safe while dashing', n => n ? 'Yes' : 'No'] },
   // legendary
-  { id: 'overcharge', rar: 'legendary', name: 'Overcharge',  desc: 'Every few shots, fire a huge shell that pierces 3 enemies.', max: 3, stat: ['Huge shell every', n => off(n, x => F.overcharge(x) + ' shots')] },
+  { id: 'overcharge', gun: true, rar: 'legendary', name: 'Overcharge',  desc: 'Every few shots, fire a huge shell that pierces 3 enemies.', max: 3, stat: ['Huge shell every', n => off(n, x => F.overcharge(x) + ' shots')] },
   { id: 'phoenix',  rar: 'legendary', name: 'Blast Rebirth',  desc: 'Each tank survives killing blows each level and explodes back to life.', max: 2, stat: ['Rebirths per level', n => n] },
   { id: 'reflect',  rar: 'legendary', name: 'Mirror Plating', desc: 'Enemy shells can bounce off you and fly back at them.', max: 4, stat: ['Reflect chance', n => pct(F.reflect(n))] },
-  { id: 'storm',    rar: 'legendary', name: 'Shell Storm',    desc: 'Each tank fires a ring of 6 shells on its own.', max: 4, stat: ['Shell ring every', n => off(n, x => secs(F.storm(x)))] },
-  { id: 'homing',   rar: 'legendary', name: 'Seeker Shells', desc: 'Your shells curve toward nearby enemies.', max: 4, stat: ['Homing strength', n => off(n, x => x)] },
+  { id: 'storm', gun: true,    rar: 'legendary', name: 'Shell Storm',    desc: 'Each tank fires a ring of 6 shells on its own.', max: 4, stat: ['Shell ring every', n => off(n, x => secs(F.storm(x)))] },
+  { id: 'homing', gun: true,   rar: 'legendary', name: 'Seeker Shells', desc: 'Your shells curve toward nearby enemies.', max: 4, stat: ['Homing strength', n => off(n, x => x)] },
   { id: 'chain',    rar: 'legendary', name: 'Chain Reaction', desc: 'Destroyed enemies explode and damage the enemies around them.', max: 4, stat: ['Chain blast size', n => off(n, x => F.chain(x) + 'px')] },
   { id: 'orbit',    rar: 'legendary', name: 'Guardian Orbs',  desc: 'Orbs circle each tank, destroying enemy shells and hurting enemies they touch.', max: 3, stat: ['Orbs per tank', n => n] },
   { id: 'airstrike',rar: 'legendary', name: 'Airstrike',      desc: 'Bombs drop on random enemies during each level.', max: 4, stat: ['Bomb every', n => off(n, x => secs(F.airstrike(x)))] },
   // mythic (one rank each)
-  { id: 'mythic',   rar: 'mythic', name: 'Endless Ricochet', desc: 'Shells bounce 6 more times, pass through every enemy, and you fire 50% faster.', max: 1 },
+  { id: 'mythic', gun: true,   rar: 'mythic', name: 'Endless Ricochet', desc: 'Shells bounce 6 more times, pass through every enemy, and you fire 50% faster.', max: 1 },
   { id: 'warp',     rar: 'mythic', name: 'Time Warp',        desc: 'Every enemy, and every enemy shell, moves at 65% speed.', max: 1 },
-  { id: 'fission',  rar: 'mythic', name: 'Fission Shells',   desc: 'The first time each of your shells bounces, it splits in two.', max: 1 },
+  { id: 'fission', gun: true,  rar: 'mythic', name: 'Fission Shells',   desc: 'The first time each of your shells bounces, it splits in two.', max: 1 },
   { id: 'singularity', rar: 'mythic', name: 'Singularity', desc: 'Every 10 seconds a black hole opens on an enemy and swallows everything around it.', max: 1 },
-  { id: 'echo',     rar: 'mythic', name: 'Echo Shots',       desc: 'Every shot fires again a moment later, for free.', max: 1 },
-  { id: 'carnage',  rar: 'mythic', name: 'Carnage',          desc: 'Every enemy you destroy bursts into 5 of your shells.', max: 1 },
+  { id: 'echo', gun: true,     rar: 'mythic', name: 'Echo Shots',       desc: 'Every shot fires again a moment later, for free.', max: 1 },
+  { id: 'carnage', gun: true,  rar: 'mythic', name: 'Carnage',          desc: 'Every enemy you destroy bursts into 5 of your shells.', max: 1 },
 ];
 const SKILL = Object.fromEntries(SKILLS.map(s => [s.id, s]));
 const ARENAS = [
@@ -449,9 +455,11 @@ const CHASSIS = {
   k:   { name: 'Spiker',   desc: 'No gun. Ram enemies to destroy them. Fire to dash. Has its own skills.', ram: true },
   w:   { name: 'Bulwark',  desc: 'A front shield blocks enemy shells. Drives and reloads a bit slower.', shield: true, drive: .85, cd: 1.3 },
   g:   { name: 'Ghost',    desc: 'Enemies lose track of you unless you fired in the last 2 seconds or get close.', stealth: true },
-  j:   { name: 'Blinker',  desc: 'No mines. The mine button teleports you a short way instead.', blink: true },
+  j:   { name: 'Blinker',  desc: 'No mines. Hold the mine button and aim with the right stick or mouse, then let go to teleport there.', blink: true },
+  n:   { name: 'Heavy',    desc: 'Shrugs off the first 2 hits every level and fires heavy shells, but drives slower.', armor: 2, drive: .8, hr: 4, spd: .9 },
+  l:   { name: 'Laser',    desc: 'A short charge-up, then an instant beam that bounces once.', laser: true, charge: .3, lbnc: 1, cd: 4 },
+  i:   { name: 'Bouncer',  desc: 'Shells bounce 3 extra times and speed up on every bounce.', bnc: 3, accel: .12 },
   // secret: unlocked only by unlocking every other tank
-  mini: { name: 'Minigun', desc: 'Secret tank. Hold fire to spray shells for up to 5 seconds, then it overheats for 5 seconds.', minigun: true },
   // Elite tanks: the Standard tank with upgrades only, no downsides. Unlocked by milestones saved on this computer.
   vet:  { name: 'Prism',     desc: 'Elite. An instant laser that bounces off walls 3 times and hits everything on its path.', elite: true, beam: 3, cd: 5.5, unlock: { level: 5 } },
   reb:  { name: 'Vortex',    desc: 'Elite. An orb that collapses into a mini black hole, pulling in and crushing nearby enemies.', elite: true, wpn: 'vortex', kind: 'vortex', spd: .8, bnc: -1, life: .9, ammo: 2, cd: 2.2, unlock: { level: 8 } },
@@ -470,8 +478,8 @@ const CHASSIS = {
   dsc:  { name: 'Razor Disc',desc: 'Elite. A disc that cuts through everything, speeds up on every bounce, and fires a shot at the nearest enemy each time.', elite: true, wpn: 'disc', kind: 'saw', spd: .9, bnc: 5, pierce: 99, ammo: 2, cd: 1.8, hr: 5, unlock: { level: 40 } },
   cmd:  { name: 'Plasma',    desc: 'Elite. A big plasma orb that passes through enemies and explodes where it stops.', elite: true, wpn: 'plasma', kind: 'plasma', spd: .75, bnc: -1, pierce: 99, ammo: 2, life: 2.2, cd: 2.4, hr: 6, unlock: { level: 25 } },
 };
-const CHASSIS_ORDER = ['std', 'vet', 'reb', 'iron', 'twn', 'hunt', 'spr', 'prc', 'cmd', 'thn', 'ion', 'shu', 'car', 'nap', 'rst', 'sfl', 'dsc', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j', 'mini'];
-const KILL_TANKS = CHASSIS_ORDER.filter(k => k !== 'std' && k !== 'mini' && !CHASSIS[k].unlock);
+const CHASSIS_ORDER = ['std', 'vet', 'reb', 'iron', 'twn', 'hunt', 'spr', 'prc', 'cmd', 'thn', 'ion', 'shu', 'car', 'nap', 'rst', 'sfl', 'dsc', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j', 'n', 'l', 'i'];
+const KILL_TANKS = CHASSIS_ORDER.filter(k => k !== 'std' && !CHASSIS[k].unlock);
 const ELITE_TANKS = CHASSIS_ORDER.filter(k => CHASSIS[k].unlock);
 let BEST = Object.assign({ level: 0, kills: 0 }, store.get('rr-best-v1', {}) || {});
 const eliteOk = k => { const u = CHASSIS[k].unlock; return u.level ? BEST.level >= u.level : BEST.kills >= u.kills; };
@@ -483,11 +491,92 @@ function saveBest(before) {
   fresh.forEach((k, i) => { G.parts.push({ kind: 'text', x: W / 2, y: H / 2 - 90 + i * 22, vx: 0, vy: -14, life: 3.5, max: 3.5, size: 0, grow: 0, color: '#f2b90f', text: CHASSIS[k].name.toUpperCase() + ' UNLOCKED', drag: 0 }); });
   if (fresh.length) playSfx('legend');
 }
-const allTanksUnlocked = () => KILL_TANKS.every(k => (KILLS[k] || 0) >= KILL_NEED);
 let KILLS = store.get('rr-kills-v1', {}) || {};
-const unlockedChassis = () => CHASSIS_ORDER.filter(k => k === 'std' || (k === 'mini' ? allTanksUnlocked() : CHASSIS[k].unlock ? eliteOk(k) : (KILLS[k] || 0) >= KILL_NEED));
+const unlockedChassis = () => CHASSIS_ORDER.filter(k => k === 'std' || (CHASSIS[k].unlock ? eliteOk(k) : (KILLS[k] || 0) >= KILL_NEED));
 const slotChassis = i => (G.slots[i] && CHASSIS[G.slots[i].chassis]) ? G.slots[i].chassis : 'std';
-const chassisOf = t => CHASSIS[slotChassis(t.slot)];
+// A tank's stats after its own tank skills are applied (cached until the skills change)
+const chCache = {};
+function effChassis(key) {
+  const hit = chCache[key]; if (hit && hit.sig === G.skSig) return hit.ch;
+  const ch = Object.assign({}, CHASSIS[key]);
+  for (const s of TANK_SKILLS) if (s.req === key && sk(s.id)) Object.assign(ch, s.mod(ch, sk(s.id)));
+  chCache[key] = { sig: G.skSig, ch }; return ch;
+}
+const chassisOf = t => effChassis(slotChassis(t.slot));
+// Two skills for every tank, offered only while you're driving it
+const mul = (v, f, n) => (v || 1) * Math.pow(f, n);
+const rateSk = (req, id, rar, name, desc, max, f = .88) => ({ id, req, rar, name, desc, max, stat: ['Fire rate', n => pct(1 / Math.pow(f, n))], mod: (c, n) => ({ cd: mul(c.cd, f, n) }) });
+const addSk = (req, id, rar, name, desc, max, field, base, step, label, fmt = v => v) => ({ id, req, rar, name, desc, max, stat: [label, n => fmt(base + step * n)], mod: (c, n) => ({ [field]: (c[field] ?? base) + step * n }) });
+const pctSk = (req, id, rar, name, desc, max, field, step, label) => ({ id, req, rar, name, desc, max, stat: [label, n => pct(1 + step * n)], mod: (c, n) => ({ [field]: (c[field] || 1) * (1 + step * n) }) });
+const TANK_SKILLS = [
+  rateSk('std', 'std_rate', 'common', 'Drill Sergeant', 'Your Standard tank fires faster.', 4, .9),
+  addSk('std', 'std_bnc', 'rare', 'Ricochet Training', 'Your Standard tank\'s shells bounce more.', 2, 'bnc', 0, 1, 'Extra bounces', v => '+' + v),
+  pctSk('c', 'c_spd', 'common', 'Afterburner', 'Hornet rockets fly faster.', 4, 'spd', .12, 'Rocket speed'),
+  rateSk('c', 'c_rate', 'rare', 'Rocket Pods', 'The Hornet fires faster.', 4),
+  addSk('m', 'm_bnc', 'common', 'Long Range Missiles', 'Missiles bounce more.', 3, 'bnc', 2, 1, 'Extra bounces', v => '+' + v),
+  addSk('m', 'm_ammo', 'rare', 'Missile Rack', 'Carry more missiles at once.', 3, 'ammoAdd', 0, 1, 'Extra missiles', v => '+' + v),
+  { id: 's_charge', req: 's', rar: 'common', name: 'Quick Scope', desc: 'The Sniper charges faster.', max: 3, stat: ['Charge time', n => secs(.35 * Math.pow(.75, n))], mod: (c, n) => ({ charge: c.charge * Math.pow(.75, n) }) },
+  addSk('s', 's_pierce', 'rare', 'Hollow Point', 'Sniper shells pierce more enemies.', 3, 'pierce', 1, 1, 'Enemies pierced'),
+  { id: 'h_pel', req: 'h', rar: 'common', name: 'Wide Choke', desc: 'The Shotgun fires more pellets.', max: 4, stat: ['Pellets', n => 5 + n], mod: (c, n) => ({ pellets: c.pellets + n, spread: c.spread + .08 * n }) },
+  pctSk('h', 'h_range', 'rare', 'Long Barrel', 'Shotgun pellets fly farther.', 3, 'life', .25, 'Pellet range'),
+  addSk('f', 'f_burst', 'common', 'Extended Burst', 'The Brute fires longer bursts.', 3, 'burst', 3, 1, 'Shells per burst'),
+  rateSk('f', 'f_rate', 'rare', 'Quick Reload', 'The Brute reloads faster.', 3),
+  addSk('v', 'v_bnc', 'common', 'Bouncy Fragments', 'Splitter shells bounce more.', 2, 'bnc', 0, 1, 'Extra bounces', v => '+' + v),
+  { id: 'v_tri', req: 'v', rar: 'epic', name: 'Triple Split', desc: 'Splitter shells split into three instead of two.', max: 1, stat: ['Pieces per split', n => 2 + n], mod: () => ({ fis: 3 }) },
+  { id: 'x_more', req: 'x', rar: 'common', name: 'Bigger Swarm', desc: 'The Hive fires more seekers.', max: 3, stat: ['Seekers per shot', n => 3 + n], mod: (c, n) => ({ swarm: c.swarm + n, spread: c.spread + .1 * n }) },
+  addSk('x', 'x_home', 'rare', 'Sharper Senses', 'Hive seekers turn harder.', 3, 'home', 3, 1.5, 'Homing strength'),
+  pctSk('z', 'z_fuel', 'common', 'Fuel Tank', 'Scorcher flames reach farther.', 3, 'flameLife', .25, 'Flame range'),
+  addSk('z', 'z_wide', 'rare', 'Wide Nozzle', 'The Scorcher sprays a wider cone.', 3, 'flameSpread', .15, .06, 'Spray width', v => Math.round(v / .15 * 100) + '%'),
+  pctSk('q', 'q_big', 'common', 'Big Payload', 'Mortar shells blast a bigger area.', 4, 'mr', .15, 'Blast size'),
+  rateSk('q', 'q_rate', 'rare', 'Rapid Loader', 'The Mortar fires faster.', 3, .85),
+  addSk('w', 'w_arc', 'common', 'Wide Shield', 'The Bulwark shield covers more of the tank.', 3, 'arc', 1.05, .25, 'Shield width', v => Math.round(v * 2 * 57.3) + '°'),
+  { id: 'w_counter', req: 'w', rar: 'epic', name: 'Counter Shield', desc: 'Shells that hit the Bulwark shield fly back as your own.', max: 1, stat: ['Blocked shells turn', n => n ? 'Yes' : 'No'], mod: () => ({ counter: true }) },
+  addSk('g', 'g_cover', 'common', 'Deep Cover', 'The Ghost hides again sooner after firing.', 3, 'reveal', 2, -.5, 'Visible after firing', secs),
+  addSk('g', 'g_pierce', 'rare', 'Phantom Rounds', 'Ghost shells pierce enemies.', 2, 'pierce', 0, 1, 'Enemies pierced'),
+  pctSk('j', 'j_range', 'common', 'Long Jump', 'The Blinker teleports farther.', 4, 'blinkK', .25, 'Teleport range'),
+  { id: 'j_cd', req: 'j', rar: 'rare', name: 'Quick Blink', desc: 'The Blinker teleports more often.', max: 3, stat: ['Teleport cooldown', n => secs(2.2 * Math.pow(.8, n))], mod: (c, n) => ({ blinkCd: 2.2 * Math.pow(.8, n) }) },
+  addSk('n', 'n_armor', 'rare', 'Reinforced Hull', 'The Heavy blocks more hits each level.', 2, 'armor', 2, 1, 'Hits blocked per level'),
+  pctSk('n', 'n_drive', 'common', 'Bigger Engine', 'The Heavy drives faster.', 3, 'drive', .1, 'Drive speed'),
+  addSk('l', 'l_bnc', 'common', 'Mirror Lens', 'Laser beams bounce more.', 3, 'lbnc', 1, 1, 'Beam bounces'),
+  { id: 'l_charge', req: 'l', rar: 'rare', name: 'Fast Capacitor', desc: 'The Laser charges faster.', max: 3, stat: ['Charge time', n => secs(.3 * Math.pow(.75, n))], mod: (c, n) => ({ charge: c.charge * Math.pow(.75, n) }) },
+  addSk('i', 'i_bnc', 'common', 'Super Bounce', 'Bouncer shells bounce even more.', 3, 'bnc', 3, 1, 'Extra bounces', v => '+' + v),
+  addSk('i', 'i_accel', 'rare', 'Momentum Rounds', 'Bouncer shells gain more speed per bounce.', 3, 'accel', .12, .06, 'Speed per bounce', v => '+' + pct(v)),
+  addSk('vet', 'vet_bnc', 'common', 'Extra Facets', 'Prism lasers bounce more.', 3, 'beam', 3, 1, 'Laser bounces'),
+  rateSk('vet', 'vet_rate', 'rare', 'Rapid Pulse', 'The Prism fires faster.', 3),
+  pctSk('reb', 'reb_size', 'common', 'Event Horizon', 'Vortex black holes are bigger.', 3, 'holeK', .15, 'Black hole size'),
+  addSk('reb', 'reb_ammo', 'rare', 'Twin Orbs', 'Carry more Vortex orbs at once.', 2, 'ammoAdd', 0, 1, 'Extra orbs', v => '+' + v),
+  { id: 'iron_more', req: 'iron', rar: 'common', name: 'More Missiles', desc: 'Swarm fires more missiles.', max: 3, stat: ['Missiles per shot', n => 4 + n], mod: (c, n) => ({ swarm: c.swarm + n, spread: c.spread + .1 * n }) },
+  pctSk('iron', 'iron_blast', 'rare', 'Bigger Warheads', 'Swarm missiles blast a bigger area.', 3, 'blastK', .2, 'Blast size'),
+  addSk('twn', 'twn_bnc', 'common', 'Extra Bounces', 'Bomber bombs bounce (and explode) more.', 3, 'bnc', 2, 1, 'Extra bounces', v => '+' + v),
+  pctSk('twn', 'twn_blast', 'rare', 'Megaton', 'Bomber blasts are bigger.', 3, 'blastK', .15, 'Blast size'),
+  addSk('hunt', 'hunt_chain', 'common', 'Longer Chain', 'Tesla lightning leaps to more enemies.', 3, 'chain', 3, 1, 'Enemies per bolt'),
+  pctSk('hunt', 'hunt_range', 'rare', 'Overvolt', 'Tesla lightning reaches farther.', 3, 'teslaK', .2, 'Range'),
+  rateSk('spr', 'spr_rate', 'common', 'Capacitor', 'The Lancer fires faster.', 3, .85),
+  addSk('spr', 'spr_bnc', 'rare', 'Ricochet Rail', 'Lancer beams bounce off walls.', 2, 'lbnc', 0, 1, 'Beam bounces'),
+  addSk('prc', 'prc_more', 'common', 'More Bomblets', 'Cluster rockets burst into more shells.', 3, 'cn', 5, 2, 'Shells per burst'),
+  pctSk('prc', 'prc_spd', 'rare', 'Fast Rockets', 'Cluster rockets fly faster.', 3, 'spd', .15, 'Rocket speed'),
+  pctSk('cmd', 'cmd_blast', 'common', 'Overcharged Core', 'Plasma explosions are bigger.', 3, 'blastK', .15, 'Blast size'),
+  addSk('cmd', 'cmd_ammo', 'rare', 'Extra Orb', 'Carry more plasma orbs at once.', 2, 'ammoAdd', 0, 1, 'Extra orbs', v => '+' + v),
+  pctSk('thn', 'thn_range', 'common', 'Storm Reach', 'Thunder shells zap from farther away.', 3, 'zapK', .25, 'Zap range'),
+  { id: 'thn_fast', req: 'thn', rar: 'rare', name: 'Fast Zaps', desc: 'Thunder shells zap more often.', max: 2, stat: ['Zap every', n => secs(.2 * Math.pow(.75, n))], mod: (c, n) => ({ zapT: .2 * Math.pow(.75, n) }) },
+  addSk('ion', 'ion_heat', 'common', 'Heat Sink', 'The Ion beam fires longer before overheating.', 3, 'heatMax', 3, 1, 'Beam time', secs),
+  { id: 'ion_cool', req: 'ion', rar: 'rare', name: 'Coolant', desc: 'The Ion cools down faster after overheating.', max: 2, stat: ['Overheat time', n => secs(3 * Math.pow(.75, n))], mod: (c, n) => ({ coolT: 3 * Math.pow(.75, n) }) },
+  { id: 'shu_more', req: 'shu', rar: 'common', name: 'More Stars', desc: 'The Shuriken throws more stars.', max: 3, stat: ['Stars per throw', n => 3 + n], mod: (c, n) => ({ swarm: c.swarm + n, spread: c.spread + .1 * n }) },
+  addSk('shu', 'shu_pierce', 'rare', 'Razor Edges', 'Shuriken stars pierce more enemies.', 3, 'pierce', 2, 1, 'Enemies pierced'),
+  addSk('car', 'car_drone', 'epic', 'Extra Drone', 'The Carrier gets another drone.', 2, 'drones', 2, 1, 'Drones'),
+  { id: 'car_rate', req: 'car', rar: 'common', name: 'Drone Targeting', desc: 'Carrier drones fire faster.', max: 3, stat: ['Drone fires every', n => secs(.8 * Math.pow(.8, n))], mod: (c, n) => ({ droneK: Math.pow(.8, n) }) },
+  pctSk('nap', 'nap_size', 'common', 'Bigger Fire', 'Napalm fires are bigger.', 3, 'zoneK', .15, 'Fire size'),
+  addSk('nap', 'nap_time', 'rare', 'Long Burn', 'Napalm fires burn longer.', 3, 'zoneT', 3, 1, 'Burn time', secs),
+  addSk('rst', 'rst_more', 'epic', 'More Rails', 'Railstorm fires more beams.', 2, 'beams', 3, 1, 'Beams per shot'),
+  rateSk('rst', 'rst_rate', 'common', 'Rail Capacitor', 'Railstorm fires faster.', 3),
+  addSk('sfl', 'sfl_more', 'common', 'Meteor Shower', 'Starfall calls down more blasts.', 3, 'stars', 5, 2, 'Blasts per call'),
+  rateSk('sfl', 'sfl_rate', 'rare', 'Faster Fall', 'Starfall can be called more often.', 3, .85),
+  addSk('dsc', 'dsc_ammo', 'rare', 'Extra Disc', 'Carry more Razor Discs at once.', 2, 'ammoAdd', 0, 1, 'Extra discs', v => '+' + v),
+  addSk('dsc', 'dsc_bnc', 'common', 'Sharper Rebounds', 'Razor Discs bounce more.', 3, 'bnc', 5, 1, 'Bounces'),
+];
+SKILLS.push(...TANK_SKILLS);
+TANK_SKILLS.forEach(t => { SKILL[t.id] = t; });
+
 function cycleChassis(i, d) {
   const list = unlockedChassis(), cur = list.indexOf(slotChassis(i));
   if (list.length < 2) { playSfx('tick'); return; }
@@ -604,8 +693,8 @@ cv.addEventListener('mousemove', e => {
   const r = cv.getBoundingClientRect();
   kb.mx = (e.clientX - r.left) / r.width * W; kb.my = (e.clientY - r.top) / r.height * H;
 });
-cv.addEventListener('mousedown', e => { unlockAudio(); if (e.button === 0) { kb.click = true; kb.mdown = true; } if (e.button === 2) kb.rclick = true; });
-addEventListener('mouseup', e => { if (e.button === 0) kb.mdown = false; });
+cv.addEventListener('mousedown', e => { unlockAudio(); if (e.button === 0) { kb.click = true; kb.mdown = true; } if (e.button === 2) { kb.rclick = true; kb.rdown = true; } });
+addEventListener('mouseup', e => { if (e.button === 0) kb.mdown = false; if (e.button === 2) kb.rdown = false; });
 cv.addEventListener('contextmenu', e => e.preventDefault());
 
 const pads = {}; let padError = null;
@@ -647,6 +736,7 @@ function buildInputs() {
   if (mx && my) { mx *= Math.SQRT1_2; my *= Math.SQRT1_2; }
   INP.kb = { kb: true, mx, my, mouseAim: true, aim: null, aimAbs: false,
     fire: p('Space') || kb.click, fireHeld: k('Space') === 1 || !!kb.mdown, mine: p('KeyE') || p('ShiftLeft') || p('ShiftRight') || kb.rclick,
+    mineHeld: !!(k('KeyE') || k('ShiftLeft') || k('ShiftRight') || kb.rdown), px: kb.mx, py: kb.my,
     start: p('Escape') || p('KeyP'), a: p('Enter') || p('Space'), b: p('Escape') || p('Backspace'), y: p('KeyF'),
     join: p('Space') || p('Enter'), enter: p('Enter'), leave: p('Escape'), quit: p('KeyQ'),
     dl: p('ArrowLeft'), dr: p('ArrowRight'), du: p('ArrowUp'), dd: p('ArrowDown'), voice: p('KeyV'),
@@ -662,7 +752,7 @@ function buildInputs() {
     if (!lx && !ly && (dx || dy)) { const m = Math.hypot(dx, dy); fx = dx / m; fy = dy / m; }
     const sx = (ax[0] || 0) < -.6 ? -1 : (ax[0] || 0) > .6 ? 1 : 0, was = stickMem[i] || 0; stickMem[i] = sx;
     INP['pad' + i] = { kb: false, mx: fx, my: fy, mouseAim: false, aim: rm > 0 ? Math.atan2(ry, rx) : null, aimAbs: false,
-      fire: pp(7) || pp(5) || pp(2), fireHeld: !!(s.btn[7] || s.btn[5] || s.btn[2]), mine: pp(6) || pp(4) || pp(0),
+      fire: pp(7) || pp(5) || pp(2), fireHeld: !!(s.btn[7] || s.btn[5] || s.btn[2]), mine: pp(6) || pp(4) || pp(0), mineHeld: !!(s.btn[6] || s.btn[4] || s.btn[0]), rx, ry,
       start: pp(9), a: pp(0), b: pp(1), y: pp(3), join: pp(0), enter: pp(9), leave: pp(1), quit: pp(1),
       dl: pp(14), dr: pp(15), du: pp(12), dd: pp(13), voice: pp(8),
       sl: pp(14) || (sx === -1 && was !== -1), sr: pp(15) || (sx === 1 && was !== 1), cl: pp(4), cr: pp(5) };
@@ -700,7 +790,6 @@ function applyFx(e) {
       if (isMine(e.dev) && CHASSIS[e.k] && KILL_TANKS.includes(e.k)) {
         KILLS[e.k] = (KILLS[e.k] || 0) + 1; store.set('rr-kills-v1', KILLS);
         if (KILLS[e.k] === KILL_NEED) { G.parts.push({ kind: 'text', x: e.x, y: e.y - 30, vx: 0, vy: -20, life: 2.5, max: 2.5, size: 0, grow: 0, color: '#ff9a3d', text: CHASSIS[e.k].name.toUpperCase() + ' UNLOCKED', drag: 0 }); playSfx('legend');
-          if (allTanksUnlocked()) { G.parts.push({ kind: 'text', x: e.x, y: e.y - 6, vx: 0, vy: -20, life: 4, max: 4, size: 0, grow: 0, color: '#ff4fd8', text: 'SECRET TANK UNLOCKED: MINIGUN', drag: 0 }); playSfx('mythic'); }
         }
       }
       break;
@@ -870,6 +959,7 @@ function spawnPlayer(k, at) {
 }
 function makeEnemy(type, x, y) {
   const t = makeTank(x, y, 'e'); t.type = type; t.spec = ETYPES[type]; t.r = t.spec.r || R;
+  if (t.spec.hp) t.hp = t.maxhp = t.spec.hp;
   t.cool = rnd(1.2, 2.6) + sk('headstart');
   t.cdK = Math.max(.65, 1 - (G.level - 1) * .012); // later levels fire a little more often
   t.ai = { aimT: Math.random() * .5, target: Math.PI, moveT: 0, dir: Math.random() * TAU, mineT: rnd(3, 6), burst: 0, fireCheck: 0, flee: 0, fleeFrom: null, charging: 0 };
@@ -935,7 +1025,9 @@ function pickSkills() {
   // Deeper runs and Lucky Charm make rarer tiers more likely
   const boost = (1 + .4 * sk('lucky')) * (1 + Math.min(1.5, (G.level - 1) * .03));
   for (let tries = 0; chosen.length < 3 && tries < 80; tries++) {
-    const ok = s => sk(s.id) < s.max && !chosen.includes(s.id) && (!s.req || G.slots.some((sl, i) => sl && slotChassis(i) === s.req));
+    // tank skills only for the tank you drive; no shooting skills when every player is a Spiker
+    const allSpiker = G.slots.every((sl, i) => !sl || slotChassis(i) === 'k');
+    const ok = s => sk(s.id) < s.max && !chosen.includes(s.id) && (!s.req || G.slots.some((sl, i) => sl && slotChassis(i) === s.req)) && !(s.gun && allSpiker);
     const tiers = Object.keys(RARITY).filter(r => SKILLS.some(s => s.rar === r && ok(s)));
     if (!tiers.length) break;
     const wt = r => RARITY[r].w * (r === 'common' ? 1 : boost);
@@ -1039,7 +1131,7 @@ function shoot(t, ang, speed, bounces, kind = 'shell', o = {}) {
   t.recoil = 1;
   if (bb(tx, ty)) { if (o.fx !== false) { emit({ t: 'puff', x: r1(tx), y: r1(ty), n: 5 }); sfx('pop'); } return; }
   G.bullets.push({ id: ++G.idSeq, x: tx, y: ty, dx: Math.cos(ang), dy: Math.sin(ang), speed, bounces, owner: t, team: t.team,
-    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0, pierce: o.pierce || 0, hitIds: [], base: speed, fis: o.fis || false, home: o.home || 0, big: !!o.big, wpn: o.wpn || null, hr: o.hr || 0 });
+    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0, pierce: o.pierce || 0, hitIds: [], base: speed, fis: o.fis || false, accel: o.accel || 0, home: o.home || 0, big: !!o.big, wpn: o.wpn || null, hr: o.hr || 0 });
   t.bullets++; t.lastShot = G.time;
   if (o.fx !== false && kind !== 'flame') {
     emit({ t: 'muz', x: r1(tx), y: r1(ty), a: r2(ang) });
@@ -1055,7 +1147,8 @@ function enemyFire(t) {
   const ang = t.turret + off;
   if (S.pellets) {
     for (let i = 0; i < S.pellets; i++) shoot(t, ang + (i / (S.pellets - 1) - .5) * S.spread + rnd(-.04, .04), enemyShotSpeed(S) * rnd(.9, 1.1), S.bounces, 'pellet', { life: S.life, fx: i === 0 });
-  } else shoot(t, ang, enemyShotSpeed(S), S.bounces, S.kind || 'shell', { fis: S.fis });
+  } else if (S.laser) beamShot(t, ang, 0, { color: '#ff3b3b', w: 4 });
+  else shoot(t, ang, enemyShotSpeed(S), S.bounces, S.kind || 'shell', { fis: S.fis, accel: S.accel });
 }
 function layMine(t) {
   const max = t.team === 'p' ? F.mines(sk('mines')) : (t.spec.mines || 0);
@@ -1092,24 +1185,25 @@ function looseShell(owner, x, y, ang, speed, bounces, life) {
 }
 // What special elite shells do when they stop (hit a wall for the last time or run out of time)
 function shellEnd(b) {
-  const o = b.owner, boss = F.bossDmg(sk('heavy'));
+  const o = b.owner, boss = F.bossDmg(sk('heavy')), ch = o && o.team === 'p' ? chassisOf(o) : {}, bk = ch.blastK || 1;
   switch (b.wpn) {
     case 'grenade': shellBlast(b.x, b.y, o, 58, 2 * boss); break;
-    case 'plasma': shellBlast(b.x, b.y, o, 66, 3 * boss); break;
-    case 'bomb': shellBlast(b.x, b.y, o, 62, 3 * boss); break;
-    case 'swarm': shellBlast(b.x, b.y, o, 34, boss); break;
-    case 'vortex': G.strikes.push({ x: b.x, y: b.y, t: .45, team: 'p', owner: o, r: 92, hole: true, mini: true }); sfx('hole'); break;
-    case 'napalm': G.strikes.push({ x: b.x, y: b.y, t: 3, team: 'p', owner: o, r: 62, zone: true }); emit({ t: 'boom', x: r1(b.x), y: r1(b.y), c: '#ff7a2e', k: .6 }); sfx('flame'); break;
+    case 'plasma': shellBlast(b.x, b.y, o, 66 * bk, 3 * boss); break;
+    case 'bomb': shellBlast(b.x, b.y, o, 62 * bk, 3 * boss); break;
+    case 'swarm': shellBlast(b.x, b.y, o, 34 * bk, boss); break;
+    case 'vortex': G.strikes.push({ x: b.x, y: b.y, t: .45, team: 'p', owner: o, r: 92 * (ch.holeK || 1), hole: true, mini: true }); sfx('hole'); break;
+    case 'napalm': G.strikes.push({ x: b.x, y: b.y, t: ch.zoneT || 3, team: 'p', owner: o, r: 62 * (ch.zoneK || 1), zone: true }); emit({ t: 'boom', x: r1(b.x), y: r1(b.y), c: '#ff7a2e', k: .6 }); sfx('flame'); break;
     case 'flak': { const a0 = Math.random() * TAU; for (let k = 0; k < 8; k++) { const a = a0 + k / 8 * TAU; looseShell(o, b.x, b.y, a, 270, 0, .45); } emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 10, v: 160 }); sfx('pop'); break; }
-    case 'cluster': { const back = Math.atan2(-b.dy, -b.dx); for (let k = 0; k < 5; k++) { const a = back + (k / 4 - .5) * 1.8; looseShell(o, b.x - b.dx * 6, b.y - b.dy * 6, a, 280, 1); } emit({ t: 'boom', x: r1(b.x), y: r1(b.y), c: '#ffb04d', k: .5 }); sfx('pop'); break; }
+    case 'cluster': { const back = Math.atan2(-b.dy, -b.dx), cn = ch.cn || 5; for (let k = 0; k < cn; k++) { const a = back + (k / (cn - 1) - .5) * 1.8; looseShell(o, b.x - b.dx * 6, b.y - b.dy * 6, a, 280, 1); } emit({ t: 'boom', x: r1(b.x), y: r1(b.y), c: '#ffb04d', k: .5 }); sfx('pop'); break; }
   }
 }
 // Tesla: instant lightning to the nearest enemy roughly in front, then it leaps to up to 2 more
 function teslaShot(t) {
   const hit = [], pts = [[r1(t.x + Math.cos(t.turret) * 22), r1(t.y + Math.sin(t.turret) * 22)]];
   let from = { x: t.x, y: t.y };
-  for (let n = 0; n < 3; n++) {
-    const range = n === 0 ? 340 : 180;
+  const tch = chassisOf(t), tk = tch.teslaK || 1;
+  for (let n = 0; n < (tch.chain || 3); n++) {
+    const range = (n === 0 ? 340 : 180) * tk;
     const c = aliveTanks.filter(e => e.alive && e.team === 'e' && !hit.includes(e) && dist(e, from) < range && clearPath(from, e)
       && (n > 0 || Math.abs(angDiff(Math.atan2(e.y - t.y, e.x - t.x), t.turret)) < .6)).sort((a, b) => dist(a, from) - dist(b, from))[0];
     if (!c) break;
@@ -1126,15 +1220,16 @@ function beamShot(t, ang, bounces, opt = {}) {
   if (!bb(o.x, o.y)) for (let i = 0; i < 700; i++) { const r = advance(o, STEP); if (r === 'dead') break; if (r === 'bounce') pts.push([o.x, o.y]); }
   pts.push([o.x, o.y]);
   const near = (px, py, rad) => { for (let i = 0; i < pts.length - 1; i++) { const [ax, ay] = pts[i], [bx, by] = pts[i + 1], dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1, u = clamp(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1); if (Math.hypot(ax + u * dx - px, ay + u * dy - py) < rad) return true; } return false; };
-  for (const e of aliveTanks) if (e.alive && e.team === 'e' && near(e.x, e.y, (e.r || R) + 4) && (!opt.cdKey || (e[opt.cdKey] || 0) <= G.time)) {
+  const foe = t.team === 'p' ? 'e' : 'p';
+  for (const e of aliveTanks) if (e.alive && e.team === foe && near(e.x, e.y, (e.r || R) + 4) && (!opt.cdKey || (e[opt.cdKey] || 0) <= G.time)) {
     if (opt.cdKey) e[opt.cdKey] = G.time + .25;
     hurtTank(e, t, e.boss ? (opt.boss || 2) * F.bossDmg(sk('heavy')) : 1);
   }
-  for (const b of G.bullets) if (b.alive && b.team === 'e' && near(b.x, b.y, 7)) killBullet(b, false);
-  emit({ t: 'beam', pts: pts.map(q => [r1(q[0]), r1(q[1])]), c: opt.color || slotColor(t.slot), w: opt.w || 5, l: opt.life || .22 });
+  for (const b of G.bullets) if (b.alive && b.team === foe && near(b.x, b.y, 7)) killBullet(b, false);
+  emit({ t: 'beam', pts: pts.map(q => [r1(q[0]), r1(q[1])]), c: opt.color || (t.team === 'p' ? slotColor(t.slot) : '#ff3b3b'), w: opt.w || 5, l: opt.life || .22 });
   if (!opt.quiet) { emit({ t: 'spk', x: r1(o.x), y: r1(o.y), n: 8, v: 140 }); sfx('snipe'); }
 }
-const lanceShot = t => beamShot(t, t.turret, 0);
+const lanceShot = t => beamShot(t, t.turret, chassisOf(t).lbnc || 0);
 function canHit(b, t) {
   if (t.shield > 0) return false;
   if (b.team === 'e' && t.team === 'e') return false; // enemies never hurt each other
@@ -1145,7 +1240,7 @@ function canHit(b, t) {
 // Bosses lose health, plated players lose their plating, everyone else is destroyed.
 function hurtTank(t, killer, dmg) {
   if (t.team === 'p' && t.dashT > 0 && sk('ironhide')) return;
-  if (t.boss) {
+  if (t.boss || t.maxhp) {
     t.hp -= dmg; t.hit = .12;
     emit({ t: 'spk', x: r1(t.x), y: r1(t.y), n: 6, v: 160 }); sfx('pop');
     if (t.hp <= 0) killTank(t, killer);
@@ -1279,9 +1374,9 @@ function updatePlayer(t, dt, active) {
     if (t.overheat > 0) { t.overheat -= dt; if (t.overheat <= 0) { t.overheat = 0; t.heat = 0; sfx('tick'); } }
     else if (inp.fireHeld) {
       t.heat = (t.heat || 0) + dt;
-      if (t.heat >= 3) { t.overheat = 3; emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 26), s: 'OVERHEATED', c: '#ff5a3c' }); sfx('clank'); }
+      if (t.heat >= (ch.heatMax || 3)) { t.overheat = ch.coolT || 3; emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 26), s: 'OVERHEATED', c: '#ff5a3c' }); sfx('clank'); }
     } else t.heat = Math.max(0, (t.heat || 0) - dt);
-    t.hv = t.overheat > 0 ? 1 + t.overheat / 3 : (t.heat || 0) / 3;
+    t.hv = t.overheat > 0 ? 1 + t.overheat / (ch.coolT || 3) : (t.heat || 0) / (ch.heatMax || 3);
     if (inp.fireHeld && !(t.overheat > 0) && t.cool <= 0) {
       beamShot(t, t.turret, 0, { cdKey: 'ionCd', boss: .5, color: '#7fd6ff', w: 3, life: .1, quiet: true });
       t.cool = .07; t.recoil = .4; t.ionSnd = (t.ionSnd || 0) - 1; if (t.ionSnd <= 0) { t.ionSnd = 4; sfx('zap'); }
@@ -1291,30 +1386,15 @@ function updatePlayer(t, dt, active) {
     // Starfall: 5 blasts rain down around where you aim
     if (inp.fire && t.cool <= 0) {
       const [mx, my] = mortarPoint(t, inp);
-      for (let k = 0; k < 5; k++) G.strikes.push({ x: clamp(mx + rnd(-60, 60), 20, W - 20), y: clamp(my + rnd(-60, 60), 20, H - 20), t: .55 + k * .14, team: 'p', owner: t, r: 38, mortar: true });
+      const nStars = ch.stars || 5;
+      for (let k = 0; k < nStars; k++) G.strikes.push({ x: clamp(mx + rnd(-60, 60), 20, W - 20), y: clamp(my + rnd(-60, 60), 20, H - 20), t: .55 + k * .7 / nStars, team: 'p', owner: t, r: 38, mortar: true });
       t.cool = PCD * ch.cd * rateK; t.recoil = 1; sfx('mortar'); rumble(t.dev, .3, .3, 90);
-    }
-  } else if (ch.minigun) {
-    // Minigun (secret): fire for up to 5 seconds, then it overheats for 5 seconds. Heat drains while you're not firing.
-    if (t.overheat > 0) {
-      t.overheat -= dt;
-      if (t.overheat <= 0) { t.overheat = 0; t.heat = 0; sfx('tick'); }
-    } else if (inp.fireHeld) {
-      t.heat = (t.heat || 0) + dt;
-      if (t.heat >= 5) { t.overheat = 5; emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 26), s: 'OVERHEATED', c: '#ff5a3c' }); sfx('clank'); rumble(t.dev, .6, .3, 250); }
-    } else t.heat = Math.max(0, (t.heat || 0) - dt);
-    t.hv = t.overheat > 0 ? 1 + t.overheat / 5 : (t.heat || 0) / 5;
-    if (inp.fireHeld && !(t.overheat > 0) && t.cool <= 0 && t.bullets < 90) {
-      shoot(t, t.turret + rnd(-.07, .07), Math.min(600, PBS * 1.1 * F.shellSpeed(sk('speed'))), F.bounces(sk('bounce')) + (god ? 6 : 0), 'shell',
-        { fx: false, pierce: god ? 99 : sk('pierce'), side: ((t.spin = (t.spin || 0) + 1) % 3 - 1) * 3 });
-      t.cool = .04; t.recoil = .5;
-      if (t.spin % 3 === 0) { sfx('fire'); emit({ t: 'muz', x: r1(t.x + Math.cos(t.turret) * 24), y: r1(t.y + Math.sin(t.turret) * 24), a: r2(t.turret) }); }
-      rumble(t.dev, .1, .25, 50);
     }
   } else if (ch.flame) {
     // Scorcher: hold fire for a stream of short-lived flames
     if (inp.fireHeld && t.cool <= 0 && t.bullets < 16 + 2 * sk('magazine')) {
-      shoot(t, t.turret + rnd(-.15, .15), 240 * rnd(.85, 1.1) * F.shellSpeed(sk('speed')), 0, 'flame', { life: .42, fx: false, pierce: sk('pierce') });
+      const fs = ch.flameSpread || .15;
+      shoot(t, t.turret + rnd(-fs, fs), 240 * rnd(.85, 1.1) * F.shellSpeed(sk('speed')), 0, 'flame', { life: .42 * (ch.flameLife || 1), fx: false, pierce: sk('pierce') });
       t.cool = .055 * rateK;
       t.flameSnd = (t.flameSnd || 0) - 1; if (t.flameSnd <= 0) { t.flameSnd = 4; sfx('flame'); }
     }
@@ -1322,7 +1402,7 @@ function updatePlayer(t, dt, active) {
     const live = G.strikes.filter(s => s.owner === t).length;
     if (inp.fire && t.cool <= 0 && live < 2 + Math.floor(sk('magazine') / 2)) {
       const [mx, my] = mortarPoint(t, inp);
-      G.strikes.push({ x: mx, y: my, t: 1, team: 'p', owner: t, r: 50, mortar: true });
+      G.strikes.push({ x: mx, y: my, t: 1, team: 'p', owner: t, r: 50 * (ch.mr || 1), mortar: true });
       t.cool = PCD * ch.cd * rateK; t.recoil = 1;
       emit({ t: 'muz', x: r1(t.x + Math.cos(t.turret) * 18), y: r1(t.y + Math.sin(t.turret) * 18), a: r2(t.turret) }); sfx('mortar'); rumble(t.dev, .3, .3, 90);
     }
@@ -1353,7 +1433,7 @@ function updatePlayer(t, dt, active) {
     // Carrier drones: shoot the nearest enemy they can see
     t.droneT = (t.droneT || 0) - dt;
     if (t.droneT <= 0) {
-      t.droneT = .8 * rateK;
+      t.droneT = .8 * rateK * (ch.droneK || 1);
       for (let k = 0; k < ch.drones; k++) {
         const [dx, dy] = dronePos(t, k, ch.drones), d = { x: dx, y: dy };
         const tgt = aliveTanks.filter(e => e.alive && e.team === 'e' && dist(e, d) < 320 && clearPath(d, e)).sort((a, b) => dist(a, d) - dist(b, d))[0];
@@ -1369,7 +1449,7 @@ function updatePlayer(t, dt, active) {
       emit({ t: 'ring', x: r1(t.x), y: r1(t.y), c: slotColor(t.slot) });
     }
   }
-  if (inp.mine && ch.blink) blinkPlayer(t, inp, mag);
+  if (ch.blink) blinkPlayer(t, inp, ch, dt);
   else if (inp.mine) layMine(t);
 }
 // The shape of one shot for a player's tank: fan angles, side offsets, and how many shells it can have out
@@ -1383,6 +1463,7 @@ function volleyShape(ch) {
   return { angles, sides, per, cap: ((ch.ammo || F.mag(sk('magazine'))) + (ch.ammoAdd || 0)) * per };
 }
 function fireVolley(t, ch, v, god, rateK, burstShot) {
+  if (ch.laser) { beamShot(t, t.turret, (ch.lbnc || 0) + sk('bounce'), { color: '#ff6b6b' }); t.cool = PCD * (ch.cd || 1) * rateK; rumble(t.dev, .2, .4, 90); return; }
   const spd = Math.min(600, PBS * (ch.spd || 1) * F.shellSpeed(sk('speed')));
   const bnc = Math.max(0, F.bounces(sk('bounce')) + (ch.bnc || 0)) + (god ? 6 : 0);
   let pierce = god ? 99 : sk('pierce') + (ch.pierce || 0), big = false;
@@ -1390,7 +1471,7 @@ function fireVolley(t, ch, v, god, rateK, burstShot) {
   if (sk('overcharge') && t.shotN % F.overcharge(sk('overcharge')) === 0) { big = true; pierce += 3; }
   let first = true;
   for (const a of v.angles) for (const sd of v.sides) {
-    const o = { side: sd, fx: first, pierce, life: ch.life, fis: ch.fis, home: ch.home, big, wpn: ch.wpn, hr: ch.hr };
+    const o = { side: sd, fx: first, pierce, life: ch.life, fis: ch.fis, home: ch.home, big, wpn: ch.wpn, hr: ch.hr, accel: ch.accel };
     const ang = t.turret + a + (ch.pellets ? rnd(-.03, .03) : 0), sp = spd * (ch.pellets ? rnd(.92, 1.08) : 1);
     shoot(t, ang, sp, bnc, ch.kind || 'shell', o);
     if (sk('echo')) G.echoes.push({ t: .3, owner: t, x: t.x, y: t.y, ang, sp, bnc, kind: ch.kind || 'shell', o: Object.assign({}, o, { fx: first }) });
@@ -1413,15 +1494,27 @@ function updateEchoes(dt) {
   G.echoes = G.echoes.filter(e => !e.done);
 }
 // Blinker: teleport up to 160px in the direction you're moving (or aiming)
-function blinkPlayer(t, inp, mag) {
-  if (t.blinkCd > 0) return;
-  const a = mag > .2 ? Math.atan2(inp.my, inp.mx) : t.turret;
-  let bx = t.x, by = t.y;
-  for (let d = 10; d <= 160; d += 10) { const x = t.x + Math.cos(a) * d, y = t.y + Math.sin(a) * d; if (tankFree(x, y)) { bx = x; by = y; } }
-  if (bx === t.x && by === t.y) return;
-  emit({ t: 'ring', x: r1(t.x), y: r1(t.y), c: slotColor(t.slot) }); emit({ t: 'puff', x: r1(t.x), y: r1(t.y), n: 6, z: 4 });
-  t.x = bx; t.y = by; t.blinkCd = 2.2;
-  emit({ t: 'ring', x: r1(bx), y: r1(by), c: slotColor(t.slot) }); sfx('blinkport'); rumble(t.dev, .2, .4, 100);
+// Blinker: hold the mine button to place a marker (mouse, or move it with the right stick), let go to teleport there
+function blinkPlayer(t, inp, ch, dt) {
+  const maxR = 240 * (ch.blinkK || 1);
+  if (inp.mineHeld && t.blinkCd <= 0) {
+    if (!t.blinkAim) { t.blinkAim = true; t.btx = t.x + Math.cos(t.turret) * 120; t.bty = t.y + Math.sin(t.turret) * 120; }
+    if (inp.kb) { const px = inp.mouseAim ? kb.mx : inp.px, py = inp.mouseAim ? kb.my : inp.py; if (px !== null && px !== undefined) { t.btx = px; t.bty = py; } }
+    else { t.btx += (inp.rx || 0) * 340 * dt; t.bty += (inp.ry || 0) * 340 * dt; }
+    let dx = t.btx - t.x, dy = t.bty - t.y; const d = Math.hypot(dx, dy);
+    if (d > maxR) { dx *= maxR / d; dy *= maxR / d; }
+    t.btx = clamp(t.x + dx, R, W - R); t.bty = clamp(t.y + dy, R, H - R);
+    t.bx = t.btx; t.by = t.bty;
+  } else if (t.blinkAim) {
+    t.blinkAim = false; t.bx = 0; t.by = 0;
+    // land on the marker, or the closest open spot on the way to it
+    let bx = null, by = null;
+    for (let f = 1; f >= 0.05; f -= .05) { const x = t.x + (t.btx - t.x) * f, y = t.y + (t.bty - t.y) * f; if (tankFree(x, y)) { bx = x; by = y; break; } }
+    if (bx === null || Math.hypot(bx - t.x, by - t.y) < 8) return;
+    emit({ t: 'ring', x: r1(t.x), y: r1(t.y), c: slotColor(t.slot) }); emit({ t: 'puff', x: r1(t.x), y: r1(t.y), n: 6, z: 4 });
+    t.x = bx; t.y = by; t.blinkCd = ch.blinkCd || 2.2;
+    emit({ t: 'ring', x: r1(bx), y: r1(by), c: slotColor(t.slot) }); sfx('blinkport'); rumble(t.dev, .2, .4, 100);
+  }
 }
 function smashCrates(x, y) {
   for (let r = Math.floor((y - R) / TS); r <= Math.floor((y + R) / TS); r++) for (let c = Math.floor((x - R) / TS); c <= Math.floor((x + R) / TS); c++) {
@@ -1445,7 +1538,7 @@ function mortarPoint(t, inp) {
   return [clamp(t.x + Math.cos(t.turret) * d, 20, W - 20), clamp(t.y + Math.sin(t.turret) * d, 20, H - 20)];
 }
 // A Ghost player is hidden unless it fired in the last 2 seconds or an enemy is close
-const hidden = (p, from) => chassisOf(p).stealth && G.time - (p.lastShot ?? -9) > 2 && (!from || dist(p, from) > 140);
+const hidden = (p, from) => { const ch = chassisOf(p); return !!ch.stealth && G.time - (p.lastShot ?? -9) > (ch.reveal ?? 2) && (!from || dist(p, from) > 140); };
 function nearestPlayer(t) {
   let best = null, bd = 1e9;
   for (const p of aliveTanks) if (p.team === 'p' && !hidden(p, t)) { const d = dist(p, t); if (d < bd) { bd = d; best = p; } }
@@ -1530,6 +1623,19 @@ function updateEnemy(t, dt, active) {
       t.cool = S.cd * t.cdK * rnd(.8, 1.2);
       G.strikes.push({ x: clamp(target.x + rnd(-25, 25), 20, W - 20), y: clamp(target.y + rnd(-25, 25), 20, H - 20), t: 1.4 / F.jam(sk('slow')), team: 'e', owner: t });
       t.recoil = 1; emit({ t: 'muz', x: r1(t.x + Math.cos(t.turret) * 18), y: r1(t.y + Math.sin(t.turret) * 18), a: r2(t.turret) }); sfx('mortar');
+    }
+  }
+  if (S.summon) {
+    // Summoner: calls in a Hiveling every few seconds, up to 3 at a time
+    ai.sumT = (ai.sumT ?? 2.5) - dt;
+    if (ai.sumT <= 0) {
+      ai.sumT = S.summon;
+      if (G.tanks.filter(o => o.alive && o.summoner === t.id).length < 3) {
+        for (let k = 0; k < 12; k++) {
+          const a = Math.random() * TAU, x = t.x + Math.cos(a) * 34, y = t.y + Math.sin(a) * 34;
+          if (tankFree(x, y, 10)) { const h = makeEnemy('y', x, y); h.summoner = t.id; h.cool = rnd(1, 1.6); G.tanks.push(h); emit({ t: 'ring', x: r1(x), y: r1(y), c: S.color }); sfx('blinkport'); break; }
+        }
+      }
     }
   }
   if (S.blink) {
@@ -1696,8 +1802,8 @@ function updateBullets(dt) {
       // Thunder: zaps the nearest enemy within reach every 0.2 seconds while it flies
       b.zapT = (b.zapT || 0) - dt;
       if (b.zapT <= 0) {
-        b.zapT = .2;
-        const tgt = aliveTanks.filter(e => e.alive && e.team === 'e' && dist(e, b) < 85).sort((x, y) => dist(x, b) - dist(y, b))[0];
+        const zc = chassisOf(b.owner); b.zapT = zc.zapT || .2;
+        const tgt = aliveTanks.filter(e => e.alive && e.team === 'e' && dist(e, b) < 85 * (zc.zapK || 1)).sort((x, y) => dist(x, b) - dist(y, b))[0];
         if (tgt) { emit({ t: 'bolt', pts: [[r1(b.x), r1(b.y)], [r1(tgt.x), r1(tgt.y)]], c: '#ffe066' }); sfx('zap'); hurtTank(tgt, b.owner, 1); }
       }
     }
@@ -1728,7 +1834,8 @@ function updateBullets(dt) {
       if (r === 'dead') { if (b.wpn) shellEnd(b); killBullet(b, !b.wpn); break; }
       if (r === 'bounce') {
         b.bounced = true; sfx('bounce');
-        if (b.wpn === 'bomb') shellBlast(b.x, b.y, b.owner, 48, 2 * F.bossDmg(sk('heavy')));
+        if (b.accel) b.speed = Math.min(b.team === 'p' ? 600 : 520, b.speed * (1 + b.accel));
+        if (b.wpn === 'bomb') shellBlast(b.x, b.y, b.owner, 48 * (chassisOf(b.owner).blastK || 1), 2 * F.bossDmg(sk('heavy')));
         if (b.wpn === 'disc') {
           // Razor Disc: speeds up and fires a shot at the nearest enemy every bounce
           b.speed = Math.min(600, b.speed * 1.15);
@@ -1740,7 +1847,8 @@ function updateBullets(dt) {
           // Fission Shells / Splitter tanks: the first bounce splits the shell in two
           b.split = true; b.fam = b.id;
           const a = Math.atan2(b.dy, b.dx), piece = off => Object.assign({}, b, { id: ++G.idSeq, dx: Math.cos(a + off), dy: Math.sin(a + off), hitIds: b.hitIds.slice(), free: true, trailT: 0 });
-          G.bullets.push(piece(.35)); b.dx = Math.cos(a - .35); b.dy = Math.sin(a - .35);
+          if (b.fis === 3) G.bullets.push(piece(.4), piece(-.4)); // Triple Split: middle piece keeps going
+          else { G.bullets.push(piece(.35)); b.dx = Math.cos(a - .35); b.dy = Math.sin(a - .35); }
         }
         emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 4, v: 90 }); }
       for (const t of aliveTanks) {
@@ -1757,12 +1865,18 @@ function updateBullets(dt) {
             break;
           }
           const shielded = b.team !== t.team && (t.team === 'e' ? !!(t.spec && t.spec.shield && t.shState !== 2) : !!chassisOf(t).shield);
-          if (shielded && Math.abs(angDiff(Math.atan2(b.y - t.y, b.x - t.x), t.turret)) < 1.05) {
+          const arc = t.team === 'p' ? (chassisOf(t).arc || 1.05) : 1.05;
+          if (shielded && Math.abs(angDiff(Math.atan2(b.y - t.y, b.x - t.x), t.turret)) < arc) {
             // Bulwark (enemy or player): shells that hit the front shield bounce away
             const nx = (b.x - t.x) / (Math.hypot(b.x - t.x, b.y - t.y) || 1), ny = (b.y - t.y) / (Math.hypot(b.x - t.x, b.y - t.y) || 1);
             const dot = b.dx * nx + b.dy * ny;
             if (dot < 0) { b.dx -= 2 * dot * nx; b.dy -= 2 * dot * ny; }
             b.x = t.x + nx * (hr + 1); b.y = t.y + ny * (hr + 1);
+            if (t.team === 'p' && chassisOf(t).counter) {
+              // Counter Shield: the blocked shell becomes yours
+              if (!b.free) b.owner.bullets = Math.max(0, b.owner.bullets - 1);
+              b.owner = t; b.team = 'p'; b.slot = t.slot; b.free = true; b.bounced = true; b.hitIds = [t.id];
+            }
             emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 6, v: 120 }); sfx('clank');
             break;
           }
@@ -1904,6 +2018,7 @@ function simStep(dt, active) {
     // Time Warp slows every enemy; Static Field slows their reloading
     const edt = t.team === 'e' && sk('warp') ? dt * .65 : dt;
     t.cool -= t.team === 'e' ? edt / F.stat(sk('static')) : dt;
+    if (!t.boss) t.hit = Math.max(0, (t.hit || 0) - dt);
     t.recoil = Math.max(0, t.recoil - dt * 6); t.reveal -= edt; t.shield = Math.max(0, t.shield - dt);
     if (t.team === 'p') { t.ramCd = (t.ramCd || 0) - dt; updatePlayer(t, dt, active); }
     else if (t.boss) updateBoss(t, edt, active); else updateEnemy(t, edt, active);
@@ -2133,7 +2248,8 @@ function addRemoteInputs() {
       let used = p.used[k];
       if (!used) used = p.used[k] = Object.assign({}, c);
       const inp = { kb: k === 'kb', mx: clamp(+v.mx || 0, -1, 1), my: clamp(+v.my || 0, -1, 1), mouseAim: false,
-        aim: typeof v.aim === 'number' ? v.aim : null, aimAbs: !!v.aa, fireHeld: !!v.fh };
+        aim: typeof v.aim === 'number' ? v.aim : null, aimAbs: !!v.aa, fireHeld: !!v.fh, mineHeld: !!v.mh,
+        rx: clamp(+v.rx || 0, -1, 1), ry: clamp(+v.ry || 0, -1, 1), px: typeof v.px === 'number' ? v.px : null, py: typeof v.py === 'number' ? v.py : null };
       for (const key of PRESS_KEYS) { const n = +c[key] || 0; inp[key] = n > (used[key] || 0); used[key] = n; }
       INP['r:' + pid + ':' + k] = inp;
     }
@@ -2146,7 +2262,7 @@ function sendSnapshot() {
     grid: G.grid.length ? G.grid.map(r => r.join('')).join('') : '',
     sl: G.slots.map(s => s ? [s.dev, s.kills, s.deaths, s.color, s.trail, s.chassis || 'std'] : null),
     tk: G.tanks.filter(t => t.alive).map(t => [t.id, r1(t.x), r1(t.y), r2(t.body), r2(t.turret), t.team === 'p' ? t.slot : t.type, r2(t.recoil), r2(Math.max(0, t.reveal)), r2(t.shield),
-      r2(t.charge || 0), t.boss ? t.hp : 0, t.boss ? t.maxhp : 0, r2(t.hit || 0), t.armor || 0, t.shState || 0, r1(t.bx || 0), r1(t.by || 0), r2(t.hv || 0)]),
+      r2(t.charge || 0), t.maxhp ? t.hp : 0, t.maxhp || 0, r2(t.hit || 0), t.armor || 0, t.shState || 0, r1(t.bx || 0), r1(t.by || 0), r2(t.hv || 0)]),
     bl: G.bullets.filter(b => b.alive).map(b => [b.id, r1(b.x), r1(b.y), r3(b.dx), r3(b.dy), b.speed, b.bounces, b.kind, b.slot, b.big ? 1 : 0]),
     mn: G.mines.map(m => [r1(m.x), r1(m.y), m.team === 'p' ? m.slot : m.type, r2(m.t), r2(m.fuse)]),
     wr: G.wrecks.map(w => [r1(w.x), r1(w.y), w.slot, r2(w.prog), r2(w.body)]),
@@ -2265,7 +2381,7 @@ function clientSendInputs(now) {
     for (const k of PRESS_KEYS) if (i[k]) cnt[k] = (cnt[k] || 0) + 1;
     let aim = i.aim, aa = false;
     if (i.mouseAim) { const t = myKbTank(); aim = t ? Math.atan2(kb.my - t.y, kb.mx - t.x) : null; aa = true; }
-    d[dev] = { mx: r2(i.mx), my: r2(i.my), aim: aim === null ? null : r3(aim), aa, fh: i.fireHeld ? 1 : 0, c: cnt };
+    d[dev] = { mx: r2(i.mx), my: r2(i.my), aim: aim === null ? null : r3(aim), aa, fh: i.fireHeld ? 1 : 0, mh: i.mineHeld ? 1 : 0, rx: r2(i.rx || 0), ry: r2(i.ry || 0), px: i.mouseAim ? r1(kb.mx) : null, py: i.mouseAim ? r1(kb.my) : null, c: cnt };
   }
   const json = JSON.stringify(d);
   if (json !== NET.lastSend || now - NET.lastSendT > 120) { NET.lastSend = json; NET.lastSendT = now; send({ t: 'in', d }); }
@@ -2398,10 +2514,21 @@ nameIn.addEventListener('change', () => {
 });
 
 // ---------- customization clicks on the title screen ----------
+let wipeArm = 0, wipedAt = 0;
 ov.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   b.blur(); unlockAudio();
   if (b.dataset.act === 'skill') { const i = +b.dataset.i; if (NET.mode === 'client') send({ t: 'pick', i }); else chooseSkill(i); return; }
+  if (b.dataset.act === 'wipe') {
+    if (performance.now() - wipeArm > 4000) { wipeArm = performance.now(); playSfx('tick'); return; }
+    // second click: delete unlock progress saved on this computer
+    wipeArm = 0; wipedAt = performance.now();
+    KILLS = {}; BEST = { level: 0, kills: 0 }; store.set('rr-kills-v1', KILLS); store.set('rr-best-v1', BEST);
+    for (const k in PREFS) PREFS[k].chassis = 'std';
+    store.set('rr-prefs-v1', PREFS);
+    G.slots.forEach((sl, i) => { if (sl && isMine(sl.dev) && sl.chassis !== 'std') setPref(i, { chassis: 'std' }); });
+    playSfx('fail'); return;
+  }
   const i = +b.dataset.slot, s = G.slots[i]; if (!s || !isMine(s.dev)) return;
   switch (b.dataset.act) {
     case 'col': setPref(i, { color: s.color + +b.dataset.d }); break;
@@ -2467,7 +2594,11 @@ function drawStyledTank(t, S, color, dark, alpha, mul = 1) {
     }
     c.restore();
   }
-  drawTank(tt, color, dark, alpha, sc, { noGun: S.ram, mortar: S.mortar, minigun: S.minigun });
+  drawTank(tt, t.hit > 0 && t.maxhp && !t.boss ? '#fff1d6' : color, dark, alpha, sc, { noGun: S.ram, mortar: S.mortar });
+  if (t.maxhp && !t.boss) {
+    // Heavy: health pips
+    for (let k = 0; k < t.maxhp; k++) { c.fillStyle = k < t.hp ? '#e5484d' : 'rgba(23,20,15,.6)'; c.beginPath(); c.arc(t.x + (k - (t.maxhp - 1) / 2) * 8, t.y - (t.r || R) - 9, 3, 0, TAU); c.fill(); }
+  }
   if (S.drones && t.team === 'p') for (let k = 0; k < S.drones; k++) {
     const [dx, dy] = dronePos(t, k, S.drones);
     c.save(); c.translate(dx, dy); c.rotate(G.time * 4); c.globalAlpha = alpha;
@@ -2475,7 +2606,7 @@ function drawStyledTank(t, S, color, dark, alpha, mul = 1) {
     c.fillStyle = '#c9d4d8'; c.strokeStyle = '#2b2620'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(0, -6); c.lineTo(6, 0); c.lineTo(0, 6); c.lineTo(-6, 0); c.closePath(); c.fill(); c.stroke();
     c.fillStyle = color; c.beginPath(); c.arc(0, 0, 2, 0, TAU); c.fill(); c.restore();
   }
-  if ((S.minigun || S.ion) && t.hv > 0) {
+  if (S.ion && t.hv > 0) {
     // heat bar: fills while firing; red and draining while overheated
     const over = t.hv > 1, k = over ? t.hv - 1 : t.hv;
     c.save(); c.globalAlpha = alpha; c.fillStyle = 'rgba(23,20,15,.8)'; rrect(c, t.x - 17, t.y + 21, 34, 6, 3); c.fill();
@@ -2489,16 +2620,13 @@ function drawStyledTank(t, S, color, dark, alpha, mul = 1) {
     for (const o of [-11, -7]) { c.beginPath(); c.moveTo(o - 2, -5); c.lineTo(o + 2, 0); c.lineTo(o - 2, 5); c.stroke(); }
     c.restore();
   }
-  if (S.minigun) {
-    c.save(); c.translate(t.x, t.y); c.scale(sc, sc); c.globalAlpha = alpha * .8;
-    c.strokeStyle = '#f2b90f'; c.lineWidth = 2; c.setLineDash([5, 4]); c.lineDashOffset = -G.time * 30;
-    c.beginPath(); c.arc(0, 0, 21, 0, TAU); c.stroke(); c.restore();
-  }
+
   if (S.shield && t.shState !== 2) {
     c.save(); c.translate(t.x, t.y); c.scale(sc, sc);
     c.globalAlpha = alpha * (t.shState === 1 ? (Math.sin(G.time * 45) > 0 ? 1 : .2) : 1); // flickers just before it drops
-    c.strokeStyle = '#2b2620'; c.lineWidth = 7; c.beginPath(); c.arc(0, 0, 23, t.turret - 1.05, t.turret + 1.05); c.stroke();
-    c.strokeStyle = '#c9d4d8'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, 23, t.turret - 1.05, t.turret + 1.05); c.stroke();
+    const arc = S.arc || 1.05;
+    c.strokeStyle = '#2b2620'; c.lineWidth = 7; c.beginPath(); c.arc(0, 0, 23, t.turret - arc, t.turret + arc); c.stroke();
+    c.strokeStyle = S.counter ? '#ffd27a' : '#c9d4d8'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, 23, t.turret - arc, t.turret + arc); c.stroke();
     c.restore();
   }
 }
@@ -2517,11 +2645,7 @@ function drawTank(t, color, dark, alpha, scale = 1, opt = {}) {
   c.fillStyle = 'rgba(255,255,255,.18)'; c.fillRect(-12, -7, 24, 3);
   c.rotate(-t.body + t.turret);
   const rc = (t.recoil || 0) * 4;
-  if (opt.minigun) {
-    // three barrels that look like they're spinning
-    for (let k = -1; k <= 1; k++) { c.fillStyle = (Math.floor(G.time * 30) + k) % 2 ? '#3a342c' : '#6b6255'; rrect(c, 3 - rc, k * 3.4 - 1.6, 22, 3.2, 1.4); c.fill(); }
-    c.fillStyle = '#1d1a16'; c.fillRect(22 - rc, -5.2, 3, 10.4);
-  } else if (opt.mortar) { c.fillStyle = dark; rrect(c, 1 - rc, -5.5, 14, 11, 3); c.fill(); c.fillStyle = '#1d1a16'; c.beginPath(); c.arc(14 - rc, 0, 4, 0, TAU); c.fill(); }
+  if (opt.mortar) { c.fillStyle = dark; rrect(c, 1 - rc, -5.5, 14, 11, 3); c.fill(); c.fillStyle = '#1d1a16'; c.beginPath(); c.arc(14 - rc, 0, 4, 0, TAU); c.fill(); }
   else if (!opt.noGun) { c.fillStyle = dark; rrect(c, 2 - rc, -3.5, 21, 7, 2); c.fill(); c.fillStyle = '#1d1a16'; c.fillRect(19 - rc, -3.5, 4, 7); }
   c.fillStyle = color; c.beginPath(); c.arc(0, 0, 8.5, 0, TAU); c.fill();
   c.strokeStyle = dark; c.lineWidth = 1.6; c.stroke();
@@ -2579,10 +2703,10 @@ function render() {
     if (ch.mortar || ch.starfall) {
       const [mx, my] = mortarPoint(t, t === myKbTank() ? { mouseAim: true } : null);
       c.save(); c.strokeStyle = slotColor(t.slot); c.globalAlpha = .6; c.lineWidth = 2; c.setLineDash([3, 5]);
-      c.beginPath(); c.arc(mx, my, ch.starfall ? 75 : 50, 0, TAU); c.stroke(); c.setLineDash([]); c.beginPath(); c.arc(mx, my, 4, 0, TAU); c.stroke(); c.restore();
+      c.beginPath(); c.arc(mx, my, ch.starfall ? 75 : 50 * (ch.mr || 1), 0, TAU); c.stroke(); c.setLineDash([]); c.beginPath(); c.arc(mx, my, 4, 0, TAU); c.stroke(); c.restore();
       continue;
     }
-    const pts = ch.lance || ch.ion || ch.beams ? aimPath(t, 0, 1400) : ch.beam ? aimPath(t, ch.beam + sk('bounce'), 1600) : ch.tesla ? aimPath(t, 0, 340) : aimPath(t, Math.max(0, F.bounces(sk('bounce')) + (ch.bnc || 0)) + (sk('mythic') ? 6 : 0), ch.pellets ? 150 : ch.flame ? 100 : F.sights(sk('sights')) * (ch.sight || 1));
+    const pts = ch.laser || (ch.lance && ch.lbnc) ? aimPath(t, (ch.lbnc || 0) + (ch.laser ? sk('bounce') : 0), 1600) : ch.lance || ch.ion || ch.beams ? aimPath(t, 0, 1400) : ch.beam ? aimPath(t, ch.beam + sk('bounce'), 1600) : ch.tesla ? aimPath(t, 0, 340) : aimPath(t, Math.max(0, F.bounces(sk('bounce')) + (ch.bnc || 0)) + (sk('mythic') ? 6 : 0), ch.pellets ? 150 : ch.flame ? 100 : F.sights(sk('sights')) * (ch.sight || 1));
     c.save(); c.strokeStyle = slotColor(t.slot); c.globalAlpha = .55; c.lineWidth = 2; c.setLineDash([2, 7]); c.lineCap = 'round';
     if (t.charge > 0) { c.strokeStyle = '#ff2d2d'; c.globalAlpha = .9; c.lineWidth = 2.5; c.setLineDash([]); } // Sniper charge-up laser
     c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const p of pts.slice(1)) c.lineTo(p[0], p[1]); c.stroke(); c.restore();
@@ -2593,6 +2717,11 @@ function render() {
       const col = slotColor(t.slot);
       if (t.shield > 0) { c.strokeStyle = col; c.globalAlpha = .4 + .3 * Math.sin(G.time * 20); c.lineWidth = 2; c.beginPath(); c.arc(t.x, t.y, 22, 0, TAU); c.stroke(); c.globalAlpha = 1; }
       c.fillStyle = col; c.globalAlpha = .25; c.beginPath(); c.ellipse(t.x, t.y + 2, 22, 18, 0, 0, TAU); c.fill(); c.globalAlpha = 1;
+      if (t.bx) {
+        c.save(); c.strokeStyle = col; c.globalAlpha = .6 + .3 * Math.sin(G.time * 20); c.lineWidth = 2; c.setLineDash([4, 4]);
+        c.beginPath(); c.moveTo(t.x, t.y); c.lineTo(t.bx, t.by); c.stroke(); c.setLineDash([]); c.lineWidth = 2.5;
+        c.beginPath(); c.arc(t.bx, t.by, 16, 0, TAU); c.stroke(); c.globalAlpha = .25; c.fillStyle = col; c.beginPath(); c.arc(t.bx, t.by, 13, 0, TAU); c.fill(); c.restore();
+      }
       drawStyledTank(t, chassisOf(t), col, slotDark(t.slot), chassisOf(t).stealth ? (G.time - (t.lastShot ?? -9) > 2 || NET.mode === 'client' ? .45 : .85) : 1);
     } else {
       if (t.bx) {
@@ -2872,7 +3001,8 @@ function overlayHTML() {
         <div class="row"><span>${ffTxt}</span><span class="note">D-pad ◀ ▶ color, ▲ ▼ trail, <span class="k">LB</span> <span class="k">RB</span> or <span class="k">Z</span> <span class="k">C</span> tank.</span></div>
         <div class="go">${joinedCount() ? `Press ${ST} or <span class="k">ENTER</span> to deploy` : `Press ${BA} to join`}</div>
         <div class="note">Elite tanks: ${ELITE_TANKS.map(k => eliteOk(k) ? `<b>${CHASSIS[k].name} ✓</b>` : `${CHASSIS[k].name} (${eliteNeed(k)})`).join(' · ')}</div>
-        <div class="note">Tank unlocks (destroy ${KILL_NEED} of a type to play as it): ${KILL_TANKS.map(k => (KILLS[k] || 0) >= KILL_NEED ? `<b>${CHASSIS[k].name} ✓</b>` : `${CHASSIS[k].name} ${KILLS[k] || 0}/${KILL_NEED}`).join(' · ')} · ${allTanksUnlocked() ? '<b class="secret">Minigun ✓</b>' : '<b>???</b> (unlock every other tank)'}</div>
+        <div class="note">Tank unlocks (destroy ${KILL_NEED} of a type to play as it): ${KILL_TANKS.map(k => (KILLS[k] || 0) >= KILL_NEED ? `<b>${CHASSIS[k].name} ✓</b>` : `${CHASSIS[k].name} ${KILLS[k] || 0}/${KILL_NEED}`).join(' · ')}</div>
+        <div class="row"><button type="button" class="mini danger" data-act="wipe">${performance.now() - wipeArm < 4000 ? 'Click again to delete all unlocks' : 'Delete progress'}</button>${performance.now() - wipedAt < 3000 ? '<span class="note">Progress deleted.</span>' : ''}</div>
         ${padLine}${netLine}</div>`;
     }
     case 'intro': {
@@ -2936,6 +3066,7 @@ document.addEventListener('visibilitychange', () => {
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now;
+  G.skSig = JSON.stringify(G.skills);
   pollPads(); buildInputs();
   if (G.state === 'intro' && G.level > BEST.level && G.slots.some(sl => sl && isMine(sl.dev))) { const before = unlockedChassis(); BEST.level = G.level; saveBest(before); }
   if (NET.mode !== 'off') for (const dev in INP) if (INP[dev].voice) { toggleVoice(); break; }
