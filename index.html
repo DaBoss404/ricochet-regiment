@@ -96,7 +96,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .stats .h{font-size:.75em;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 
 /* online dialog */
-#net{position:fixed;inset:0;background:rgba(10,8,6,.72);display:grid;place-items:center;z-index:20;padding:16px}
+#net,#cheat{position:fixed;inset:0;background:rgba(10,8,6,.72);display:grid;place-items:center;z-index:20;padding:16px}
+.codes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.codes b{display:inline-block;min-width:92px;color:var(--accent);font-family:var(--display);font-weight:400;letter-spacing:.04em}
+#cheat-status[data-err="1"]{color:#ffb4a8}
+.title h1{cursor:default;user-select:none}
 .net-card{background:var(--panel);border:1px solid #4a3e2f;border-radius:8px;padding:20px 22px;width:min(440px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
 .net-card h3{font:400 22px var(--display);margin:0}
 .net-card p{margin:0}
@@ -188,6 +192,21 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     </div>
     <p id="net-status" role="status"></p>
     <div class="btnrow"><button id="net-leave" class="pbtn ghost" type="button" hidden>Leave room</button><button id="net-close" class="pbtn ghost" type="button">Close</button></div>
+  </div>
+</div>
+<div id="cheat" hidden>
+  <div class="net-card" role="dialog" aria-modal="true" aria-labelledby="cheat-title">
+    <h3 id="cheat-title">Cheat codes</h3>
+    <div class="joinrow"><input id="cheat-in" maxlength="20" placeholder="CODE" autocomplete="off" aria-label="Cheat code"><button id="cheat-go" class="pbtn" type="button">Enter</button></div>
+    <p id="cheat-status" role="status"></p>
+    <ul class="codes">
+      <li><b>UNLOCKALL</b> Try every tank this session. Nothing is saved, and your real unlocks aren't changed.</li>
+      <li><b>GODMODE</b> Players can't be destroyed.</li>
+      <li><b>LEVEL 20</b> Start runs at that level (any number).</li>
+      <li><b>LIVES 9</b> Set lives (any number).</li>
+      <li><b>CLEAR</b> Turn all cheats off.</li>
+    </ul>
+    <div class="btnrow"><span class="note" id="cheat-active"></span><button id="cheat-close" class="pbtn ghost" type="button">Close</button></div>
   </div>
 </div>
 
@@ -493,7 +512,9 @@ function saveBest(before) {
   if (fresh.length) playSfx('legend');
 }
 let KILLS = store.get('rr-kills-v1', {}) || {};
-const unlockedChassis = () => CHASSIS_ORDER.filter(k => k === 'std' || (CHASSIS[k].unlock ? eliteOk(k) : (KILLS[k] || 0) >= KILL_NEED));
+// Cheats (from the hidden cheat window): only last for this browser session
+const CHEAT = { all: false, god: false, level: 1, lives: 0 };
+const unlockedChassis = () => CHASSIS_ORDER.filter(k => k === 'std' || CHEAT.all || (CHASSIS[k].unlock ? eliteOk(k) : (KILLS[k] || 0) >= KILL_NEED));
 const slotChassis = i => (G.slots[i] && CHASSIS[G.slots[i].chassis]) ? G.slots[i].chassis : 'std';
 // A tank's stats after its own tank skills are applied (cached until the skills change)
 const chCache = {};
@@ -685,6 +706,7 @@ const PREVENT = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRig
 const typing = e => { const t = e.target; return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable); };
 addEventListener('keydown', e => {
   if (!netEl.hidden) { if (e.code === 'Escape') closeNet(); return; }
+  if (!cheatEl.hidden) { if (e.code === 'Escape') closeCheat(); return; }
   if (typing(e)) return;
   if (PREVENT.has(e.code)) e.preventDefault();
   if (!e.repeat) kb.pressed.add(e.code);
@@ -1059,6 +1081,8 @@ function startGame() {
   // the Spiker can't shoot, so a squad with a Spiker in it starts with 5 lives instead of 3
   G.lives = G.slots.some((sl, i) => sl && slotChassis(i) === 'k') ? 5 : 3; G.level = 1; G.skills = {}; G.lastLayout = -1;
   G.nextWave = [{ t: 'a', n: 2 }];
+  if (CHEAT.lives) G.lives = CHEAT.lives;
+  if (CHEAT.level > 1) { G.level = CHEAT.level; G.nextWave = rollReels(G.level).map(r => ({ t: r.t, n: r.n })); }
   loadLevel(); sfx('join');
 }
 function toTitle() {
@@ -1245,6 +1269,7 @@ function canHit(b, t) {
 }
 // Bosses lose health, plated players lose their plating, everyone else is destroyed.
 function hurtTank(t, killer, dmg) {
+  if (t.team === 'p' && CHEAT.god) return;
   if (t.team === 'p' && t.dashT > 0 && sk('ironhide')) return;
   if (t.boss || t.maxhp) {
     t.hp -= dmg; t.hit = .12;
@@ -2544,6 +2569,36 @@ const toggleVoice = () => { if (NET.mode !== 'off') setVoice(!NET.voice); };
 
 // ---------- online dialog ----------
 const netEl = $('#net'), netBtn = $('#net-btn'), voiceBtn = $('#voice-btn');
+// ---------- cheat window ----------
+const cheatEl = $('#cheat'), cheatIn = $('#cheat-in');
+function cheatSummary() {
+  const on = [CHEAT.all && 'all tanks', CHEAT.god && 'god mode', CHEAT.level > 1 && 'start at level ' + CHEAT.level, CHEAT.lives && CHEAT.lives + ' lives'].filter(Boolean);
+  $('#cheat-active').textContent = on.length ? 'Active: ' + on.join(', ') : 'No cheats active';
+}
+function openCheat() { cheatEl.hidden = false; cheatIn.value = ''; $('#cheat-status').textContent = ''; cheatSummary(); playSfx('legend'); setTimeout(() => cheatIn.focus(), 0); }
+function closeCheat() { cheatEl.hidden = true; if (document.activeElement) document.activeElement.blur(); }
+function applyCheat() {
+  const raw = cheatIn.value.trim().toUpperCase().replace(/\s+/g, ' '), st = $('#cheat-status');
+  const [code, arg] = raw.split(' '), n = parseInt(arg, 10);
+  let msg = '', ok = true;
+  if (code === 'UNLOCKALL') { CHEAT.all = true; msg = 'Every tank is unlocked until you reload the page.'; }
+  else if (code === 'GODMODE') { CHEAT.god = !CHEAT.god; msg = CHEAT.god ? 'God mode on: players can\'t be destroyed.' : 'God mode off.'; }
+  else if (code === 'LEVEL' && n >= 1 && n <= 999) { CHEAT.level = n; msg = `Runs now start at level ${n}.`; }
+  else if (code === 'LIVES' && n >= 1 && n <= 99) { CHEAT.lives = n; if (G.state !== 'title' && NET.mode !== 'client') G.lives = n; msg = `Lives set to ${n}.`; }
+  else if (code === 'CLEAR') {
+    Object.assign(CHEAT, { all: false, god: false, level: 1, lives: 0 });
+    G.slots.forEach((sl, i) => { if (sl && isMine(sl.dev) && !unlockedChassis().includes(slotChassis(i))) setPref(i, { chassis: 'std' }); });
+    msg = 'All cheats are off.';
+  }
+  else { ok = false; msg = 'That code doesn\'t do anything.'; }
+  if (ok && NET.mode === 'client' && code !== 'UNLOCKALL' && code !== 'CLEAR') msg += ' (Only the host\'s cheats affect an online game.)';
+  st.textContent = msg; st.dataset.err = ok ? '0' : '1'; cheatSummary(); playSfx(ok ? 'join' : 'tick');
+  cheatIn.value = '';
+}
+$('#cheat-go').addEventListener('click', applyCheat);
+cheatIn.addEventListener('keydown', e => { if (e.key === 'Enter') applyCheat(); });
+$('#cheat-close').addEventListener('click', closeCheat);
+cheatEl.addEventListener('click', e => { if (e.target === cheatEl) closeCheat(); });
 const nameIn = $('#net-name'), codeIn = $('#net-code');
 nameIn.value = NET.name;
 function openNet() { netEl.hidden = false; renderNet(); }
@@ -2585,11 +2640,18 @@ nameIn.addEventListener('change', () => {
 });
 
 // ---------- customization clicks on the title screen ----------
-let wipeArm = 0, wipedAt = 0;
+let wipeArm = 0, wipedAt = 0, titleTaps = [];
 ov.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   b.blur(); unlockAudio();
   if (b.dataset.act === 'skill') { const i = +b.dataset.i; if (NET.mode === 'client') send({ t: 'pick', i }); else chooseSkill(i); return; }
+  if (b.dataset.act === 'title') {
+    // three quick taps on the title open the cheat window
+    const now = performance.now();
+    titleTaps = titleTaps.filter(x => now - x < 1200); titleTaps.push(now);
+    if (titleTaps.length >= 3) { titleTaps = []; openCheat(); }
+    return;
+  }
   if (b.dataset.act === 'wipe') {
     if (performance.now() - wipeArm > 4000) { wipeArm = performance.now(); playSfx('tick'); return; }
     // second click: delete unlock progress saved on this computer
@@ -3073,12 +3135,13 @@ function overlayHTML() {
       const netLine = NET.mode === 'off'
         ? `<div class="note">Playing with friends on other computers? Click <b>Play online</b> at the top.</div>`
         : `<div class="note">Online room <b>${esc(NET.code)}</b> · ${Math.max(1, NET.roster.length)} connected.${NET.voice ? ' Voice chat is on.' : ' Press <span class="k">V</span> or <span class="k">VIEW</span> to turn voice chat on.'}</div>`;
-      return `<div class="panel title"><h1>Ricochet <span>Regiment</span></h1>
+      return `<div class="panel title"><h1 data-act="title">Ricochet <span>Regiment</span></h1>
         <p class="sub">Endless co-op tank combat for up to four players. Shells bounce off walls, mines clear crates, and a destroyed tank sits out until the next level. After every level the slot machines pick the next wave, and solo players pick a skill every 3 levels. A boss arrives every 10 levels.</p>
         <div class="slots">${[0, 1, 2, 3].map(slotCard).join('')}</div>
         <div class="row"><span>${ffTxt}</span><span class="note">D-pad ◀ ▶ color, ▲ ▼ trail, <span class="k">LB</span> <span class="k">RB</span> or <span class="k">Z</span> <span class="k">C</span> tank.</span></div>
         <div class="go">${joinedCount() ? `Press ${ST} or <span class="k">ENTER</span> to deploy` : `Press ${BA} to join`}</div>
         <div class="note">Elite tanks: ${ELITE_TANKS.map(k => eliteOk(k) ? `<b>${CHASSIS[k].name} ✓</b>` : `${CHASSIS[k].name} (${eliteNeed(k)})`).join(' · ')}</div>
+        ${CHEAT.all || CHEAT.god || CHEAT.level > 1 || CHEAT.lives ? '<div class="warn">Cheats are on for this session.</div>' : ''}
         <div class="note">Tank unlocks (destroy ${KILL_NEED} of a type to play as it): ${KILL_TANKS.map(k => (KILLS[k] || 0) >= KILL_NEED ? `<b>${CHASSIS[k].name} ✓</b>` : `${CHASSIS[k].name} ${KILLS[k] || 0}/${KILL_NEED}`).join(' · ')}</div>
         <div class="row"><button type="button" class="mini danger" data-act="wipe">${performance.now() - wipeArm < 4000 ? 'Click again to delete all unlocks' : 'Delete progress'}</button>${performance.now() - wipedAt < 3000 ? '<span class="note">Progress deleted.</span>' : ''}</div>
         ${padLine}${netLine}</div>`;
