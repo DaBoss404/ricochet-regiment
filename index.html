@@ -244,10 +244,19 @@ const ETYPES = {
   l: { name: 'Laser',    color: '#dc2626', speed: 40, bs: 0, bounces: 0, max: 1, cd: 3.4, turn: 1.8, aimEvery: .35, laser: true, charge: .7, pref: 340, miss: 0, err: .04 },
   i: { name: 'Bouncer',  color: '#65a30d', speed: 55, bs: 210, bounces: 4, max: 2, cd: 1.8, turn: 2.4, aimEvery: .35, smart: true, accel: .12, pref: 300, miss: .35, err: .12 },
   u: { name: 'Summoner', color: '#b45309', speed: 35, bs: 170, bounces: 1, max: 1, cd: 2.8, turn: 1.8, aimEvery: .5, summon: 6, pref: 360, miss: .45, err: .2 },
+  sie:  { name: 'Siege',     color: '#4a4036', speed: 32, bs: 150, bounces: 1, max: 1, cd: 2.6, turn: 1.4, aimEvery: .5, smart: true, kind: 'cannon', hr: 7, pref: 320, miss: .3, err: .1 },
+  kam:  { name: 'Kamikaze',  color: '#e85d04', r: 11, speed: 125, bs: 0, bounces: 0, max: 0, cd: 99, turn: 4, aimEvery: 1, pref: 0, miss: 0, err: 0, kami: true },
+  mag:  { name: 'Magnet',    color: '#a21caf', speed: 45, bs: 200, bounces: 1, max: 1, cd: 2.2, turn: 2, aimEvery: .4, smart: true, magnet: 85, pref: 260, miss: .35, err: .14 },
+  gen:  { name: 'Generator', color: '#0284c7', speed: 30, bs: 170, bounces: 1, max: 1, cd: 3, turn: 1.6, aimEvery: .5, gen: 120, pref: 380, miss: .45, err: .2 },
+  bur:  { name: 'Burrower',  color: '#78350f', speed: 50, bs: 230, bounces: 0, max: 1, cd: 1.4, turn: 3, aimEvery: .3, burrow: true, pref: 220, miss: .3, err: .1 },
+  eng:  { name: 'Engineer',  color: '#57534e', speed: 38, bs: 180, bounces: 1, max: 1, cd: 2.6, turn: 2, aimEvery: .5, build: 8, pref: 340, miss: .4, err: .18 },
+  tur:  { name: 'Turret',    color: '#78716c', r: 12, speed: 0, bs: 200, bounces: 1, max: 1, cd: 2.4, turn: 2.2, aimEvery: .4, smart: true, miss: .35, err: .14 },
+  sal:  { name: 'Salvo',     color: '#0e7490', speed: 45, bs: 190, bounces: 0, max: 4, cd: 3.4, burst: 4, burstGap: .14, turn: 2.2, aimEvery: .35, kind: 'missile', homeP: 1.6, pref: 320, miss: .3, err: .2 },
+  orbt: { name: 'Orbiter',   color: '#6d28d9', speed: 40, bs: 220, bounces: 1, max: 1, cd: 1.6, turn: 2.4, aimEvery: .35, smart: true, orbs: 3, pref: 300, miss: .3, err: .12 },
   s: { name: 'Sniper',   color: '#5c6b2f', speed: 30, bs: 650, bounces: 1, max: 1, cd: 3.4, turn: 1.6, aimEvery: .45, kind: 'snipe', smart: true, charge: .6, pref: 420, miss: .15, err: .05 },
 };
 // When each enemy type can start showing up on the slot machines
-const UNLOCK = { a: 1, b: 1, c: 3, h: 4, d: 5, k: 5, e: 6, n: 6, m: 7, z: 7, f: 8, w: 8, i: 8, s: 9, v: 9, q: 10, x: 11, l: 11, g: 12, j: 13, u: 14 };
+const UNLOCK = { a: 1, b: 1, c: 3, h: 4, d: 5, k: 5, e: 6, n: 6, m: 7, z: 7, f: 8, w: 8, i: 8, s: 9, v: 9, q: 10, x: 11, l: 11, g: 12, j: 13, u: 14, sie: 10, kam: 12, mag: 15, gen: 16, bur: 17, eng: 18, sal: 19, orbt: 21 };
 const unlockedTypes = lvl => Object.keys(UNLOCK).filter(k => lvl >= UNLOCK[k]);
 const BOSSES = [
   { name: 'Juggernaut', color: '#6b2a2a', hp: 26, speed: 34, turn: 1.6, gap: 2.1, pref: 260, attacks: ['fan', 'mines', 'fan', 'ring'] },
@@ -255,6 +264,11 @@ const BOSSES = [
   { name: 'Warden',     color: '#4a3a62', hp: 34, speed: 46, turn: 2.2, gap: 1.9, pref: 320, attacks: ['ring', 'snipe', 'fan', 'mines', 'snipe'] },
 ];
 const BOSS_R = 30;
+// Every 50th level: an elite boss armed with elite weapons
+const ELITE_BOSS = { name: 'Overlord', color: '#c9a227', hp: 90, speed: 40, turn: 2.2, gap: 1.7, pref: 320, elite: true,
+  attacks: ['prism', 'swarm', 'starfall', 'vortex', 'ring', 'prism', 'missiles', 'starfall'] };
+const isEliteBoss = lvl => lvl % 50 === 0;
+const bossName = lvl => isEliteBoss(lvl) ? ELITE_BOSS.name : BOSSES[bossIndex(lvl) % BOSSES.length].name;
 // Each skill card first rolls a rarity, then a skill of that rarity.
 const RARITY = {
   common:    { label: 'Common',    w: 60 },
@@ -469,6 +483,14 @@ const CHASSIS = {
   f:   { name: 'Brute',    desc: 'Fires a 3-shell burst, then reloads slowly.', burst: 3, burstGap: .09, cd: 3.2 },
   v:   { name: 'Splitter', desc: 'Shells split in two on their first bounce.', fis: true, cd: 1.15 },
   x:   { name: 'Hive',     desc: 'When destroyed, splits into two small tanks: steer one with the left stick (WASD) and the other with the right stick (arrow keys). They fire on their own.', split: true },
+  sie: { name: 'Siege',     desc: 'Fires a slow giant cannonball that smashes through every enemy in its path.', kind: 'cannon', spd: .6, bnc: -1, pierce: 99, hr: 7, cd: 2.4 },
+  kam: { name: 'Kamikaze',  desc: 'Fire to launch a bomb car that races to the nearest enemy and explodes (up to 3 at once).', kamiLaunch: true },
+  mag: { name: 'Magnet',    desc: 'A magnetic field bends enemy shells away from you.', magnet: 90 },
+  gen: { name: 'Generator', desc: 'A bubble shield blocks one hit, then recharges after 6 seconds.', bubble: 6, bubbles: 1 },
+  bur: { name: 'Burrower',  desc: 'No mines. The mine button digs you underground for 1.5 seconds: you can\'t be hit and you move faster, but can\'t shoot.', burrow: true },
+  eng: { name: 'Engineer',  desc: 'No mines. The mine button builds a turret that shoots enemies (up to 2).', build: true },
+  sal: { name: 'Salvo',     desc: 'Fires a burst of 4 rockets that curve toward enemies.', burst: 4, burstGap: .1, kind: 'missile', home: 2, bnc: -1, cd: 2.4 },
+  orbt: { name: 'Orbiter',  desc: 'Three orbs circle you and block enemy shells. Fire launches an orb; they grow back over time.', orbs: 3 },
   u:   { name: 'Summoner', desc: 'Summons a minion tank every 6 seconds (up to 3) that fights on its own.', summon: true, minions: 3, sumT: 6 },
   z:   { name: 'Scorcher', desc: 'Hold fire to spray a short-range stream of flame.', flame: true },
   q:   { name: 'Mortar',   desc: 'Lobs shells over walls to where you aim.', mortar: true, cd: 8 },
@@ -498,7 +520,7 @@ const CHASSIS = {
   dsc:  { name: 'Razor Disc',desc: 'Elite. A disc that cuts through everything, speeds up on every bounce, and fires a shot at the nearest enemy each time.', elite: true, wpn: 'disc', kind: 'saw', spd: .9, bnc: 5, pierce: 99, ammo: 2, cd: 1.8, hr: 5, unlock: { level: 40 } },
   cmd:  { name: 'Plasma',    desc: 'Elite. A big plasma orb that passes through enemies and explodes where it stops.', elite: true, wpn: 'plasma', kind: 'plasma', spd: .75, bnc: -1, pierce: 99, ammo: 2, life: 2.2, cd: 2.4, hr: 6, unlock: { level: 25 } },
 };
-const CHASSIS_ORDER = ['std', 'vet', 'reb', 'iron', 'twn', 'hunt', 'spr', 'prc', 'cmd', 'thn', 'ion', 'shu', 'car', 'nap', 'rst', 'sfl', 'dsc', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j', 'n', 'l', 'i', 'u'];
+const CHASSIS_ORDER = ['std', 'vet', 'reb', 'iron', 'twn', 'hunt', 'spr', 'prc', 'cmd', 'thn', 'ion', 'shu', 'car', 'nap', 'rst', 'sfl', 'dsc', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j', 'n', 'l', 'i', 'u', 'sie', 'kam', 'mag', 'gen', 'bur', 'eng', 'sal', 'orbt'];
 const KILL_TANKS = CHASSIS_ORDER.filter(k => k !== 'std' && !CHASSIS[k].unlock);
 const ELITE_TANKS = CHASSIS_ORDER.filter(k => CHASSIS[k].unlock);
 let BEST = Object.assign({ level: 0, kills: 0 }, store.get('rr-best-v1', {}) || {});
@@ -597,6 +619,22 @@ const TANK_SKILLS = [
   rateSk('sfl', 'sfl_rate', 'rare', 'Faster Fall', 'Starfall can be called more often.', 3, .85),
   addSk('dsc', 'dsc_ammo', 'rare', 'Extra Disc', 'Carry more Razor Discs at once.', 2, 'ammoAdd', 0, 1, 'Extra discs', v => '+' + v),
   addSk('dsc', 'dsc_bnc', 'common', 'Sharper Rebounds', 'Razor Discs bounce more.', 3, 'bnc', 5, 1, 'Bounces'),
+  rateSk('sie', 'sie_rate', 'common', 'Quick Load', 'Siege fires faster.', 3),
+  pctSk('sie', 'sie_spd', 'rare', 'Lighter Shot', 'Siege cannonballs fly faster.', 3, 'spd', .2, 'Cannonball speed'),
+  addSk('kam', 'kam_max', 'common', 'Bigger Garage', 'Have more bomb cars out at once.', 2, 'kmax', 3, 1, 'Bomb cars at once'),
+  pctSk('kam', 'kam_blast', 'rare', 'Bigger Bang', 'Bomb cars explode in a bigger blast.', 3, 'kblast', .2, 'Blast size'),
+  pctSk('mag', 'mag_field', 'common', 'Stronger Field', 'The Magnet field reaches farther.', 3, 'magK', .2, 'Field size'),
+  rateSk('mag', 'mag_rate', 'rare', 'Charged Rounds', 'The Magnet fires faster.', 3),
+  { id: 'gen_fast', req: 'gen', rar: 'common', name: 'Fast Recharge', desc: 'The bubble shield comes back sooner.', max: 3, stat: ['Bubble recharge', n => secs(6 * Math.pow(.8, n))], mod: (c, n) => ({ bubble: 6 * Math.pow(.8, n) }) },
+  addSk('gen', 'gen_layers', 'epic', 'Double Bubble', 'Hold more bubble layers at once.', 2, 'bubbles', 1, 1, 'Bubble layers'),
+  addSk('bur', 'bur_long', 'common', 'Deep Dig', 'Stay underground longer.', 3, 'burT', 1.5, .5, 'Time underground', secs),
+  { id: 'bur_cd', req: 'bur', rar: 'rare', name: 'Quick Dig', desc: 'Dig down again sooner.', max: 3, stat: ['Dig cooldown', n => secs(4 * Math.pow(.8, n))], mod: (c, n) => ({ burCd: 4 * Math.pow(.8, n) }) },
+  addSk('eng', 'eng_more', 'rare', 'Bigger Crew', 'Build more turrets.', 2, 'turrets', 2, 1, 'Turrets at once'),
+  { id: 'eng_fast', req: 'eng', rar: 'common', name: 'Fast Build', desc: 'Build turrets more often.', max: 3, stat: ['Build cooldown', n => secs(6 * Math.pow(.8, n))], mod: (c, n) => ({ bcd: 6 * Math.pow(.8, n) }) },
+  addSk('sal', 'sal_more', 'common', 'Bigger Salvo', 'Salvo fires more rockets per burst.', 3, 'burst', 4, 1, 'Rockets per burst'),
+  addSk('sal', 'sal_home', 'rare', 'Smart Rockets', 'Salvo rockets turn harder toward enemies.', 3, 'home', 2, 1, 'Homing strength'),
+  addSk('orbt', 'orbt_more', 'rare', 'More Orbs', 'Carry more orbs.', 2, 'orbs', 3, 1, 'Orbs'),
+  { id: 'orbt_fast', req: 'orbt', rar: 'common', name: 'Fast Regrow', desc: 'Orbs grow back faster.', max: 3, stat: ['New orb every', n => secs(2.5 * Math.pow(.8, n))], mod: (c, n) => ({ orbT: 2.5 * Math.pow(.8, n) }) },
 ];
 SKILLS.push(...TANK_SKILLS);
 TANK_SKILLS.forEach(t => { SKILL[t.id] = t; });
@@ -857,7 +895,8 @@ function bulletTrail(b, dt) {
   b.trailT = (b.trailT || 0) - dt; if (b.trailT > 0) return;
   const x = b.x - b.dx * 6, y = b.y - b.dy * 6, P = G.parts;
   if (b.kind === 'plasma') { b.trailT = .02; P.push({ kind: 'fire', x: b.x, y: b.y, vx: rnd(-15, 15), vy: rnd(-15, 15), life: .3, max: .3, size: 5, grow: 2, color: '#b07cff', drag: 2 }); return; }
-  if (b.kind === 'saw' || b.kind === 'boomer' || b.kind === 'grenade' || b.kind === 'bomb' || b.kind === 'star') { b.trailT = 1; return; }
+  if (b.kind === 'saw' || b.kind === 'boomer' || b.kind === 'grenade' || b.kind === 'bomb' || b.kind === 'star' || b.kind === 'cannon') { b.trailT = 1; return; }
+  if (b.kind === 'orb') { b.trailT = .02; P.push({ kind: 'fire', x: b.x, y: b.y, vx: 0, vy: 0, life: .2, max: .2, size: 4, grow: 0, color: '#b48cff', drag: 0 }); return; }
   if (b.kind === 'vortex' || b.kind === 'thunder') { b.trailT = .025; P.push({ kind: 'fire', x: b.x, y: b.y, vx: rnd(-12, 12), vy: rnd(-12, 12), life: .25, max: .25, size: 4, grow: 2, color: b.kind === 'vortex' ? '#b07cff' : '#ffe066', drag: 2 }); return; }
   if (b.kind === 'flame') { b.trailT = .03; P.push({ kind: 'fire', x: b.x, y: b.y, vx: rnd(-20, 20), vy: rnd(-20, 20), life: .2, max: .2, size: rnd(3, 6), grow: 6, color: Math.random() < .5 ? '#ff7a2e' : '#ffc24d', drag: 2 }); return; }
   if (b.kind === 'pellet') { b.trailT = .04; P.push({ kind: 'smoke', x, y, vx: 0, vy: 0, life: .3, max: .3, size: 1.5, grow: 5, color: '#a99c86', drag: 2 }); return; }
@@ -981,6 +1020,7 @@ function makeTank(x, y, team) {
 function spawnPlayer(k, at) {
   const sp = at || G.spawns.p[k] || G.spawns.p[0] || { x: 80, y: 80 + k * 80 };
   const t = makeTank(sp.x, sp.y, 'p'); t.slot = k; t.dev = G.slots[k].dev; t.shield = at ? 1.6 : 0;
+  t.orbs = chassisOf(t).orbs || 0; t.bub = chassisOf(t).bubble ? chassisOf(t).bubbles || 1 : 0;
   if (!at) { t.armor = sk('armor') + (chassisOf(t).armor || 0); if (sk('shield')) t.shield = F.shield(sk('shield')); }
   t.armorMax = sk('armor') + (chassisOf(t).armor || 0);
   G.tanks.push(t); return t;
@@ -988,9 +1028,17 @@ function spawnPlayer(k, at) {
 function makeEnemy(type, x, y) {
   const t = makeTank(x, y, 'e'); t.type = type; t.spec = ETYPES[type]; t.r = t.spec.r || R;
   if (t.spec.hp) t.hp = t.maxhp = t.spec.hp;
+  if (t.spec.orbs) t.orbs = t.spec.orbs;
   t.cool = rnd(1.2, 2.6) + sk('headstart');
   t.cdK = Math.max(.65, 1 - (G.level - 1) * .012); // later levels fire a little more often
   t.ai = { aimT: Math.random() * .5, target: Math.PI, moveT: 0, dir: Math.random() * TAU, mineT: rnd(3, 6), burst: 0, fireCheck: 0, flee: 0, fleeFrom: null, charging: 0 };
+  return t;
+}
+function makeEliteBoss(x, y) {
+  const tier = G.level / 50 - 1, t = makeTank(x, y, 'e');
+  t.type = 'bossE'; t.spec = ELITE_BOSS; t.boss = true; t.r = 34;
+  t.maxhp = t.hp = Math.round(ELITE_BOSS.hp * (1 + .6 * tier) * (1 + .35 * (joinedCount() - 1)));
+  t.ai = { atkT: 2.6 + sk('headstart'), atk: 0, dir: Math.PI, moveT: 0, flee: 0, charging: 0, tier: tier + 2 };
   return t;
 }
 function makeBoss(idx, x, y) {
@@ -1029,7 +1077,7 @@ function loadLevel(retry) {
   G.tanks = []; G.bullets = []; G.mines = []; G.parts = []; G.marks = []; G.wrecks = []; G.scorch = [];
   G.slots.forEach((s, k) => { if (s) spawnPlayer(k); });
   const boss = isBossLevel(G.level);
-  if (boss) { const b = L.sp.boss || { x: W - 180, y: H / 2 }; G.tanks.push(makeBoss(bossIndex(G.level), b.x, b.y)); }
+  if (boss) { const b = L.sp.boss || { x: W - 180, y: H / 2 }; G.tanks.push(isEliteBoss(G.level) ? makeEliteBoss(b.x, b.y) : makeBoss(bossIndex(G.level), b.x, b.y)); }
   const types = [];
   for (const w of G.nextWave) for (let i = 0; i < w.n; i++) types.push(w.t);
   const extra = Math.round((joinedCount() - 1) * 0.7);
@@ -1161,7 +1209,7 @@ function shoot(t, ang, speed, bounces, kind = 'shell', o = {}) {
   t.recoil = 1;
   if (bb(tx, ty)) { if (o.fx !== false) { emit({ t: 'puff', x: r1(tx), y: r1(ty), n: 5 }); sfx('pop'); } return; }
   G.bullets.push({ id: ++G.idSeq, x: tx, y: ty, dx: Math.cos(ang), dy: Math.sin(ang), speed, bounces, owner: t, team: t.team,
-    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0, pierce: o.pierce || 0, hitIds: [], base: speed, fis: o.fis || false, accel: o.accel || 0, home: o.home || 0, big: !!o.big, wpn: o.wpn || null, hr: o.hr || 0 });
+    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0, pierce: o.pierce || 0, hitIds: [], base: speed, fis: o.fis || false, accel: o.accel || 0, homeP: o.homeP || 0, home: o.home || 0, big: !!o.big, wpn: o.wpn || null, hr: o.hr || 0 });
   t.bullets++; t.lastShot = G.time;
   if (o.fx !== false && kind !== 'flame') {
     emit({ t: 'muz', x: r1(tx), y: r1(ty), a: r2(ang) });
@@ -1178,7 +1226,8 @@ function enemyFire(t) {
   if (S.pellets) {
     for (let i = 0; i < S.pellets; i++) shoot(t, ang + (i / (S.pellets - 1) - .5) * S.spread + rnd(-.04, .04), enemyShotSpeed(S) * rnd(.9, 1.1), S.bounces, 'pellet', { life: S.life, fx: i === 0 });
   } else if (S.laser) beamShot(t, ang, 0, { color: '#ff3b3b', w: 4 });
-  else shoot(t, ang, enemyShotSpeed(S), S.bounces, S.kind || 'shell', { fis: S.fis, accel: S.accel });
+  else if (S.orbs) { if (t.orbs > 0) { t.orbs--; shoot(t, ang, enemyShotSpeed(S), S.bounces, 'orb'); } }
+  else shoot(t, ang, enemyShotSpeed(S), S.bounces, S.kind || 'shell', { fis: S.fis, accel: S.accel, homeP: S.homeP, hr: S.hr });
 }
 function layMine(t) {
   const max = t.team === 'p' ? F.mines(sk('mines')) : (t.spec.mines || 0);
@@ -1261,7 +1310,7 @@ function beamShot(t, ang, bounces, opt = {}) {
 }
 const lanceShot = t => beamShot(t, t.turret, chassisOf(t).lbnc || 0);
 function canHit(b, t) {
-  if (t.shield > 0) return false;
+  if (t.shield > 0 || t.under) return false;
   if (b.team === 'e' && t.team === 'e') return false; // enemies never hurt each other
   if (t === b.owner && !b.bounced && b.age < .25) return false;
   if (b.team === 'p' && t.team === 'p' && !G.ff) return false;
@@ -1270,6 +1319,9 @@ function canHit(b, t) {
 // Bosses lose health, plated players lose their plating, everyone else is destroyed.
 function hurtTank(t, killer, dmg) {
   if (t.team === 'p' && CHEAT.god) return;
+  if (t.under) return; // underground
+  if (t.team === 'e' && t.gsh) { emit({ t: 'spk', x: r1(t.x), y: r1(t.y), n: 6, v: 100 }); sfx('clank'); return; } // Generator shield
+  if (t.team === 'p' && t.bub > 0) { t.bub--; t.bubT = chassisOf(t).bubble || 6; emit({ t: 'ring', x: r1(t.x), y: r1(t.y), c: '#7fd6ff' }); sfx('clank'); return; }
   if (t.team === 'p' && t.dashT > 0 && sk('ironhide')) return;
   if (t.boss || t.maxhp) {
     t.hp -= dmg; t.hit = .12;
@@ -1389,6 +1441,15 @@ function autoFire(t, dt, rate, speed, bounces) {
 // Summoner minion: stays near its owner, closes in on enemies and shoots them
 function updateAlly(t, dt, active) {
   if (!active) return;
+  if (t.stat) { autoFire(t, dt, 1.1, 240, 1); return; } // Engineer turret
+  if (t.kami) {
+    // bomb car: race to the nearest enemy and explode
+    t.life -= dt;
+    const prey = aliveTanks.filter(e => e.alive && e.team === 'e' && !e.under).sort((a, b) => dist(a, t) - dist(b, t))[0];
+    chase(t, prey, 145, dt);
+    if (t.life <= 0 || (prey && dist(prey, t) < (prey.r || R) + 14)) kamiBoom(t, 55 * (chassisOf(t.owner).kblast || 1));
+    return;
+  }
   const tgt = autoFire(t, dt, 1.3, 230, 0), ai = t.ai;
   ai.moveT -= dt;
   if (ai.moveT <= 0 || !tankFree(t.x + Math.cos(ai.dir) * 14, t.y + Math.sin(ai.dir) * 14, t.r)) {
@@ -1433,7 +1494,7 @@ function updatePlayer(t, dt, active) {
     if (t.dashT <= 0) dashEnd(t);
   } else if (mag > .05) {
     steerBody(t, Math.atan2(inp.my, inp.mx), 8, dt);
-    const sp = PSPEED * F.drive(sk('treads')) * (G.adren > 0 ? 1.3 : 1) * (ch.drive || 1);
+    const sp = PSPEED * F.drive(sk('treads')) * (G.adren > 0 ? 1.3 : 1) * (ch.drive || 1) * (t.under ? 1.6 : 1);
     moveTank(t, inp.mx * sp, inp.my * sp, dt);
   }
   if (inp.mouseAim) t.turret = Math.atan2(kb.my - t.y, kb.mx - t.x);
@@ -1442,7 +1503,22 @@ function updatePlayer(t, dt, active) {
   else if (mag > .5 && t.idleAim > .6) t.turret += angDiff(Math.atan2(inp.my, inp.mx), t.turret) * Math.min(1, dt * 6);
   t.idleAim = inp.aim === null && !inp.mouseAim ? (t.idleAim || 0) + dt : 0;
   const god = sk('mythic') > 0, rateK = 1 / F.fireRate(sk('reload')) / (god ? 1.5 : 1) * (G.adren > 0 ? .65 : 1);
-  if (ch.ram) {
+  // Generator bubble and Orbiter orbs grow back
+  if (ch.bubble && t.bub < (ch.bubbles || 1)) { t.bubT = (t.bubT ?? ch.bubble) - dt; if (t.bubT <= 0) { t.bub++; t.bubT = ch.bubble; sfx('tick'); } }
+  if (ch.orbs && t.orbs < ch.orbs) { t.orbT = (t.orbT ?? (ch.orbT || 2.5)) - dt; if (t.orbT <= 0) { t.orbs++; t.orbT = ch.orbT || 2.5; } }
+  t.burCdT = (t.burCdT || 0) - dt; t.buildCd = (t.buildCd || 0) - dt;
+  if (t.under) {
+    // Burrower: underground, can't shoot; pops back up when time runs out
+    t.underT -= dt;
+    if (t.underT <= 0) { t.under = false; collideTank(t); emit({ t: 'puff', x: r1(t.x), y: r1(t.y), n: 10, v: 60, z: 5 }); sfx('pop'); }
+  } else if (ch.kamiLaunch) {
+    if (inp.fire && t.cool <= 0 && G.tanks.filter(o => o.alive && o.kami && o.owner === t).length < (ch.kmax || 3)) {
+      const a = t.turret, x = t.x + Math.cos(a) * 26, y = t.y + Math.sin(a) * 26;
+      if (tankFree(x, y, 10)) { const k = makeFriend(t, x, y, 'ally'); k.kami = true; k.life = 7; k.r = 9; k.body = a; t.cool = .6 * rateK; sfx('rev'); }
+    }
+  } else if (ch.orbs) {
+    if (inp.fire && t.cool <= 0 && t.orbs > 0) { t.orbs--; shoot(t, t.turret, PBS * 1.15 * F.shellSpeed(sk('speed')), F.bounces(sk('bounce')), 'orb', { pierce: god ? 99 : sk('pierce') }); t.cool = .22 * rateK; }
+  } else if (ch.ram) {
     if (inp.fire && t.dashCd <= 0) { t.dashT = F.dashLen(sk('dashlen')); t.dashCd = F.dashCd(sk('dashcd')) * rateK; sfx('rev'); rumble(t.dev, .4, .3, 150); }
   } else if (ch.tesla || ch.lance || ch.beam !== undefined) {
     if (inp.fire && t.cool <= 0) {
@@ -1543,6 +1619,14 @@ function updatePlayer(t, dt, active) {
     }
   }
   if (ch.blink) blinkPlayer(t, inp, ch, dt);
+  else if (ch.burrow) { if (inp.mine && !t.under && t.burCdT <= 0) { t.under = true; t.underT = ch.burT || 1.5; t.burCdT = (ch.burCd || 4) + t.underT; emit({ t: 'puff', x: r1(t.x), y: r1(t.y), n: 10, v: 60, z: 5 }); sfx('mortar'); } }
+  else if (ch.build) {
+    if (inp.mine && t.buildCd <= 0 && G.tanks.filter(o => o.alive && o.stat && o.owner === t).length < (ch.turrets || 2)) {
+      const a = t.turret; let x = t.x + Math.cos(a) * 34, y = t.y + Math.sin(a) * 34;
+      if (!tankFree(x, y, 12)) { x = t.x - Math.cos(a) * 34; y = t.y - Math.sin(a) * 34; }
+      if (tankFree(x, y, 12)) { const tu = makeFriend(t, x, y, 'ally'); tu.stat = true; tu.r = 12; tu.turret = a; t.buildCd = ch.bcd || 6; emit({ t: 'ring', x: r1(x), y: r1(y), c: slotColor(t.slot) }); sfx('clank'); }
+    }
+  }
   else if (inp.mine) layMine(t);
 }
 // The shape of one shot for a player's tank: fan angles, side offsets, and how many shells it can have out
@@ -1631,7 +1715,7 @@ function mortarPoint(t, inp) {
   return [clamp(t.x + Math.cos(t.turret) * d, 20, W - 20), clamp(t.y + Math.sin(t.turret) * d, 20, H - 20)];
 }
 // A Ghost player is hidden unless it fired in the last 2 seconds or an enemy is close
-const hidden = (p, from) => { const ch = chassisOf(p); return !!ch.stealth && G.time - (p.lastShot ?? -9) > (ch.reveal ?? 2) && (!from || dist(p, from) > 140); };
+const hidden = (p, from) => { if (p.under) return true; const ch = chassisOf(p); return !!ch.stealth && G.time - (p.lastShot ?? -9) > (ch.reveal ?? 2) && (!from || dist(p, from) > 140); };
 function nearestPlayer(t) {
   let best = null, bd = 1e9;
   for (const p of aliveTanks) if (p.team === 'p' && !hidden(p, t)) { const d = dist(p, t); if (d < bd) { bd = d; best = p; } }
@@ -1705,9 +1789,67 @@ function updateSpiker(t, dt, target) {
   }
   if (steerBody(t, ai.dir, 6, dt) < .7) moveTank(t, Math.cos(ai.dir) * S.speed * tar, Math.sin(ai.dir) * S.speed * tar, dt);
 }
+// Bomb blast for Kamikaze tanks and bomb cars: hurts the other side and breaks crates
+function kamiBoom(t, size) {
+  const foe = t.team === 'p' ? 'e' : 'p';
+  emit({ t: 'boom', x: r1(t.x), y: r1(t.y), c: '#ff7a2e', k: size / 55 }); emit({ t: 'sc', x: r1(t.x), y: r1(t.y), r: 34 }); sfx('boom'); shake(7);
+  for (const o of G.tanks) if (o.alive && o.team === foe && Math.hypot(o.x - t.x, o.y - t.y) < size + (o.r || R) * .5) hurtTank(o, t.team === 'p' ? t.owner || t : t, o.boss ? 3 : 1);
+  for (let r = Math.floor((t.y - size) / TS); r <= Math.floor((t.y + size) / TS); r++) for (let c = Math.floor((t.x - size) / TS); c <= Math.floor((t.x + size) / TS); c++) {
+    if (r < 0 || c < 0 || r >= ROWS || c >= COLS || G.grid[r][c] !== 2) continue;
+    if (Math.hypot(c * TS + TS / 2 - t.x, r * TS + TS / 2 - t.y) < size + 12) { G.grid[r][c] = 0; staticDirty = true; emit({ t: 'crate', x: c * TS + TS / 2, y: r * TS + TS / 2 }); }
+  }
+  if (t.alive) { t.alive = false; if (t.team === 'p' && t.ally) return; killTank(Object.assign(t, { alive: true }), null); }
+}
+// Chase a target in a straight line when possible, otherwise pick an open direction toward it
+function chase(t, target, speed, dt) {
+  const ai = t.ai; ai.moveT = (ai.moveT || 0) - dt;
+  if (ai.moveT <= 0 || !tankFree(t.x + Math.cos(ai.dir) * 16, t.y + Math.sin(ai.dir) * 16, t.r || R)) {
+    ai.moveT = rnd(.2, .45);
+    if (target && clearPath(t, target)) ai.dir = Math.atan2(target.y - t.y, target.x - t.x);
+    else {
+      let best = null, bs = -1e9;
+      for (let k = 0; k < 12; k++) { const a = k / 12 * TAU, cx = Math.cos(a), cy = Math.sin(a); if (!tankFree(t.x + cx * 18, t.y + cy * 18, t.r || R)) continue; let sc = Math.random() * .6; if (target) { const d = dist(target, t) || 1; sc += (cx * (target.x - t.x) + cy * (target.y - t.y)) / d; } if (sc > bs) { bs = sc; best = a; } }
+      ai.dir = best === null ? (ai.dir || 0) + Math.PI : best;
+    }
+  }
+  if (steerBody(t, ai.dir, 8, dt) < .8) moveTank(t, Math.cos(ai.dir) * speed, Math.sin(ai.dir) * speed, dt);
+}
 function updateEnemy(t, dt, active) {
   if (!active) return;
   const S = t.spec, ai = t.ai, target = nearestPlayer(t);
+  if (S.kami) {
+    // Kamikaze: rushes you and explodes up close
+    chase(t, target, S.speed * F.tar(sk('tar')), dt);
+    if (target && dist(target, t) < (t.r || R) + (target.r || R) + 12) kamiBoom(t, 55);
+    return;
+  }
+  if (S.burrow) {
+    // Burrower: digs under, travels toward you, then pops up (with a shaking mound first) and fires
+    if (t.under) {
+      ai.digT -= dt;
+      if (ai.digT > .5 && ai.dest) { const d = dist(ai.dest, t); if (d > 3) { const v = Math.min(d, 150 * dt); t.x += (ai.dest.x - t.x) / d * v; t.y += (ai.dest.y - t.y) / d * v; } }
+      else t.emerge = true;
+      if (ai.digT <= 0) { t.under = false; t.emerge = false; ai.burT = rnd(3, 4.5); t.cool = Math.min(t.cool, .25); ai.aimT = 0; emit({ t: 'puff', x: r1(t.x), y: r1(t.y), n: 10, v: 60, z: 5 }); sfx('pop'); }
+      return;
+    }
+    ai.burT = (ai.burT ?? rnd(2, 3)) - dt;
+    if (ai.burT <= 0 && target) {
+      for (let k = 0; k < 30; k++) { const a = Math.random() * TAU, d = rnd(120, 190), x = target.x + Math.cos(a) * d, y = target.y + Math.sin(a) * d; if (tankFree(x, y)) { ai.dest = { x, y }; break; } }
+      if (ai.dest) { t.under = true; ai.digT = 2; emit({ t: 'puff', x: r1(t.x), y: r1(t.y), n: 10, v: 60, z: 5 }); sfx('mortar'); return; }
+    }
+  }
+  if (S.build) {
+    // Engineer: builds up to 2 turrets
+    ai.buildT = (ai.buildT ?? 3) - dt;
+    if (ai.buildT <= 0) {
+      ai.buildT = S.build;
+      if (G.tanks.filter(o => o.alive && o.builder === t.id).length < 2) for (let k = 0; k < 16; k++) {
+        const a = Math.random() * TAU, x = t.x + Math.cos(a) * 40, y = t.y + Math.sin(a) * 40;
+        if (tankFree(x, y, 12)) { const tu = makeEnemy('tur', x, y); tu.builder = t.id; tu.cool = 1.5; G.tanks.push(tu); emit({ t: 'ring', x: r1(x), y: r1(y), c: S.color }); sfx('clank'); break; }
+      }
+    }
+  }
+  if (S.orbs && t.orbs < S.orbs) { ai.orbT = (ai.orbT ?? 2.5) - dt; if (ai.orbT <= 0) { ai.orbT = 2.5; t.orbs++; } }
   if (S.ram) { updateSpiker(t, dt, target); return; }
   if (S.mortar) {
     // Mortar: lobs a shell over walls at where you are; it lands after a warning circle
@@ -1817,7 +1959,11 @@ function updateBoss(t, dt, active) {
   const B = t.spec, ai = t.ai, target = nearestPlayer(t);
   if (ai.charging > 0) {
     ai.charging -= dt; t.charge = Math.max(0, ai.charging);
-    if (ai.charging <= 0) shoot(t, t.turret, 650 * F.jam(sk('slow')), 2, 'snipe');
+    if (ai.charging <= 0) {
+      if (ai.pending === 'prism') { for (let k = -1; k <= 1; k++) beamShot(t, t.turret + k * .28, 2, { color: '#ffd27a', quiet: k !== 0 }); }
+      else shoot(t, t.turret, 650 * F.jam(sk('slow')), 2, 'snipe');
+      ai.pending = null;
+    }
   } else if (target) {
     t.turret += clamp(angDiff(Math.atan2(target.y - t.y, target.x - t.x), t.turret), -B.turn * dt, B.turn * dt);
     ai.atkT -= dt * (1 + ai.tier * .15) / F.stat(sk('static'));
@@ -1853,13 +1999,22 @@ function bossAttack(t, atk) {
       }
       sfx('mine'); break;
     case 'snipe': t.ai.charging = .9; t.charge = .9; break;
+    // Overlord (elite boss) attacks
+    case 'prism': t.ai.charging = .9; t.charge = .9; t.ai.pending = 'prism'; break;
+    case 'swarm': for (let k = 0; k < 5; k++) shoot(t, a + (k - 2) * .3, 200 * slow, 0, 'missile', { fx: k === 0, homeP: 1.5 }); break;
+    case 'starfall': {
+      const tg = nearestPlayer(t); if (!tg) break;
+      for (let k = 0; k < 6; k++) G.strikes.push({ x: clamp(tg.x + rnd(-70, 70), 20, W - 20), y: clamp(tg.y + rnd(-70, 70), 20, H - 20), t: (1.1 + k * .15) / slow, team: 'e', owner: t });
+      sfx('mortar'); break;
+    }
+    case 'vortex': { const tg = nearestPlayer(t); if (tg) { G.strikes.push({ x: tg.x, y: tg.y, t: 1.5 / slow, team: 'e', owner: t, r: 80, hole: true, mini: true }); sfx('hole'); } break; }
   }
 }
 function separateTanks() {
   for (let i = 0; i < aliveTanks.length; i++) for (let j = i + 1; j < aliveTanks.length; j++) {
     const a = aliveTanks[i], b = aliveTanks[j];
     const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), rs = (a.r || R) + (b.r || R);
-    if (d >= rs || d < 1e-4) continue;
+    if (d >= rs || d < 1e-4 || a.under || b.under) continue;
     const p = rs - d, nx = dx / d, ny = dy / d;
     if (sk('ram') && a.team !== b.team) {
       const pl = a.team === 'p' ? a : b, en = a.team === 'p' ? b : a;
@@ -1886,7 +2041,12 @@ function separateTanks() {
     collideTank(a); collideTank(b);
   }
 }
+const orbitPt = (t, k) => { const a = G.time * 2.6 + k / 3 * TAU; return [t.x + Math.cos(a) * ((t.r || R) + 12), t.y + Math.sin(a) * ((t.r || R) + 12)]; };
+let fields = [], orbiters = [];
 function updateBullets(dt) {
+  fields = aliveTanks.filter(t => t.alive && !t.under && (t.team === 'e' ? t.spec && t.spec.magnet : !t.ally && !t.half && chassisOf(t).magnet))
+    .map(t => ({ x: t.x, y: t.y, team: t.team, rad: t.team === 'e' ? t.spec.magnet : chassisOf(t).magnet * (chassisOf(t).magK || 1) }));
+  orbiters = aliveTanks.filter(t => t.alive && t.orbs > 0);
   for (const b of G.bullets) {
     if (!b.alive) continue;
     b.age += dt;
@@ -1910,6 +2070,23 @@ function updateBullets(dt) {
       }
     }
     const homeK = b.team === 'p' ? F.homing(sk('homing')) + (b.home || 0) : 0;
+    if (b.homeP && b.team === 'e') {
+      // Salvo/Overlord rockets curve toward the nearest player
+      let best = null, bd = 260;
+      for (const pl of aliveTanks) if (pl.team === 'p' && pl.alive && !pl.under) { const d = Math.hypot(pl.x - b.x, pl.y - b.y); if (d < bd) { bd = d; best = pl; } }
+      if (best) { const cur = Math.atan2(b.dy, b.dx), na = cur + clamp(angDiff(Math.atan2(best.y - b.y, best.x - b.x), cur), -b.homeP * dt, b.homeP * dt); b.dx = Math.cos(na); b.dy = Math.sin(na); }
+    }
+    for (const f of fields) {
+      // Magnet: bends shells from the other side away
+      if (f.team === b.team) continue;
+      const d = Math.hypot(b.x - f.x, b.y - f.y);
+      if (d < f.rad && d > 1) { const cur = Math.atan2(b.dy, b.dx), away = Math.atan2(b.y - f.y, b.x - f.x), na = cur + clamp(angDiff(away, cur), -5 * dt, 5 * dt); b.dx = Math.cos(na); b.dy = Math.sin(na); }
+    }
+    for (const o of orbiters) {
+      if (o.team === b.team || !b.alive || Math.hypot(b.x - o.x, b.y - o.y) > 50) continue;
+      for (let k = 0; k < o.orbs; k++) { const [ox, oy] = orbitPt(o, k); if ((b.x - ox) ** 2 + (b.y - oy) ** 2 < 100) { killBullet(b, false); o.orbs--; emit({ t: 'spk', x: r1(ox), y: r1(oy), n: 6, v: 120 }); sfx('clank'); break; } }
+    }
+    if (!b.alive) continue;
     if (homeK > 0) {
       let best = null, bd = 220;
       for (const e of aliveTanks) if (e.team === 'e' && e.alive) { const d = Math.hypot(e.x - b.x, e.y - b.y); if (d < bd) { bd = d; best = e; } }
@@ -2044,10 +2221,16 @@ function updateAirstrikes(dt) {
       if (s.t <= 0) s.done = true;
       continue;
     }
-    if (s.hole) for (const e of aliveTanks) if (e.alive && e.team === 'e' && !e.boss) { const d = Math.hypot(s.x - e.x, s.y - e.y); if (d < s.r * 1.6 && d > 4) { e.x += (s.x - e.x) / d * 60 * dt; e.y += (s.y - e.y) / d * 60 * dt; collideTank(e); } }
+    if (s.hole && s.team !== 'e') for (const e of aliveTanks) if (e.alive && e.team === 'e' && !e.boss) { const d = Math.hypot(s.x - e.x, s.y - e.y); if (d < s.r * 1.6 && d > 4) { e.x += (s.x - e.x) / d * 60 * dt; e.y += (s.y - e.y) / d * 60 * dt; collideTank(e); } }
+    if (s.hole && s.team === 'e') for (const p of aliveTanks) if (p.alive && p.team === 'p') { const d = Math.hypot(s.x - p.x, s.y - p.y); if (d < s.r * 1.8 && d > 4) { p.x += (s.x - p.x) / d * 35 * dt; p.y += (s.y - p.y) / d * 35 * dt; collideTank(p); } }
     s.t -= s.team === 'e' && sk('warp') ? dt * .65 : dt;
     if (s.t > 0) continue;
     s.done = true;
+    if (s.team === 'e' && s.hole) {
+      emit({ t: 'boom', x: r1(s.x), y: r1(s.y), c: '#b07cff', k: 1.6 }); sfx('boom'); shake(10);
+      for (const p of G.tanks) if (p.alive && p.team === 'p' && Math.hypot(p.x - s.x, p.y - s.y) < s.r) hurtTank(p, s.owner, 1);
+      continue;
+    }
     if (s.team === 'e') {
       emit({ t: 'boom', x: r1(s.x), y: r1(s.y), c: '#ffb04d', k: 1 }); emit({ t: 'sc', x: r1(s.x), y: r1(s.y), r: 32 }); sfx('boom'); shake(6);
       for (const p of G.tanks) if (p.alive && p.team === 'p' && Math.hypot(p.x - s.x, p.y - s.y) < 46) hurtTank(p, s.owner, 1);
@@ -2084,7 +2267,7 @@ function updateMines(dt) {
     }
     const quick = m.team === 'p' && sk('fuse');
     if (m.t > (quick ? 0 : .8)) for (const t of aliveTanks) {
-      if (t.alive && t.team !== m.team && (t.x - m.x) ** 2 + (t.y - m.y) ** 2 < ((t.r || R) + (quick ? F.trigger(sk('fuse')) : 18)) ** 2) { explode(m); break; }
+      if (t.alive && !t.under && t.team !== m.team && (t.x - m.x) ** 2 + (t.y - m.y) ** 2 < ((t.r || R) + (quick ? F.trigger(sk('fuse')) : 18)) ** 2) { explode(m); break; }
     }
   }
   G.mines = G.mines.filter(m => m.alive);
@@ -2106,6 +2289,8 @@ function updateParts(dt) {
 }
 function simStep(dt, active) {
   aliveTanks = G.tanks.filter(t => t.alive);
+  const gens = aliveTanks.filter(t => t.team === 'e' && t.spec && t.spec.gen && !t.under);
+  for (const t of aliveTanks) if (t.team === 'e') t.gsh = !t.spec.gen && !t.boss && gens.some(g => Math.hypot(g.x - t.x, g.y - t.y) < g.spec.gen);
   G.adren = Math.max(0, G.adren - dt);
   for (const t of aliveTanks) {
     // Time Warp slows every enemy; Static Field slows their reloading
@@ -2358,7 +2543,8 @@ function sendSnapshot() {
     grid: G.grid.length ? G.grid.map(r => r.join('')).join('') : '',
     sl: G.slots.map(s => s ? [s.dev, s.kills, s.deaths, s.color, s.trail, s.chassis || 'std'] : null),
     tk: G.tanks.filter(t => t.alive).map(t => [t.id, r1(t.x), r1(t.y), r2(t.body), r2(t.turret), t.team === 'p' ? t.slot : t.type, r2(t.recoil), r2(Math.max(0, t.reveal)), r2(t.shield),
-      r2(t.charge || 0), t.maxhp ? t.hp : 0, t.maxhp || 0, r2(t.hit || 0), t.armor || 0, t.shState || 0, r1(t.bx || 0), r1(t.by || 0), r2(t.hv || 0), t.ally ? 1 : t.half ? 1 + t.half : 0]),
+      r2(t.charge || 0), t.maxhp ? t.hp : 0, t.maxhp || 0, r2(t.hit || 0), t.armor || 0, t.shState || 0, r1(t.bx || 0), r1(t.by || 0), r2(t.hv || 0), t.ally ? (t.stat ? 4 : t.kami ? 5 : 1) : t.half ? 1 + t.half : 0,
+      (t.gsh || t.bub > 0 ? 1 : 0) | (t.under ? 2 : 0) | (t.emerge ? 4 : 0), t.orbs || 0]),
     bl: G.bullets.filter(b => b.alive).map(b => [b.id, r1(b.x), r1(b.y), r3(b.dx), r3(b.dy), b.speed, b.bounces, b.kind, b.slot, b.big ? 1 : 0]),
     mn: G.mines.map(m => [r1(m.x), r1(m.y), m.team === 'p' ? m.slot : m.type, r2(m.t), r2(m.fuse)]),
     wr: G.wrecks.map(w => [r1(w.x), r1(w.y), w.slot, r2(w.prog), r2(w.body)]),
@@ -2432,8 +2618,10 @@ function applySnap(s) {
     let t = old.get(a[0]);
     if (!t) t = { id: a[0], x: a[1], y: a[2], body: a[3], turret: a[4], tread: 0, trail: 0 };
     t.tx = a[1]; t.ty = a[2]; t.tb = a[3]; t.tt = a[4]; t.recoil = a[6]; t.reveal = a[7]; t.shield = a[8]; t.alive = true;
+    t.gsh = !!(a[19] & 1); t.bub = a[19] & 1; t.under = !!(a[19] & 2); t.emerge = !!(a[19] & 4); t.orbs = a[20] || 0;
     t.charge = a[9] || 0; t.hp = a[10]; t.maxhp = a[11]; t.hit = a[12] || 0; t.armor = a[13] || 0; t.shState = a[14] || 0; t.bx = a[15] || 0; t.by = a[16] || 0; t.hv = a[17] || 0;
-    if (typeof a[5] === 'number') { t.team = 'p'; t.slot = a[5]; t.ally = a[18] === 1; t.half = a[18] > 1 ? a[18] - 1 : 0; t.r = t.ally || t.half ? 10 : R; }
+    if (typeof a[5] === 'number') { t.team = 'p'; t.slot = a[5]; t.ally = a[18] === 1 || a[18] >= 4; t.stat = a[18] === 4; t.kami = a[18] === 5; t.half = a[18] === 2 || a[18] === 3 ? a[18] - 1 : 0; t.r = t.ally || t.half ? 10 : R; }
+    else if (a[5] === 'bossE') { t.team = 'e'; t.type = a[5]; t.boss = true; t.r = 34; t.spec = ELITE_BOSS; }
     else if (String(a[5]).startsWith('boss')) { t.team = 'e'; t.type = a[5]; t.boss = true; t.r = BOSS_R; t.spec = BOSSES[+String(a[5]).slice(4)] || BOSSES[0]; }
     else { t.team = 'e'; t.type = a[5]; t.spec = ETYPES[a[5]] || ETYPES.a; t.r = t.spec.r || R; }
     return t;
@@ -2846,6 +3034,16 @@ function render() {
   }
   for (const t of G.tanks) {
     if (!t.alive) continue;
+    if (t.under) {
+      // underground: a moving dirt mound (shakes just before popping up)
+      const j = t.emerge ? rnd(-2, 2) : 0;
+      c.save(); c.fillStyle = 'rgba(70,45,20,.55)'; c.beginPath(); c.ellipse(t.x + j, t.y + j, 16, 11, 0, 0, TAU); c.fill();
+      c.fillStyle = 'rgba(120,85,45,.8)'; for (let q = 0; q < 5; q++) { c.beginPath(); c.arc(t.x + j + Math.cos(q * 1.3 + G.time * 3) * 8, t.y + j + Math.sin(q * 1.3) * 5, 3, 0, TAU); c.fill(); }
+      c.restore(); continue;
+    }
+    if (t.gsh) { c.save(); c.strokeStyle = '#7fd6ff'; c.globalAlpha = .55 + .2 * Math.sin(G.time * 6); c.lineWidth = 2; c.beginPath(); c.arc(t.x, t.y, (t.r || R) + 8, 0, TAU); c.stroke(); c.globalAlpha = .1; c.fillStyle = '#7fd6ff'; c.fill(); c.restore(); }
+    if (t.orbs > 0) for (let k = 0; k < t.orbs; k++) { const [ox, oy] = orbitPt(t, k); c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = '#b48cff'; c.globalAlpha = .5; c.beginPath(); c.arc(ox, oy, 7, 0, TAU); c.fill(); c.globalAlpha = 1; c.fillStyle = '#efe4ff'; c.beginPath(); c.arc(ox, oy, 3.5, 0, TAU); c.fill(); c.restore(); }
+    if (t.team === 'p' && t.kami) { const col = slotColor(t.slot); drawTank(t, col, '#ff5a1e', 1, t.r / R); c.fillStyle = Math.sin(G.time * 30) > 0 ? '#ff3b2f' : '#ffd27a'; c.beginPath(); c.arc(t.x, t.y, 2.5, 0, TAU); c.fill(); continue; }
     if (t.team === 'p' && (t.ally || t.half)) {
       // Summoner minion or Hive half: a small tank in the player's color
       const col = slotColor(t.slot);
@@ -2862,6 +3060,7 @@ function render() {
         c.beginPath(); c.moveTo(t.x, t.y); c.lineTo(t.bx, t.by); c.stroke(); c.setLineDash([]); c.lineWidth = 2.5;
         c.beginPath(); c.arc(t.bx, t.by, 16, 0, TAU); c.stroke(); c.globalAlpha = .25; c.fillStyle = col; c.beginPath(); c.arc(t.bx, t.by, 13, 0, TAU); c.fill(); c.restore();
       }
+      if (t.bub > 0) { c.save(); c.strokeStyle = '#7fd6ff'; c.globalAlpha = .6; c.lineWidth = 2; c.beginPath(); c.arc(t.x, t.y, 24, 0, TAU); c.stroke(); c.globalAlpha = .1; c.fillStyle = '#7fd6ff'; c.fill(); c.restore(); }
       drawStyledTank(t, chassisOf(t), col, slotDark(t.slot), chassisOf(t).stealth ? (G.time - (t.lastShot ?? -9) > 2 || NET.mode === 'client' ? .45 : .85) : 1);
     } else {
       if (t.bx) {
@@ -2875,8 +3074,12 @@ function render() {
         c.save(); c.strokeStyle = '#ff2d2d'; c.globalAlpha = .35 + .5 * (1 - t.charge / (t.boss ? .9 : t.spec.charge || .75)); c.lineWidth = 1.5; c.setLineDash([6, 4]);
         c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const p of pts.slice(1)) c.lineTo(p[0], p[1]); c.stroke(); c.restore();
       }
+      if (t.spec.kami) { drawEnemyTank(t, 1); c.fillStyle = Math.sin(G.time * 30) > 0 ? '#ff3b2f' : '#ffd27a'; c.beginPath(); c.arc(t.x, t.y, 3, 0, TAU); c.fill(); continue; }
+      if (t.spec.magnet) { c.save(); c.strokeStyle = '#e879f9'; c.globalAlpha = .25; c.setLineDash([3, 6]); c.lineDashOffset = G.time * 20; c.beginPath(); c.arc(t.x, t.y, t.spec.magnet, 0, TAU); c.stroke(); c.restore(); }
+      if (t.spec.gen) { c.save(); c.strokeStyle = '#7fd6ff'; c.globalAlpha = .18; c.setLineDash([4, 6]); c.beginPath(); c.arc(t.x, t.y, t.spec.gen, 0, TAU); c.stroke(); c.restore(); }
       const a = t.spec.ghost ? Math.min(1, .07 + clamp(t.reveal, 0, 1) * .6) : 1;
       if (t.boss) drawTank(t, t.hit > 0 ? '#fff1d6' : t.spec.color, '#120c08', 1, t.r / R);
+      if (t.boss && t.spec.elite) { c.save(); c.strokeStyle = '#ffd27a'; c.lineWidth = 3; c.setLineDash([8, 6]); c.lineDashOffset = -G.time * 40; c.beginPath(); c.arc(t.x, t.y, t.r + 10, 0, TAU); c.stroke(); c.restore(); }
       else drawEnemyTank(t, a);
     }
     if (t.team === 'p' && t.armor > 0) { c.strokeStyle = 'rgba(241,230,207,.75)'; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath(); c.arc(t.x, t.y, 21, 0, TAU); c.stroke(); c.setLineDash([]); }
@@ -2894,6 +3097,13 @@ function render() {
         c.strokeStyle = slotColor(b.slot); c.lineWidth = 3.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(-8, -6); c.quadraticCurveTo(0, 0, -8, 6); c.moveTo(-8, -6); c.lineTo(6, 0); c.lineTo(-8, 6); c.stroke();
       }
       c.restore(); continue;
+    }
+    if (b.kind === 'cannon') {
+      c.beginPath(); c.arc(b.x + 3, b.y + 4, 9, 0, TAU); c.fill();
+      c.fillStyle = '#1d1a16'; c.beginPath(); c.arc(b.x, b.y, 9, 0, TAU); c.fill(); c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.arc(b.x - 3, b.y - 3, 3, 0, TAU); c.fill(); continue;
+    }
+    if (b.kind === 'orb') {
+      c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = '#b48cff'; c.globalAlpha = .6; c.beginPath(); c.arc(b.x, b.y, 7, 0, TAU); c.fill(); c.globalAlpha = 1; c.fillStyle = '#efe4ff'; c.beginPath(); c.arc(b.x, b.y, 3.5, 0, TAU); c.fill(); c.restore(); continue;
     }
     if (b.kind === 'bomb') {
       c.beginPath(); c.arc(b.x + 3, b.y + 4, 7, 0, TAU); c.fill();
@@ -3010,7 +3220,7 @@ function drawReels() {
   c.textAlign = 'center'; c.textBaseline = 'middle';
   c.font = '400 40px Bungee, Impact, sans-serif'; c.fillStyle = '#f1e6cf'; c.fillText(`LEVEL ${lvl}`, W / 2, 70);
   c.font = '600 16px "Chakra Petch", system-ui, sans-serif'; c.fillStyle = boss ? '#ff8a7a' : '#a8987b';
-  c.fillText(boss ? `Boss level: ${BOSSES[bossIndex(lvl) % BOSSES.length].name} is coming, with an escort` : 'Spinning up the next wave', W / 2, 108);
+  c.fillText(boss ? `${isEliteBoss(lvl) ? 'Elite boss level' : 'Boss level'}: ${bossName(lvl)} is coming, with an escort` : 'Spinning up the next wave', W / 2, 108);
   const t = G.reelT;
   G.reels.forEach((res, i) => {
     const cx = W / 2 + (i - 1) * 270, top = 145, mw = 220, mh = 330;
@@ -3172,7 +3382,7 @@ function overlayHTML() {
       return `<div class="panel skillp"><div class="eyebrow">Level ${G.level} is next${isBossLevel(G.level) ? ' · Boss fight' : ''}</div><h2>Choose a skill</h2>
         <div class="skills">${cards}</div>
         <div class="note">Move with the stick, D-pad or arrow keys. Pick with ${BA}, <span class="k">ENTER</span> or a click. Anyone in the squad can choose.</div>
-        <div class="note">Up next: <b>${next}</b>${isBossLevel(G.level) ? ` plus <b>${BOSSES[bossIndex(G.level) % BOSSES.length].name}</b>` : ''}</div>
+        <div class="note">Up next: <b>${next}</b>${isBossLevel(G.level) ? ` plus <b>${bossName(G.level)}</b>` : ''}</div>
         ${owned ? `<div class="note">Squad skills: ${owned}</div>` : ''}</div>`;
     }
     case 'paused':
