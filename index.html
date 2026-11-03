@@ -928,7 +928,8 @@ function rollReels(lvl) {
 }
 const REEL_STOPS = [0, 1, 2].map(i => [1.0 + i * .55, 1.55 + i * .55]);
 const REEL_DONE = REEL_STOPS[2][1] + 1.3;
-const SKILL_EVERY = 3; // the squad picks a skill after every 3rd level
+const SKILL_EVERY = 3; // a solo player picks a skill after every 3rd level
+const skillsOn = () => joinedCount() <= 1; // co-op runs have no skill picks
 function pickSkills() {
   const chosen = [];
   // Deeper runs and Lucky Charm make rarer tiers more likely
@@ -2001,7 +2002,7 @@ function update(dt) {
         if (before < a && G.reelT >= a) sfx('reel');
         if (before < b && G.reelT >= b) sfx('reel');
       }
-      if (G.reelT >= REEL_DONE && (G.level - 1) % SKILL_EVERY !== 0) {
+      if (G.reelT >= REEL_DONE && (!skillsOn() || (G.level - 1) % SKILL_EVERY !== 0)) {
         // no skill pick this time: straight into the next level
         G.nextWave = G.reels.map(r => ({ t: r.t, n: r.n }));
         loadLevel();
@@ -2785,7 +2786,7 @@ function drawReels() {
   c.fillText(t < REEL_STOPS[2][1] ? 'Press A or Enter to skip' : `Next wave: ${G.reels.map(r => `${r.n} ${enemyName(r.t)}`).join(' · ')}`, W / 2, 540);
   const cleared = lvl - 1, nextPick = Math.ceil(lvl / SKILL_EVERY) * SKILL_EVERY;
   c.fillStyle = '#f2b90f'; c.font = '600 14px "Chakra Petch", system-ui, sans-serif';
-  c.fillText(cleared % SKILL_EVERY === 0 ? 'Skill pick next!' : `Next skill pick after level ${nextPick}`, W / 2, 566);
+  c.fillText(!skillsOn() ? 'Co-op run: no skill picks' : cleared % SKILL_EVERY === 0 ? 'Skill pick next!' : `Next skill pick after level ${nextPick}`, W / 2, 566);
 }
 function label(x, y, text, color, a) {
   const c = ctx; c.font = GLYPH_FONT; const w = c.measureText(text).width + 10;
@@ -2866,7 +2867,7 @@ function overlayHTML() {
         ? `<div class="note">Playing with friends on other computers? Click <b>Play online</b> at the top.</div>`
         : `<div class="note">Online room <b>${esc(NET.code)}</b> · ${Math.max(1, NET.roster.length)} connected.${NET.voice ? ' Voice chat is on.' : ' Press <span class="k">V</span> or <span class="k">VIEW</span> to turn voice chat on.'}</div>`;
       return `<div class="panel title"><h1>Ricochet <span>Regiment</span></h1>
-        <p class="sub">Endless co-op tank combat for up to four players. Shells bounce off walls, mines clear crates, and a destroyed tank sits out until the next level. After every level the slot machines pick the next wave and the squad picks a skill. A boss arrives every 10 levels.</p>
+        <p class="sub">Endless co-op tank combat for up to four players. Shells bounce off walls, mines clear crates, and a destroyed tank sits out until the next level. After every level the slot machines pick the next wave, and solo players pick a skill every 3 levels. A boss arrives every 10 levels.</p>
         <div class="slots">${[0, 1, 2, 3].map(slotCard).join('')}</div>
         <div class="row"><span>${ffTxt}</span><span class="note">D-pad ◀ ▶ color, ▲ ▼ trail, <span class="k">LB</span> <span class="k">RB</span> or <span class="k">Z</span> <span class="k">C</span> tank.</span></div>
         <div class="go">${joinedCount() ? `Press ${ST} or <span class="k">ENTER</span> to deploy` : `Press ${BA} to join`}</div>

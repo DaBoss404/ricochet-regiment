@@ -2,7 +2,7 @@
 
 A top-down co-op tank game for 1–4 players in the browser. Shells bounce off walls and mines clear crates. A destroyed tank sits out until the next level.
 
-Runs are endless. After every level, three slot machines spin to decide the next wave (each lands on an enemy type, then on how many of it), and after every 3rd level the squad picks one of three skills. Every 10th level is a boss fight. If the squad is wiped out, you replay the same map. Enemy shells and mines never hurt other enemies.
+Runs are endless. After every level, three slot machines spin to decide the next wave (each lands on an enemy type, then on how many of it), and in a solo run you pick one of three skills after every 3rd level (co-op runs with 2 or more players have no skill picks). Every 10th level is a boss fight. If the squad is wiped out, you replay the same map. Enemy shells and mines never hurt other enemies.
 
 Destroy 20 of an enemy type to unlock it as a playable tank: Hornet, Missile, Sniper, Shotgun, Brute, Splitter, Hive, Scorcher, Mortar, Spiker, Bulwark, Ghost or Blinker. Each plays differently, and the Spiker has its own skills. Unlock every one of them to reveal a secret tank.
 
