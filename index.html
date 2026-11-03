@@ -453,16 +453,24 @@ const CHASSIS = {
   // secret: unlocked only by unlocking every other tank
   mini: { name: 'Minigun', desc: 'Secret tank. Hold fire to spray shells for up to 5 seconds, then it overheats for 5 seconds.', minigun: true },
   // Elite tanks: the Standard tank with upgrades only, no downsides. Unlocked by milestones saved on this computer.
-  vet:  { name: 'Boomerang', desc: 'Elite. Throws a blade that flies out, curves back to you, and slices every enemy it passes both ways.', elite: true, wpn: 'boomer', kind: 'boomer', spd: 1.2, bnc: 3, pierce: 99, ammo: 2, cd: 1.3, life: 3, unlock: { level: 5 } },
-  reb:  { name: 'Sawblade',  desc: 'Elite. A slow spinning saw that cuts through every enemy and bounces 3 times.', elite: true, wpn: 'saw', kind: 'saw', spd: .7, bnc: 2, pierce: 99, ammo: 3, cd: 1.6, hr: 6, unlock: { level: 8 } },
-  iron: { name: 'Grenadier', desc: 'Elite. Bouncing grenades that explode after a second, or the moment they touch an enemy.', elite: true, wpn: 'grenade', kind: 'grenade', spd: .85, bnc: 2, life: 1.1, ammo: 3, cd: 2.2, unlock: { level: 11 } },
-  twn:  { name: 'Flak',      desc: 'Elite. Shells burst into 8 fragments in mid-air.', elite: true, wpn: 'flak', kind: 'shell', spd: 1.1, life: .55, cd: 1.6, unlock: { level: 13 } },
+  vet:  { name: 'Prism',     desc: 'Elite. An instant laser that bounces off walls 3 times and hits everything on its path.', elite: true, beam: 3, cd: 5.5, unlock: { level: 5 } },
+  reb:  { name: 'Vortex',    desc: 'Elite. An orb that collapses into a mini black hole, pulling in and crushing nearby enemies.', elite: true, wpn: 'vortex', kind: 'vortex', spd: .8, bnc: -1, life: .9, ammo: 2, cd: 2.2, unlock: { level: 8 } },
+  iron: { name: 'Swarm',     desc: 'Elite. Fires 4 homing mini-missiles that explode on hit.', elite: true, wpn: 'swarm', kind: 'missile', swarm: 4, spread: .8, home: 4, spd: 1.05, bnc: -1, life: 2.5, cd: 2.2, unlock: { level: 11 } },
+  twn:  { name: 'Bomber',    desc: 'Elite. A heavy bomb that explodes every time it bounces, then once more where it stops.', elite: true, wpn: 'bomb', kind: 'bomb', spd: .8, bnc: 2, ammo: 2, cd: 2.4, unlock: { level: 13 } },
   hunt: { name: 'Tesla',     desc: 'Elite. An instant lightning bolt that leaps between up to 3 enemies.', elite: true, tesla: true, cd: 4.4, unlock: { level: 16 } },
   spr:  { name: 'Lancer',    desc: 'Elite. An instant rail beam that goes straight through every enemy in a line.', elite: true, lance: true, cd: 5, unlock: { kills: 100 } },
   prc:  { name: 'Cluster',   desc: 'Elite. Fast rockets that burst into 5 shells when they hit a wall.', elite: true, wpn: 'cluster', kind: 'rocket', spd: 1.3, bnc: -1, cd: 2, unlock: { kills: 250 } },
+  thn:  { name: 'Thunder',   desc: 'Elite. A storm shell that zaps every enemy near its path as it flies.', elite: true, wpn: 'thunder', kind: 'thunder', spd: .85, bnc: 1, cd: 1.5, unlock: { level: 20 } },
+  ion:  { name: 'Ion',       desc: 'Elite. Hold fire for a continuous beam that cuts through enemies. Overheats after 3 seconds.', elite: true, ion: true, unlock: { level: 22 } },
+  shu:  { name: 'Shuriken',  desc: 'Elite. A fan of 3 spinning stars that pierce 2 enemies and bounce twice.', elite: true, kind: 'star', swarm: 3, spread: .45, spd: 1.3, bnc: 1, pierce: 2, cd: 1.3, unlock: { kills: 400 } },
+  car:  { name: 'Carrier',   desc: 'Elite. Two drones orbit you and shoot enemies on their own, on top of your normal gun.', elite: true, drones: 2, unlock: { level: 30 } },
+  nap:  { name: 'Napalm',    desc: 'Elite. Shells burst into burning ground that destroys enemies who drive through it.', elite: true, wpn: 'napalm', kind: 'shell', spd: 1, bnc: 0, cd: 2, unlock: { kills: 600 } },
+  rst:  { name: 'Railstorm', desc: 'Elite. Fires 3 instant rail beams in a fan.', elite: true, beam: 0, beams: 3, cd: 8.5, unlock: { level: 35 } },
+  sfl:  { name: 'Starfall',  desc: 'Elite. Calls down a rain of 5 blasts around where you aim, over walls.', elite: true, starfall: true, cd: 15, unlock: { kills: 1000 } },
+  dsc:  { name: 'Razor Disc',desc: 'Elite. A disc that cuts through everything, speeds up on every bounce, and fires a shot at the nearest enemy each time.', elite: true, wpn: 'disc', kind: 'saw', spd: .9, bnc: 5, pierce: 99, ammo: 2, cd: 1.8, hr: 5, unlock: { level: 40 } },
   cmd:  { name: 'Plasma',    desc: 'Elite. A big plasma orb that passes through enemies and explodes where it stops.', elite: true, wpn: 'plasma', kind: 'plasma', spd: .75, bnc: -1, pierce: 99, ammo: 2, life: 2.2, cd: 2.4, hr: 6, unlock: { level: 25 } },
 };
-const CHASSIS_ORDER = ['std', 'vet', 'reb', 'iron', 'twn', 'hunt', 'spr', 'prc', 'cmd', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j', 'mini'];
+const CHASSIS_ORDER = ['std', 'vet', 'reb', 'iron', 'twn', 'hunt', 'spr', 'prc', 'cmd', 'thn', 'ion', 'shu', 'car', 'nap', 'rst', 'sfl', 'dsc', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j', 'mini'];
 const KILL_TANKS = CHASSIS_ORDER.filter(k => k !== 'std' && k !== 'mini' && !CHASSIS[k].unlock);
 const ELITE_TANKS = CHASSIS_ORDER.filter(k => CHASSIS[k].unlock);
 let BEST = Object.assign({ level: 0, kills: 0 }, store.get('rr-best-v1', {}) || {});
@@ -696,7 +704,7 @@ function applyFx(e) {
         }
       }
       break;
-    case 'beam': G.parts.push({ kind: 'line', pts: e.pts, x: 0, y: 0, vx: 0, vy: 0, life: .22, max: .22, size: 5, grow: 0, color: e.c, drag: 0 }); break;
+    case 'beam': G.parts.push({ kind: 'line', pts: e.pts, x: 0, y: 0, vx: 0, vy: 0, life: e.l || .22, max: e.l || .22, size: e.w || 5, grow: 0, color: e.c, drag: 0 }); break;
     case 'bolt': {
       // jagged lightning between the points
       const pts = [];
@@ -732,7 +740,8 @@ function bulletTrail(b, dt) {
   b.trailT = (b.trailT || 0) - dt; if (b.trailT > 0) return;
   const x = b.x - b.dx * 6, y = b.y - b.dy * 6, P = G.parts;
   if (b.kind === 'plasma') { b.trailT = .02; P.push({ kind: 'fire', x: b.x, y: b.y, vx: rnd(-15, 15), vy: rnd(-15, 15), life: .3, max: .3, size: 5, grow: 2, color: '#b07cff', drag: 2 }); return; }
-  if (b.kind === 'saw' || b.kind === 'boomer' || b.kind === 'grenade') { b.trailT = 1; return; }
+  if (b.kind === 'saw' || b.kind === 'boomer' || b.kind === 'grenade' || b.kind === 'bomb' || b.kind === 'star') { b.trailT = 1; return; }
+  if (b.kind === 'vortex' || b.kind === 'thunder') { b.trailT = .025; P.push({ kind: 'fire', x: b.x, y: b.y, vx: rnd(-12, 12), vy: rnd(-12, 12), life: .25, max: .25, size: 4, grow: 2, color: b.kind === 'vortex' ? '#b07cff' : '#ffe066', drag: 2 }); return; }
   if (b.kind === 'flame') { b.trailT = .03; P.push({ kind: 'fire', x: b.x, y: b.y, vx: rnd(-20, 20), vy: rnd(-20, 20), life: .2, max: .2, size: rnd(3, 6), grow: 6, color: Math.random() < .5 ? '#ff7a2e' : '#ffc24d', drag: 2 }); return; }
   if (b.kind === 'pellet') { b.trailT = .04; P.push({ kind: 'smoke', x, y, vx: 0, vy: 0, life: .3, max: .3, size: 1.5, grow: 5, color: '#a99c86', drag: 2 }); return; }
   if (b.kind === 'snipe') { b.trailT = .008; P.push({ kind: 'dot', x, y, vx: 0, vy: 0, life: .35, max: .35, size: 2.2, grow: 0, color: '#fff4d6', drag: 0 }); return; }
@@ -1086,6 +1095,10 @@ function shellEnd(b) {
   switch (b.wpn) {
     case 'grenade': shellBlast(b.x, b.y, o, 58, 2 * boss); break;
     case 'plasma': shellBlast(b.x, b.y, o, 66, 3 * boss); break;
+    case 'bomb': shellBlast(b.x, b.y, o, 62, 3 * boss); break;
+    case 'swarm': shellBlast(b.x, b.y, o, 34, boss); break;
+    case 'vortex': G.strikes.push({ x: b.x, y: b.y, t: .45, team: 'p', owner: o, r: 92, hole: true, mini: true }); sfx('hole'); break;
+    case 'napalm': G.strikes.push({ x: b.x, y: b.y, t: 3, team: 'p', owner: o, r: 62, zone: true }); emit({ t: 'boom', x: r1(b.x), y: r1(b.y), c: '#ff7a2e', k: .6 }); sfx('flame'); break;
     case 'flak': { const a0 = Math.random() * TAU; for (let k = 0; k < 8; k++) { const a = a0 + k / 8 * TAU; looseShell(o, b.x, b.y, a, 270, 0, .45); } emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 10, v: 160 }); sfx('pop'); break; }
     case 'cluster': { const back = Math.atan2(-b.dy, -b.dx); for (let k = 0; k < 5; k++) { const a = back + (k / 4 - .5) * 1.8; looseShell(o, b.x - b.dx * 6, b.y - b.dy * 6, a, 280, 1); } emit({ t: 'boom', x: r1(b.x), y: r1(b.y), c: '#ffb04d', k: .5 }); sfx('pop'); break; }
   }
@@ -1105,19 +1118,22 @@ function teslaShot(t) {
   emit({ t: 'bolt', pts, c: '#9fe8ff' }); sfx('zap');
   for (const e of hit) hurtTank(e, t, e.boss ? 2 * F.bossDmg(sk('heavy')) : 1);
 }
-// Lancer: instant straight beam to the first wall, through every enemy and enemy shell on the way
-function lanceShot(t) {
-  const dx = Math.cos(t.turret), dy = Math.sin(t.turret);
-  let x = t.x + dx * 22, y = t.y + dy * 22; const sx = x, sy = y;
-  while (!bb(x, y) && x > 0 && y > 0 && x < W && y < H) { x += dx * 4; y += dy * 4; }
-  for (const e of aliveTanks) {
-    if (!e.alive || e.team !== 'e') continue;
-    const u = clamp(((e.x - sx) * dx + (e.y - sy) * dy), 0, Math.hypot(x - sx, y - sy));
-    if (Math.hypot(sx + dx * u - e.x, sy + dy * u - e.y) < (e.r || R) + 4) hurtTank(e, t, e.boss ? 2 * F.bossDmg(sk('heavy')) : 1);
+// Instant beams (Lancer, Prism, Railstorm, Ion): run to the first wall, bouncing if allowed, and hit every enemy and enemy shell on the path
+function beamShot(t, ang, bounces, opt = {}) {
+  const o = { x: t.x + Math.cos(ang) * 22, y: t.y + Math.sin(ang) * 22, dx: Math.cos(ang), dy: Math.sin(ang), bounces };
+  const pts = [[o.x, o.y]];
+  if (!bb(o.x, o.y)) for (let i = 0; i < 700; i++) { const r = advance(o, STEP); if (r === 'dead') break; if (r === 'bounce') pts.push([o.x, o.y]); }
+  pts.push([o.x, o.y]);
+  const near = (px, py, rad) => { for (let i = 0; i < pts.length - 1; i++) { const [ax, ay] = pts[i], [bx, by] = pts[i + 1], dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1, u = clamp(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1); if (Math.hypot(ax + u * dx - px, ay + u * dy - py) < rad) return true; } return false; };
+  for (const e of aliveTanks) if (e.alive && e.team === 'e' && near(e.x, e.y, (e.r || R) + 4) && (!opt.cdKey || (e[opt.cdKey] || 0) <= G.time)) {
+    if (opt.cdKey) e[opt.cdKey] = G.time + .25;
+    hurtTank(e, t, e.boss ? (opt.boss || 2) * F.bossDmg(sk('heavy')) : 1);
   }
-  for (const b of G.bullets) if (b.alive && b.team === 'e') { const u = clamp((b.x - sx) * dx + (b.y - sy) * dy, 0, Math.hypot(x - sx, y - sy)); if (Math.hypot(sx + dx * u - b.x, sy + dy * u - b.y) < 7) killBullet(b, false); }
-  emit({ t: 'beam', pts: [[r1(sx), r1(sy)], [r1(x), r1(y)]], c: slotColor(t.slot) }); emit({ t: 'spk', x: r1(x), y: r1(y), n: 8, v: 140 }); sfx('snipe');
+  for (const b of G.bullets) if (b.alive && b.team === 'e' && near(b.x, b.y, 7)) killBullet(b, false);
+  emit({ t: 'beam', pts: pts.map(q => [r1(q[0]), r1(q[1])]), c: opt.color || slotColor(t.slot), w: opt.w || 5, l: opt.life || .22 });
+  if (!opt.quiet) { emit({ t: 'spk', x: r1(o.x), y: r1(o.y), n: 8, v: 140 }); sfx('snipe'); }
 }
+const lanceShot = t => beamShot(t, t.turret, 0);
 function canHit(b, t) {
   if (t.shield > 0) return false;
   if (b.team === 'e' && t.team === 'e') return false; // enemies never hurt each other
@@ -1249,8 +1265,34 @@ function updatePlayer(t, dt, active) {
   const god = sk('mythic') > 0, rateK = 1 / F.fireRate(sk('reload')) / (god ? 1.5 : 1) * (G.adren > 0 ? .65 : 1);
   if (ch.ram) {
     if (inp.fire && t.dashCd <= 0) { t.dashT = F.dashLen(sk('dashlen')); t.dashCd = F.dashCd(sk('dashcd')) * rateK; sfx('rev'); rumble(t.dev, .4, .3, 150); }
-  } else if (ch.tesla || ch.lance) {
-    if (inp.fire && t.cool <= 0) { if (ch.tesla) teslaShot(t); else lanceShot(t); t.cool = PCD * ch.cd * rateK; t.recoil = 1; rumble(t.dev, .2, .4, 90); }
+  } else if (ch.tesla || ch.lance || ch.beam !== undefined) {
+    if (inp.fire && t.cool <= 0) {
+      if (ch.tesla) teslaShot(t);
+      else if (ch.beams) for (let k = 0; k < ch.beams; k++) beamShot(t, t.turret + (k - (ch.beams - 1) / 2) * .2, ch.beam, { quiet: k > 0 });
+      else if (ch.beam) beamShot(t, t.turret, ch.beam + sk('bounce'), { color: '#9fe8ff' });
+      else lanceShot(t);
+      t.cool = PCD * ch.cd * rateK; t.recoil = 1; rumble(t.dev, .2, .4, 90);
+    }
+  } else if (ch.ion) {
+    // Ion: hold fire for a continuous beam, 3 seconds of heat then 3 seconds of cooldown
+    if (t.overheat > 0) { t.overheat -= dt; if (t.overheat <= 0) { t.overheat = 0; t.heat = 0; sfx('tick'); } }
+    else if (inp.fireHeld) {
+      t.heat = (t.heat || 0) + dt;
+      if (t.heat >= 3) { t.overheat = 3; emit({ t: 'txt', x: r1(t.x), y: r1(t.y - 26), s: 'OVERHEATED', c: '#ff5a3c' }); sfx('clank'); }
+    } else t.heat = Math.max(0, (t.heat || 0) - dt);
+    t.hv = t.overheat > 0 ? 1 + t.overheat / 3 : (t.heat || 0) / 3;
+    if (inp.fireHeld && !(t.overheat > 0) && t.cool <= 0) {
+      beamShot(t, t.turret, 0, { cdKey: 'ionCd', boss: .5, color: '#7fd6ff', w: 3, life: .1, quiet: true });
+      t.cool = .07; t.recoil = .4; t.ionSnd = (t.ionSnd || 0) - 1; if (t.ionSnd <= 0) { t.ionSnd = 4; sfx('zap'); }
+      rumble(t.dev, .05, .2, 60);
+    }
+  } else if (ch.starfall) {
+    // Starfall: 5 blasts rain down around where you aim
+    if (inp.fire && t.cool <= 0) {
+      const [mx, my] = mortarPoint(t, inp);
+      for (let k = 0; k < 5; k++) G.strikes.push({ x: clamp(mx + rnd(-60, 60), 20, W - 20), y: clamp(my + rnd(-60, 60), 20, H - 20), t: .55 + k * .14, team: 'p', owner: t, r: 38, mortar: true });
+      t.cool = PCD * ch.cd * rateK; t.recoil = 1; sfx('mortar'); rumble(t.dev, .3, .3, 90);
+    }
   } else if (ch.minigun) {
     // Minigun (secret): fire for up to 5 seconds, then it overheats for 5 seconds. Heat drains while you're not firing.
     if (t.overheat > 0) {
@@ -1304,6 +1346,18 @@ function updatePlayer(t, dt, active) {
       const off = Math.random() * TAU;
       for (let k = 0; k < 6; k++) shoot(t, off + k / 6 * TAU, PBS * F.shellSpeed(sk('speed')), F.bounces(sk('bounce')), 'shell', { fx: k === 0, pierce: god ? 99 : sk('pierce') });
       emit({ t: 'ring', x: r1(t.x), y: r1(t.y), c: slotColor(t.slot) });
+    }
+  }
+  if (ch.drones) {
+    // Carrier drones: shoot the nearest enemy they can see
+    t.droneT = (t.droneT || 0) - dt;
+    if (t.droneT <= 0) {
+      t.droneT = .8 * rateK;
+      for (let k = 0; k < ch.drones; k++) {
+        const [dx, dy] = dronePos(t, k, ch.drones), d = { x: dx, y: dy };
+        const tgt = aliveTanks.filter(e => e.alive && e.team === 'e' && dist(e, d) < 320 && clearPath(d, e)).sort((a, b) => dist(a, d) - dist(b, d))[0];
+        if (tgt) { const a = Math.atan2(tgt.y - dy, tgt.x - dx); looseShell(t, dx + Math.cos(a) * 8, dy + Math.sin(a) * 8, a, 330, 0); sfx('fire'); }
+      }
     }
   }
   if (sk('recharge') && t.armor < t.armorMax) {
@@ -1637,6 +1691,15 @@ function updateBullets(dt) {
     if (!b.alive) continue;
     b.age += dt;
     if (b.life && b.age > b.life) { if (b.wpn) shellEnd(b); killBullet(b, false); if (!b.wpn) emit({ t: 'puff', x: r1(b.x), y: r1(b.y), n: 2, z: 2 }); continue; }
+    if (b.wpn === 'thunder') {
+      // Thunder: zaps the nearest enemy within reach every 0.2 seconds while it flies
+      b.zapT = (b.zapT || 0) - dt;
+      if (b.zapT <= 0) {
+        b.zapT = .2;
+        const tgt = aliveTanks.filter(e => e.alive && e.team === 'e' && dist(e, b) < 85).sort((x, y) => dist(x, b) - dist(y, b))[0];
+        if (tgt) { emit({ t: 'bolt', pts: [[r1(b.x), r1(b.y)], [r1(tgt.x), r1(tgt.y)]], c: '#ffe066' }); sfx('zap'); hurtTank(tgt, b.owner, 1); }
+      }
+    }
     if (b.wpn === 'boomer') {
       // Boomerang: after a moment it turns back toward its tank and can hit everything again on the way
       if (!b.back && b.age > 1) { b.back = true; b.hitIds = []; }
@@ -1664,6 +1727,13 @@ function updateBullets(dt) {
       if (r === 'dead') { if (b.wpn) shellEnd(b); killBullet(b, !b.wpn); break; }
       if (r === 'bounce') {
         b.bounced = true; sfx('bounce');
+        if (b.wpn === 'bomb') shellBlast(b.x, b.y, b.owner, 48, 2 * F.bossDmg(sk('heavy')));
+        if (b.wpn === 'disc') {
+          // Razor Disc: speeds up and fires a shot at the nearest enemy every bounce
+          b.speed = Math.min(600, b.speed * 1.15);
+          const tgt = aliveTanks.filter(e => e.alive && e.team === 'e' && dist(e, b) < 320 && clearPath(b, e)).sort((x, y) => dist(x, b) - dist(y, b))[0];
+          if (tgt) looseShell(b.owner, b.x, b.y, Math.atan2(tgt.y - b.y, tgt.x - b.x), 340, 0);
+        }
         if (b.team === 'p' && sk('bboost')) b.speed = Math.min(b.base * 1.8, 600, b.speed * (1 + F.bounceBoost(sk('bboost'))));
         if (((b.team === 'p' && sk('fission')) || b.fis) && !b.split) {
           // Fission Shells / Splitter tanks: the first bounce splits the shell in two
@@ -1696,7 +1766,7 @@ function updateBullets(dt) {
             break;
           }
           hurtTank(t, b.owner, b.team === 'p' ? F.bossDmg(sk('heavy')) + (b.bounced ? sk('bankshot') : 0) + (b.big ? 2 : 0) : 1);
-          if (b.wpn === 'grenade' && t.team === 'e') { shellEnd(b); killBullet(b, false); break; }
+          if ((b.wpn === 'grenade' || b.wpn === 'bomb' || b.wpn === 'swarm' || b.wpn === 'napalm' || b.wpn === 'vortex') && t.team === 'e') { if (b.wpn !== 'vortex') hurtTank(t, b.owner, 1); shellEnd(b); killBullet(b, false); break; }
           if (b.team === 'p' && t.team === 'e' && b.pierce > 0) { b.pierce--; b.hitIds.push(t.id); continue; }
           if (b.wpn === 'cluster') shellEnd(b);
           if (b.team === 'p' && sk('blast')) shellBlast(b.x, b.y, b.owner);
@@ -1726,6 +1796,7 @@ function updateBullets(dt) {
   G.bullets = G.bullets.filter(b => b.alive);
 }
 // Guardian Orbs: positions come from the clock, so online players can draw them without extra data
+const dronePos = (t, k, n) => { const a = G.time * 1.6 + k / n * TAU; return [t.x + Math.cos(a) * 30, t.y + Math.sin(a) * 30]; };
 const orbPos = (t, k, n) => { const a = G.time * 3 + k / n * TAU + t.slot; return [t.x + Math.cos(a) * 32, t.y + Math.sin(a) * 32]; };
 function updateOrbs() {
   const n = sk('orbit'); if (!n) return;
@@ -1758,6 +1829,13 @@ function updateAirstrikes(dt) {
     }
   }
   for (const s of G.strikes) {
+    if (s.zone) {
+      // Napalm: burning ground hurts enemies inside it every quarter second
+      s.t -= dt; s.tick = (s.tick || 0) - dt;
+      if (s.tick <= 0) { s.tick = .25; for (const e of aliveTanks) if (e.alive && e.team === 'e' && Math.hypot(e.x - s.x, e.y - s.y) < s.r + (e.r || R) * .4 && (e.napCd || 0) <= G.time) { e.napCd = G.time + .5; hurtTank(e, s.owner, 1); } }
+      if (s.t <= 0) s.done = true;
+      continue;
+    }
     if (s.hole) for (const e of aliveTanks) if (e.alive && e.team === 'e' && !e.boss) { const d = Math.hypot(s.x - e.x, s.y - e.y); if (d < s.r * 1.6 && d > 4) { e.x += (s.x - e.x) / d * 60 * dt; e.y += (s.y - e.y) / d * 60 * dt; collideTank(e); } }
     s.t -= s.team === 'e' && sk('warp') ? dt * .65 : dt;
     if (s.t > 0) continue;
@@ -1772,7 +1850,7 @@ function updateAirstrikes(dt) {
     if (s.hole) {
       // Singularity collapses: crushes regular enemies and enemy shells, and badly hurts bosses
       emit({ t: 'boom', x: r1(s.x), y: r1(s.y), c: '#b07cff', k: 1.8 }); sfx('boom'); shake(12);
-      for (const e of G.tanks) if (e.alive && e.team === 'e' && Math.hypot(e.x - s.x, e.y - s.y) < s.r + (e.r || R) * .5) hurtTank(e, owner, e.boss ? 6 : 1);
+      for (const e of G.tanks) if (e.alive && e.team === 'e' && Math.hypot(e.x - s.x, e.y - s.y) < s.r + (e.r || R) * .5) hurtTank(e, owner, e.boss ? (s.mini ? 3 * F.bossDmg(sk('heavy')) : 6) : 1);
       for (const b of G.bullets) if (b.alive && b.team === 'e' && Math.hypot(b.x - s.x, b.y - s.y) < s.r) killBullet(b, false);
       continue;
     }
@@ -2063,7 +2141,7 @@ function addRemoteInputs() {
 function sendSnapshot() {
   if (!Object.keys(NET.conns).length) { NET.events = []; return; }
   broadcast({ t: 'snap', st: G.state, lvl: G.level, lv: G.lives, ff: G.ff ? 1 : 0, tm: r2(G.timer), msg: G.msg, ln: G.layoutName,
-    sk: G.skills, rl: G.reels, as: G.strikes.map(s => [r1(s.x), r1(s.y), r2(s.t), s.team === 'e' ? 1 : 0, s.mortar ? 1 : 0, s.hole ? 1 : 0]), rt: r2(G.reelT), sc: G.skillChoices, cur: G.cursor, nw: G.nextWave, bk: G.bossKill ? 1 : 0,
+    sk: G.skills, rl: G.reels, as: G.strikes.map(s => [r1(s.x), r1(s.y), r2(s.t), s.team === 'e' ? 1 : 0, s.mortar ? 1 : 0, s.hole ? 1 : 0, s.zone ? 1 : 0, r1(s.r || 0), s.mini ? 1 : 0]), rt: r2(G.reelT), sc: G.skillChoices, cur: G.cursor, nw: G.nextWave, bk: G.bossKill ? 1 : 0,
     grid: G.grid.length ? G.grid.map(r => r.join('')).join('') : '',
     sl: G.slots.map(s => s ? [s.dev, s.kills, s.deaths, s.color, s.trail, s.chassis || 'std'] : null),
     tk: G.tanks.filter(t => t.alive).map(t => [t.id, r1(t.x), r1(t.y), r2(t.body), r2(t.turret), t.team === 'p' ? t.slot : t.type, r2(t.recoil), r2(Math.max(0, t.reveal)), r2(t.shield),
@@ -2126,7 +2204,7 @@ function onClientData(d) {
 function applySnap(s) {
   G.state = s.st; G.level = s.lvl | 0 || 1; G.lives = s.lv | 0; G.ff = !!s.ff; G.timer = +s.tm || 0; G.msg = s.msg || ''; G.layoutName = s.ln || '';
   G.skills = s.sk && typeof s.sk === 'object' ? s.sk : {}; G.reels = Array.isArray(s.rl) ? s.rl : []; G.skillChoices = Array.isArray(s.sc) ? s.sc : [];
-  G.strikes = Array.isArray(s.as) ? s.as.map(a => ({ x: a[0], y: a[1], t: a[2], team: a[3] ? 'e' : 'p', mortar: !!a[4], hole: !!a[5], r: a[5] ? 120 : 0 })) : [];
+  G.strikes = Array.isArray(s.as) ? s.as.map(a => ({ x: a[0], y: a[1], t: a[2], team: a[3] ? 'e' : 'p', mortar: !!a[4], hole: !!a[5], zone: !!a[6], r: a[7] || (a[5] ? 120 : 0), mini: !!a[8] })) : [];
   G.cursor = s.cur | 0; G.nextWave = Array.isArray(s.nw) ? s.nw : []; G.bossKill = !!s.bk;
   if (G.state !== 'reels' || Math.abs(G.reelT - s.rt) > .25) G.reelT = +s.rt || 0;
   const grid = s.grid || '';
@@ -2389,7 +2467,14 @@ function drawStyledTank(t, S, color, dark, alpha, mul = 1) {
     c.restore();
   }
   drawTank(tt, color, dark, alpha, sc, { noGun: S.ram, mortar: S.mortar, minigun: S.minigun });
-  if (S.minigun && t.hv > 0) {
+  if (S.drones && t.team === 'p') for (let k = 0; k < S.drones; k++) {
+    const [dx, dy] = dronePos(t, k, S.drones);
+    c.save(); c.translate(dx, dy); c.rotate(G.time * 4); c.globalAlpha = alpha;
+    c.fillStyle = 'rgba(40,25,10,.25)'; c.fillRect(-3, 1, 9, 9);
+    c.fillStyle = '#c9d4d8'; c.strokeStyle = '#2b2620'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(0, -6); c.lineTo(6, 0); c.lineTo(0, 6); c.lineTo(-6, 0); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = color; c.beginPath(); c.arc(0, 0, 2, 0, TAU); c.fill(); c.restore();
+  }
+  if ((S.minigun || S.ion) && t.hv > 0) {
     // heat bar: fills while firing; red and draining while overheated
     const over = t.hv > 1, k = over ? t.hv - 1 : t.hv;
     c.save(); c.globalAlpha = alpha; c.fillStyle = 'rgba(23,20,15,.8)'; rrect(c, t.x - 17, t.y + 21, 34, 6, 3); c.fill();
@@ -2490,13 +2575,13 @@ function render() {
   if (G.state === 'play' || G.state === 'intro') for (const t of G.tanks) if (t.alive && t.team === 'p') {
     const ch = chassisOf(t);
     if (ch.ram) continue;
-    if (ch.mortar) {
+    if (ch.mortar || ch.starfall) {
       const [mx, my] = mortarPoint(t, t === myKbTank() ? { mouseAim: true } : null);
       c.save(); c.strokeStyle = slotColor(t.slot); c.globalAlpha = .6; c.lineWidth = 2; c.setLineDash([3, 5]);
-      c.beginPath(); c.arc(mx, my, 50, 0, TAU); c.stroke(); c.setLineDash([]); c.beginPath(); c.arc(mx, my, 4, 0, TAU); c.stroke(); c.restore();
+      c.beginPath(); c.arc(mx, my, ch.starfall ? 75 : 50, 0, TAU); c.stroke(); c.setLineDash([]); c.beginPath(); c.arc(mx, my, 4, 0, TAU); c.stroke(); c.restore();
       continue;
     }
-    const pts = ch.lance ? aimPath(t, 0, 1400) : ch.tesla ? aimPath(t, 0, 340) : aimPath(t, Math.max(0, F.bounces(sk('bounce')) + (ch.bnc || 0)) + (sk('mythic') ? 6 : 0), ch.pellets ? 150 : ch.flame ? 100 : F.sights(sk('sights')) * (ch.sight || 1));
+    const pts = ch.lance || ch.ion || ch.beams ? aimPath(t, 0, 1400) : ch.beam ? aimPath(t, ch.beam + sk('bounce'), 1600) : ch.tesla ? aimPath(t, 0, 340) : aimPath(t, Math.max(0, F.bounces(sk('bounce')) + (ch.bnc || 0)) + (sk('mythic') ? 6 : 0), ch.pellets ? 150 : ch.flame ? 100 : F.sights(sk('sights')) * (ch.sight || 1));
     c.save(); c.strokeStyle = slotColor(t.slot); c.globalAlpha = .55; c.lineWidth = 2; c.setLineDash([2, 7]); c.lineCap = 'round';
     if (t.charge > 0) { c.strokeStyle = '#ff2d2d'; c.globalAlpha = .9; c.lineWidth = 2.5; c.setLineDash([]); } // Sniper charge-up laser
     c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const p of pts.slice(1)) c.lineTo(p[0], p[1]); c.stroke(); c.restore();
@@ -2539,6 +2624,21 @@ function render() {
         c.strokeStyle = slotColor(b.slot); c.lineWidth = 3.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(-8, -6); c.quadraticCurveTo(0, 0, -8, 6); c.moveTo(-8, -6); c.lineTo(6, 0); c.lineTo(-8, 6); c.stroke();
       }
       c.restore(); continue;
+    }
+    if (b.kind === 'bomb') {
+      c.beginPath(); c.arc(b.x + 3, b.y + 4, 7, 0, TAU); c.fill();
+      c.fillStyle = '#2b2620'; c.beginPath(); c.arc(b.x, b.y, 7, 0, TAU); c.fill();
+      c.fillStyle = Math.sin(G.time * 25) > 0 ? '#ff3b2f' : '#ffd27a'; c.beginPath(); c.arc(b.x - 2, b.y - 3, 2, 0, TAU); c.fill(); continue;
+    }
+    if (b.kind === 'vortex' || b.kind === 'thunder') {
+      c.save(); c.translate(b.x, b.y); c.rotate(G.time * 10); c.globalAlpha = .9;
+      c.strokeStyle = b.kind === 'vortex' ? '#b07cff' : '#ffe066'; c.lineWidth = 2.5;
+      for (let q = 0; q < 3; q++) { c.beginPath(); c.arc(0, 0, 4 + q * 2.5, q * 2, q * 2 + 3.4); c.stroke(); }
+      c.fillStyle = b.kind === 'vortex' ? '#1a0b2e' : '#fff8d0'; c.beginPath(); c.arc(0, 0, 3, 0, TAU); c.fill(); c.restore(); continue;
+    }
+    if (b.kind === 'star') {
+      c.save(); c.translate(b.x, b.y); c.rotate(G.time * 20); c.fillStyle = '#c9d4d8'; c.strokeStyle = '#3a342c'; c.lineWidth = 1;
+      c.beginPath(); for (let q = 0; q < 8; q++) { const a = q / 8 * TAU, r = q % 2 ? 2.5 : 7.5; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); c.fill(); c.stroke(); c.restore(); continue;
     }
     if (b.kind === 'grenade') {
       c.beginPath(); c.arc(b.x + 2, b.y + 3, 4.5, 0, TAU); c.fill();
@@ -2592,8 +2692,14 @@ function render() {
     c.globalAlpha = 1; c.fillStyle = '#fff8e6'; c.beginPath(); c.arc(ox, oy, 4, 0, TAU); c.fill();
   }
   for (const s of G.strikes) {
+    if (s.zone) {
+      c.save(); c.globalAlpha = Math.min(1, s.t) * .5; c.fillStyle = '#ff7a2e'; c.beginPath(); c.arc(s.x, s.y, s.r, 0, TAU); c.fill();
+      c.globalAlpha = Math.min(1, s.t) * .8; c.globalCompositeOperation = 'lighter';
+      for (let q = 0; q < 7; q++) { const a = q * 2.4 + G.time * 2, rr = s.r * (.3 + .6 * ((q * .37 + G.time) % 1)); c.fillStyle = q % 2 ? '#ffc24d' : '#ff5a1e'; c.beginPath(); c.arc(s.x + Math.cos(a) * rr, s.y + Math.sin(a) * rr, 5 + 3 * Math.sin(G.time * 9 + q), 0, TAU); c.fill(); }
+      c.restore(); continue;
+    }
     if (s.hole) {
-      const k = clamp(s.t / 1.6, 0, 1), rr = s.r || 120;
+      const k = clamp(s.t / (s.mini ? .45 : 1.6), 0, 1), rr = s.r || 120;
       c.save(); const g = c.createRadialGradient(s.x, s.y, 2, s.x, s.y, rr * (1.1 - k * .4));
       g.addColorStop(0, 'rgba(10,0,20,.85)'); g.addColorStop(.5, 'rgba(80,30,140,.35)'); g.addColorStop(1, 'rgba(176,124,255,0)');
       c.fillStyle = g; c.beginPath(); c.arc(s.x, s.y, rr, 0, TAU); c.fill();

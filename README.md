@@ -6,7 +6,7 @@ Runs are endless. After every level, three slot machines spin to decide the next
 
 Destroy 20 of an enemy type to unlock it as a playable tank: Hornet, Missile, Sniper, Shotgun, Brute, Splitter, Hive, Scorcher, Mortar, Spiker, Bulwark, Ghost or Blinker. Each plays differently, and the Spiker has its own skills. Unlock every one of them to reveal a secret tank.
 
-There are also 8 elite tanks, each with its own special gun: Boomerang, Sawblade, Grenadier, Flak, Tesla (chain lightning), Lancer (rail beam), Cluster and Plasma. They unlock by reaching a level for the first time or by total kills across all your runs. A squad with a Spiker in it starts with 5 lives instead of 3. Unlock progress is saved in your browser and carries across runs. Pick your tank on the title screen with LB/RB, Z/C or the arrow buttons.
+There are also 16 elite tanks, each with its own special gun: Prism (bouncing laser), Vortex (mini black hole), Swarm (homing missiles), Bomber, Tesla (chain lightning), Lancer (rail beam), Cluster, Plasma, Thunder, Ion (continuous beam), Shuriken, Carrier (auto-firing drones), Napalm, Railstorm, Starfall and Razor Disc. They unlock by reaching a level for the first time or by total kills across all your runs. A squad with a Spiker in it starts with 5 lives instead of 3. Unlock progress is saved in your browser and carries across runs. Pick your tank on the title screen with LB/RB, Z/C or the arrow buttons.
 
 There are 56 skills across five rarities: Common, Rare, Epic, Legendary and Mythic. Most skills can be upgraded many times (up to 10 ranks), and each card shows exactly what the next rank changes. Rarer cards get a little more likely the deeper the run goes, and the Lucky Charm skill boosts them further.
 
