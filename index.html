@@ -251,7 +251,7 @@ const ETYPES = {
   bur:  { name: 'Burrower',  color: '#78350f', speed: 50, bs: 230, bounces: 0, max: 1, cd: 1.4, turn: 3, aimEvery: .3, burrow: true, pref: 220, miss: .3, err: .1 },
   eng:  { name: 'Engineer',  color: '#57534e', speed: 38, bs: 180, bounces: 1, max: 1, cd: 2.6, turn: 2, aimEvery: .5, build: 8, pref: 340, miss: .4, err: .18 },
   tur:  { name: 'Turret',    color: '#78716c', r: 12, speed: 0, bs: 200, bounces: 1, max: 1, cd: 2.4, turn: 2.2, aimEvery: .4, smart: true, miss: .35, err: .14 },
-  sal:  { name: 'Salvo',     color: '#0e7490', speed: 45, bs: 190, bounces: 1, max: 5, cd: 3.8, burst: 5, burstGap: .13, turn: 2.2, aimEvery: .35, smart: true, pref: 320, miss: .3, err: .2 },
+  sal:  { name: 'Salvo',     color: '#0e7490', speed: 45, bs: 180, bounces: 0, max: 3, cd: 3.8, burst: 3, burstGap: .18, kind: 'missile', homeP: 1.3, turn: 2.2, aimEvery: .35, smart: true, pref: 320, miss: .3, err: .2 },
   orbt: { name: 'Orbiter',   color: '#6d28d9', speed: 40, bs: 220, bounces: 1, max: 1, cd: 1.6, turn: 2.4, aimEvery: .35, smart: true, orbs: 3, pref: 300, miss: .3, err: .12 },
   dbl:  { name: 'Double',    color: '#be185d', speed: 50, bs: 200, bounces: 1, max: 2, cd: 2, turn: 2.4, aimEvery: .35, smart: true, twinShot: .12, pref: 280, miss: .3, err: .12 },
   frz:  { name: 'Freezer',   color: '#38bdf8', speed: 45, bs: 210, bounces: 1, max: 1, cd: 2, turn: 2.2, aimEvery: .35, smart: true, kind: 'ice', freeze: 1.6, pref: 280, miss: .25, err: .1 },
@@ -270,11 +270,29 @@ const BOSSES = [
   { name: 'Warden',     color: '#4a3a62', hp: 34, speed: 46, turn: 2.2, gap: 1.9, pref: 320, attacks: ['ring', 'snipe', 'fan', 'mines', 'snipe'] },
 ];
 const BOSS_R = 30;
-// Every 50th level: an elite boss armed with elite weapons
-const ELITE_BOSS = { name: 'Overlord', color: '#c9a227', hp: 90, speed: 40, turn: 2.2, gap: 1.7, pref: 320, elite: true,
-  attacks: ['prism', 'swarm', 'starfall', 'vortex', 'ring', 'prism', 'missiles', 'starfall'] };
+// Every 50th level: an elite boss. There is one for every elite tank, each armed with a giant version of that tank's gun; they take turns.
+// warnB = how many bounces the charge-up warning line shows
+const ELITE_BOSSES = [
+  { name: 'Prismarch',     el: 'vet',  color: '#c9a227', hp: 80, speed: 40, turn: 2.2, gap: 1.6, pref: 340, warnB: 2, attacks: ['prism', 'fan', 'prism', 'ring'] },
+  { name: 'Maelstrom',     el: 'reb',  color: '#5b3a8c', hp: 85, speed: 38, turn: 2,   gap: 1.8, pref: 320, attacks: ['vorb', 'vortex', 'ring', 'vorb', 'fan'] },
+  { name: 'Hivelord',      el: 'iron', color: '#8a5a2b', hp: 80, speed: 42, turn: 2.2, gap: 1.6, pref: 320, attacks: ['swarm', 'fan', 'swarm', 'mines'] },
+  { name: 'Demolisher',    el: 'twn',  color: '#4b4b4b', hp: 90, speed: 34, turn: 1.8, gap: 1.9, pref: 300, attacks: ['bomb', 'mines', 'bomb', 'ring'] },
+  { name: 'Stormcoil',     el: 'hunt', color: '#2a6f9e', hp: 80, speed: 44, turn: 2.4, gap: 1.7, pref: 280, warnB: 0, attacks: ['tesla', 'ring', 'tesla', 'fan'] },
+  { name: 'Impaler',       el: 'spr',  color: '#7a2e2e', hp: 80, speed: 40, turn: 2,   gap: 1.7, pref: 380, warnB: 0, attacks: ['lance', 'fan', 'lance', 'missiles'] },
+  { name: 'Shrapnel King', el: 'prc',  color: '#9a6b1f', hp: 85, speed: 40, turn: 2.2, gap: 1.7, pref: 320, attacks: ['cluster', 'ring', 'cluster', 'fan'] },
+  { name: 'Sunforge',      el: 'cmd',  color: '#c2410c', hp: 85, speed: 36, turn: 2,   gap: 1.9, pref: 320, attacks: ['plasma', 'fan', 'plasma', 'ring'] },
+  { name: 'Tempest',       el: 'thn',  color: '#56627e', hp: 85, speed: 42, turn: 2.2, gap: 1.8, pref: 300, attacks: ['thunder', 'fan', 'thunder', 'ring'] },
+  { name: 'Ion Colossus',  el: 'ion',  color: '#1e7a8c', hp: 90, speed: 36, turn: 2,   gap: 2.2, pref: 320, warnB: 0, attacks: ['ion', 'fan', 'ion', 'ring'] },
+  { name: 'Bladestorm',    el: 'shu',  color: '#3f6d4e', hp: 80, speed: 46, turn: 2.4, gap: 1.5, pref: 300, attacks: ['stars', 'stars', 'ring', 'stars', 'fan'] },
+  { name: 'Mothership',    el: 'car',  color: '#6b7280', hp: 95, speed: 34, turn: 2,   gap: 1.9, pref: 340, drones: 4, attacks: ['drones', 'fan', 'missiles', 'drones', 'ring'] },
+  { name: 'Inferno',       el: 'nap',  color: '#b4361e', hp: 85, speed: 40, turn: 2.2, gap: 1.7, pref: 300, attacks: ['napalm', 'fan', 'napalm', 'ring'] },
+  { name: 'Rail Tyrant',   el: 'rst',  color: '#3b3b6b', hp: 85, speed: 38, turn: 2,   gap: 2,   pref: 360, warnB: 0, attacks: ['rails', 'fan', 'rails', 'mines'] },
+  { name: 'Skyfall',       el: 'sfl',  color: '#3a4f8c', hp: 85, speed: 40, turn: 2.2, gap: 1.8, pref: 340, attacks: ['starfall', 'fan', 'starfall', 'ring'] },
+  { name: 'Grinder',       el: 'dsc',  color: '#7c7c7c', hp: 85, speed: 42, turn: 2.2, gap: 1.7, pref: 320, attacks: ['disc', 'fan', 'disc', 'ring'] },
+].map(b => Object.assign({ elite: true }, b));
 const isEliteBoss = lvl => lvl % 50 === 0;
-const bossName = lvl => isEliteBoss(lvl) ? ELITE_BOSS.name : BOSSES[bossIndex(lvl) % BOSSES.length].name;
+const eliteIndex = lvl => { const n = Math.round(lvl / 50) - 1, L = ELITE_BOSSES.length; return ((n % L) + L) % L; };
+const bossName = lvl => isEliteBoss(lvl) ? ELITE_BOSSES[eliteIndex(lvl)].name : BOSSES[bossIndex(lvl) % BOSSES.length].name;
 // Each skill card first rolls a rarity, then a skill of that rarity.
 const RARITY = {
   common:    { label: 'Common',    w: 60 },
@@ -495,7 +513,7 @@ const CHASSIS = {
   gen: { name: 'Generator', desc: 'A bubble shield blocks one hit, then recharges after 6 seconds.', bubble: 6, bubbles: 1 },
   bur: { name: 'Burrower',  desc: 'No mines. The mine button digs you underground for 1.5 seconds: you can\'t be hit and you move faster, but can\'t shoot.', burrow: true },
   eng: { name: 'Engineer',  desc: 'No mines. The mine button builds a turret that shoots enemies (up to 2).', build: true },
-  sal: { name: 'Salvo',     desc: 'Fires a burst of 5 bouncing shells.', burst: 5, burstGap: .1, cd: 2.8 },
+  sal: { name: 'Salvo',     desc: 'Fires a burst of 3 heat-seeking missiles.', kind: 'missile', home: 2.5, bnc: -1, burst: 3, burstGap: .12, cd: 2.8 },
   dbl: { name: 'Double',    desc: 'Fires two shells at once in a narrow V.', twinShot: .12 },
   frz: { name: 'Freezer',   desc: 'Ice shells destroy what they hit and freeze nearby enemies in place for 2 seconds.', kind: 'ice', freezeT: 2, freezeR: 70 },
   cln: { name: 'Clone',     desc: 'No mines. The mine button sends out a decoy that looks like you; enemies chase and shoot it (up to 2).', clone: true },
@@ -516,7 +534,7 @@ const CHASSIS = {
   // Elite tanks: the Standard tank with upgrades only, no downsides. Unlocked by milestones saved on this computer.
   vet:  { name: 'Prism',     desc: 'Elite. An instant laser that bounces off walls 3 times and hits everything on its path.', elite: true, beam: 3, cd: 5.5, unlock: { level: 5 } },
   reb:  { name: 'Vortex',    desc: 'Elite. An orb that collapses into a mini black hole, pulling in and crushing nearby enemies.', elite: true, wpn: 'vortex', kind: 'vortex', spd: .8, bnc: -1, life: .9, ammo: 2, cd: 2.2, unlock: { level: 8 } },
-  iron: { name: 'Swarm',     desc: 'Elite. Fires 4 homing mini-missiles that explode on hit.', elite: true, wpn: 'swarm', kind: 'missile', swarm: 4, spread: .8, home: 4, spd: 1.05, bnc: -1, life: 2.5, cd: 2.2, unlock: { level: 11 } },
+  iron: { name: 'Swarm',     desc: 'Elite. Fires a fan of 4 straight mini-missiles that explode on hit.', elite: true, wpn: 'swarm', kind: 'missile', swarm: 4, spread: .5, spd: 1.2, bnc: -1, life: 2.5, cd: 2.2, unlock: { level: 11 } },
   twn:  { name: 'Bomber',    desc: 'Elite. A heavy bomb that explodes every time it bounces, then once more where it stops.', elite: true, wpn: 'bomb', kind: 'bomb', spd: .8, bnc: 2, ammo: 2, cd: 2.4, unlock: { level: 13 } },
   hunt: { name: 'Tesla',     desc: 'Elite. An instant lightning bolt that leaps between up to 3 enemies.', elite: true, tesla: true, cd: 4.4, unlock: { level: 16 } },
   spr:  { name: 'Lancer',    desc: 'Elite. An instant rail beam that goes straight through every enemy in a line.', elite: true, lance: true, cd: 5, unlock: { kills: 100 } },
@@ -642,8 +660,8 @@ const TANK_SKILLS = [
   { id: 'bur_cd', req: 'bur', rar: 'rare', name: 'Quick Dig', desc: 'Dig down again sooner.', max: 3, stat: ['Dig cooldown', n => secs(4 * Math.pow(.8, n))], mod: (c, n) => ({ burCd: 4 * Math.pow(.8, n) }) },
   addSk('eng', 'eng_more', 'rare', 'Bigger Crew', 'Build more turrets.', 2, 'turrets', 2, 1, 'Turrets at once'),
   { id: 'eng_fast', req: 'eng', rar: 'common', name: 'Fast Build', desc: 'Build turrets more often.', max: 3, stat: ['Build cooldown', n => secs(6 * Math.pow(.8, n))], mod: (c, n) => ({ bcd: 6 * Math.pow(.8, n) }) },
-  addSk('sal', 'sal_more', 'common', 'Bigger Salvo', 'Salvo fires more shells per burst.', 3, 'burst', 5, 1, 'Shells per burst'),
-  addSk('sal', 'sal_bnc', 'rare', 'Rubber Salvo', 'Salvo shells bounce more.', 2, 'bnc', 0, 1, 'Extra bounces', v => '+' + v),
+  addSk('sal', 'sal_more', 'common', 'Bigger Salvo', 'Salvo fires more missiles per burst.', 3, 'burst', 3, 1, 'Missiles per burst'),
+  addSk('sal', 'sal_home', 'rare', 'Smart Rockets', 'Salvo missiles turn harder toward enemies.', 3, 'home', 2.5, 1, 'Homing strength'),
   rateSk('dbl', 'dbl_rate', 'common', 'Quick Doubles', 'The Double fires faster.', 3),
   addSk('dbl', 'dbl_bnc', 'rare', 'Double Bounce', 'Double shells bounce more.', 2, 'bnc', 0, 1, 'Extra bounces', v => '+' + v),
   addSk('frz', 'frz_time', 'common', 'Deep Freeze', 'Enemies stay frozen longer.', 3, 'freezeT', 2, .5, 'Freeze time', secs),
@@ -728,14 +746,16 @@ function noise(dur, vol, cut, delay = 0) {
   s.connect(f); f.connect(g); g.connect(master); s.start(t0); s.stop(t0 + dur);
 }
 // ---------- music (original pieces, generated live with Web Audio) ----------
-// Battle: a snare-driven toy-soldier march that adds instruments as more kinds of enemies are on the field.
-// Boss: an orchestral minor-key piece. Overlord (elite boss): faster and bigger, with choir and timpani rolls.
+// Battle: a serious minor-key military march that adds instruments as more kinds of enemies are on the field.
+// Boss: a driving orchestral piece with war drums, choir and brass. Elite boss: faster and heavier still, with braams and a gong.
 const NOTE = n => { const m = /^([A-G])(#|b)?(\d)$/.exec(n); const base = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0); return 440 * Math.pow(2, (base + (+m[3] + 1) * 12 - 69) / 12); };
 // "D4:3" = note D4 held for 3 sixteenth-steps; "." = rest
 const mel = s => s.trim().split(/\s+/).map(x => { if (x === '.') return null; const [n, l] = x.split(':'); return { f: NOTE(n), len: +l || 1 }; });
 const hits = a => a.map(v => v || null);
 const chordsOf = (names, len = 16) => { const out = []; for (const nm of names) { out.push({ fs: nm.split('+').map(NOTE), len }); for (let k = 1; k < len; k++) out.push(null); } return out; };
 const ostinato = (roots, offs, stepLen) => { const out = []; for (const r of roots) { const f0 = NOTE(r); for (let k = 0; k < 16; k += stepLen) { out.push({ f: f0 * Math.pow(2, offs[(k / stepLen) % offs.length] / 12), len: stepLen }); for (let q = 1; q < stepLen; q++) out.push(null); } } return out; };
+// "D4/3" = note D4 held for 3 steps (rests filled in for you), "_/4" = 4 steps of rest, "D3+F3+A3/16" = a chord
+const ph = str => { const out = []; for (const x of str.trim().split(/\s+/)) { const [n, l] = x.split('/'), len = +l || 1; out.push(n === '_' ? null : n.includes('+') ? { fs: n.split('+').map(NOTE), len } : { f: NOTE(n), len }); for (let k = 1; k < len; k++) out.push(null); } return out; };
 const bassLine = (notes, every = 4, len = 3) => { const out = []; for (const n of notes) { out.push(n === '.' ? null : { f: NOTE(n), len }); for (let q = 1; q < every; q++) out.push(null); } return out; };
 // ----- instruments -----
 function mOsc(type, f, t0, dur, vol, cut, attack = .012, detune = 0, vib = 0) {
@@ -760,56 +780,80 @@ const INST = {
   timpani: (t0, v, sd) => { const f = v.f || NOTE('E2'); const o = AC.createOscillator(), g = AC.createGain(); o.frequency.setValueAtTime(f * 1.05, t0); o.frequency.exponentialRampToValueAtTime(f, t0 + .08); g.gain.setValueAtTime(.45, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + .7); o.connect(g); g.connect(musicOut()); o.start(t0); o.stop(t0 + .75); mNoise(t0, .08, .12, 'lowpass', 600); },
   tuba: (t0, v, sd, vol) => mOsc('sawtooth', v.f, t0, sd * v.len * .9, vol, 380, .015),
   trumpet: (t0, v, sd, vol) => { mOsc('sawtooth', v.f, t0, sd * v.len * .95, vol, 2400, .02, 0, .006); mOsc('square', v.f, t0, sd * v.len * .95, vol * .45, 1800, .02, 7); },
-  glock: (t0, v, sd, vol) => { mOsc('sine', v.f * 2, t0, .45, vol, 9000, .002); mOsc('triangle', v.f * 4, t0, .2, vol * .35, 9000, .002); },
-  flute: (t0, v, sd, vol) => mOsc('triangle', v.f, t0, sd * v.len * .95, vol, 5000, .04, 0, .012),
+  taiko: (t0, v) => { const o = AC.createOscillator(), g = AC.createGain(); o.frequency.setValueAtTime(95, t0); o.frequency.exponentialRampToValueAtTime(44, t0 + .3); g.gain.setValueAtTime(.75 * Math.min(1, v), t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + .55); o.connect(g); g.connect(musicOut()); o.start(t0); o.stop(t0 + .6); mNoise(t0, .14, .22 * Math.min(1, v), 'lowpass', 420); },
+  gong: t0 => { mOsc('sine', 58, t0, 3.2, .16, 400, .01); mOsc('triangle', 87, t0, 2.6, .05, 900, .01, 12); mNoise(t0, 2.6, .07, 'bandpass', 900, .6); },
+  horn: (t0, v, sd, vol) => { mOsc('sawtooth', v.f / 2, t0, sd * v.len * .95, vol, 850, .05, -5); mOsc('sawtooth', v.f / 2, t0, sd * v.len * .95, vol * .7, 850, .05, 5); mOsc('sawtooth', v.f / 4, t0, sd * v.len * .95, vol * .6, 500, .05); },
+  braam: (t0, v, sd, vol) => { for (const f of v.fs) for (const d of [-10, 0, 10]) mOsc('sawtooth', f, t0, sd * v.len, vol, 520, .04, d); },
+  cello: (t0, v, sd, vol) => mOsc('sawtooth', v.f, t0, sd * v.len * .9, vol, 700, .01),
   strings: (t0, v, sd, vol) => { mOsc('sawtooth', v.f, t0, sd * v.len, vol, 1300, .01, -6); mOsc('sawtooth', v.f, t0, sd * v.len, vol * .7, 1300, .01, 6); },
-  brass: (t0, v, sd, vol) => { for (const f of v.fs) { mOsc('sawtooth', f, t0, sd * v.len, vol, 1700, .09, -5); mOsc('sawtooth', f, t0, sd * v.len, vol * .6, 1500, .09, 5); } },
+  brass: (t0, v, sd, vol) => { for (const f of v.fs) { mOsc('sawtooth', f, t0, sd * v.len, vol, 1300, .12, -5); mOsc('sawtooth', f, t0, sd * v.len, vol * .6, 1100, .12, 5); } },
   choir: (t0, v, sd, vol) => { for (const f of v.fs) for (const d of [-9, 0, 9]) mOsc('sawtooth', f, t0, sd * v.len, vol * .45, 900, .25, d, .004); },
 };
-// ----- the three pieces (64 sixteenth-steps = 4 bars each) -----
+// ----- the three pieces (16 sixteenth-steps per bar, 8 bars each) -----
+// Battle march in D minor: Dm Bb C A | Dm Gm C Dm
 const MARCH_SNARE = hits([1,0,.3,.3, .6,0,.3,0, 1,0,.3,.3, .6,2,.6,2,  1,0,.3,.3, .6,0,.3,0, 1,0,.3,.3, .6,2,.6,2,  1,0,.3,.3, .6,0,.3,0, 1,0,.3,.3, .6,2,.6,2,  1,0,.4,0, .7,0,.4,0, 1,2,2,2, 1,2,2,2]);
 const TRACKS = {
-  battle: { bpm: 120, layers: [
+  battle: { bpm: 112, layers: [
     { inst: 'snare', data: MARCH_SNARE, need: 0 },
     { inst: 'kick', data: hits([1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0]), need: 0 },
-    { inst: 'tuba', vol: .17, need: 0, data: bassLine(['D2','A1','D2','A1', 'G1','D2','G1','D2', 'A1','E2','A1','E2', 'D2','A1','D2','.']) },
-    { inst: 'glock', vol: .07, need: 2, data: mel(`. . D5:1 . . . F#5:1 . . . A5:1 . . . F#5:1 .  . . B4:1 . . . D5:1 . . . G5:1 . . . D5:1 .  . . C#5:1 . . . E5:1 . . . A5:1 . . . E5:1 .  . . D5:1 . F#5:1 . A5:1 . D6:1 . . . . . . .`) },
-    { inst: 'trumpet', vol: .06, need: 3, data: mel(`D4:3 . . F#4:1 A4:4 . . . D5:2 . C#5:2 . B4:2 . A4:2 .  G4:3 . . A4:1 B4:2 . G4:2 . E4:4 . . . F#4:2 . E4:2 .  A4:3 . . B4:1 C#5:2 . A4:2 . E5:4 . . . D5:2 . C#5:2 .  D5:2 . A4:2 . F#4:2 . E4:2 . D4:6 . . . . . . .`) },
-    { inst: 'flute', vol: .045, need: 4, data: mel(`. . . . F#5:2 . A5:2 . . . . . F#5:2 . . .  . . . . D5:2 . G5:2 . . . . . E5:2 . . .  . . . . E5:2 . A5:2 . . . . . G5:2 . . .  F#5:1 A5:1 F#5:1 A5:1 F#5:1 A5:1 F#5:1 . . . . . . . . .`) },
+    { inst: 'tuba', vol: .15, need: 0, data: bassLine(['D2','A1','D2','A1', 'Bb1','F2','Bb1','F2', 'C2','G1','C2','G1', 'A1','E2','A1','C#2', 'D2','A1','D2','A1', 'G1','D2','G1','Bb1', 'C2','G1','C2','E2', 'D2','A1','D2','.']) },
+    { inst: 'cello', vol: .05, need: 0, data: ostinato(['D3', 'Bb2', 'C3', 'A2', 'D3', 'G2', 'C3', 'D3'], [0, 7, 12, 7], 2) },
+    { inst: 'brass', vol: .03, need: 2, data: ph('D3+F3+A3/16 Bb2+D3+F3/16 C3+E3+G3/16 A2+C#3+E3/16 D3+F3+A3/16 G2+Bb2+D3/16 C3+E3+G3/16 D3+F3+A3/16') },
+    { inst: 'trumpet', vol: .055, need: 3, data: ph('D4/3 D4/1 A4/4 F4/2 G4/2 A4/4  Bb4/3 A4/1 G4/4 F4/2 G4/2 D4/4  E4/3 F4/1 G4/4 C5/4 Bb4/2 A4/2  A4/6 G4/2 E4/2 C#4/2 E4/4  D4/3 D4/1 A4/4 D5/4 C5/2 A4/2  Bb4/3 C5/1 D5/4 G4/4 Bb4/4  A4/3 Bb4/1 C5/4 F4/2 G4/2 E4/4  D4/8 _/4 A3/2 C#4/2') },
+    { inst: 'horn', vol: .05, need: 3, data: ph('D4/3 D4/1 A4/4 F4/2 G4/2 A4/4  Bb4/3 A4/1 G4/4 F4/2 G4/2 D4/4  E4/3 F4/1 G4/4 C5/4 Bb4/2 A4/2  A4/6 G4/2 E4/2 C#4/2 E4/4  D4/3 D4/1 A4/4 D5/4 C5/2 A4/2  Bb4/3 C5/1 D5/4 G4/4 Bb4/4  A4/3 Bb4/1 C5/4 F4/2 G4/2 E4/4  D4/8 _/4 A3/2 C#4/2') },
+    { inst: 'strings', vol: .03, need: 4, data: ph('F5/8 E5/8 D5/16 E5/8 G5/8 E5/16 F5/8 A5/8 G5/8 Bb5/8 G5/8 E5/8 F5/8 E5/8') },
     { inst: 'hat', data: hits([0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0]), need: 4 },
+    { inst: 'crash', data: hits([1, ...Array(127).fill(0)]), need: 4 },
   ] },
-  boss: { bpm: 132, layers: [
-    { inst: 'timpani', need: 0, data: (() => { const r = ['E2', 'C2', 'D2', 'B1']; const o = []; for (const n of r) { const f = NOTE(n); o.push({ f }, null, null, null, null, null, { f }, null, { f: f * 1.5 }, null, null, null, { f }, null, { f }, null); } return o; })() },
-    { inst: 'kick', data: hits([1,0,0,0, 0,0,0,0, 1,0,1,0, 0,0,0,0]), need: 0 },
-    { inst: 'snare', data: hits([0,0,.4,0, 1,0,.4,.4, 0,0,.4,0, 1,.4,2,2]), need: 0 },
-    { inst: 'crash', data: hits([1, ...Array(31).fill(0), 1, ...Array(31).fill(0)]), need: 0 },
-    { inst: 'strings', vol: .05, need: 0, data: ostinato(['E3', 'C3', 'D3', 'B2'], [0, 0, 7, 0, 12, 0, 7, 3], 2) },
-    { inst: 'brass', vol: .035, need: 0, data: chordsOf(['E3+G3+B3', 'C3+E3+G3', 'D3+F#3+A3', 'B2+D#3+F#3']) },
-    { inst: 'trumpet', vol: .065, need: 0, data: mel(`B4:4 . . . E5:4 . . . D5:2 . B4:2 . G4:4 . . .  E5:4 . . . G5:4 . . . F#5:2 . E5:2 . C5:4 . . .  D5:4 . . . F#5:2 . A5:2 . G5:2 . F#5:2 . D5:4 . . .  D#5:4 . . . F#5:4 . . . B5:6 . . . . . B4:2 .`) },
+  // Boss in E minor: Em C Am B | Em C D B
+  boss: { bpm: 138, layers: [
+    { inst: 'taiko', need: 0, data: hits([1,0,0,1, 0,0,1,0, 1,0,0,0, 1,0,.7,.7]) },
+    { inst: 'timpani', need: 0, data: (() => { const o = []; for (const n of ['E2', 'C2', 'A1', 'B1', 'E2', 'C2', 'D2', 'B1']) { const f = NOTE(n); o.push({ f }, null, null, null, null, null, null, null, { f }, null, null, null, { f }, null, { f }, { f }); } return o; })() },
+    { inst: 'snare', data: hits([0,0,0,0, 1,0,0,.4, 0,0,.4,0, 1,0,0,0,  0,0,0,0, 1,0,0,.4, 0,0,.4,0, 1,0,0,0,  0,0,0,0, 1,0,0,.4, 0,0,.4,0, 1,0,0,0,  0,0,.5,0, 1,0,.5,0, 2,2,2,2, 2,2,2,2]), need: 0 },
+    { inst: 'crash', data: hits([1, ...Array(63).fill(0)]), need: 0 },
+    { inst: 'gong', data: hits([1, ...Array(127).fill(0)]), need: 0 },
+    { inst: 'strings', vol: .04, need: 0, data: ostinato(['E3', 'C3', 'A2', 'B2', 'E3', 'C3', 'D3', 'B2'], [0, 12, 7, 12], 1) },
+    { inst: 'cello', vol: .06, need: 0, data: ostinato(['E2', 'C2', 'A1', 'B1', 'E2', 'C2', 'D2', 'B1'], [0, 0, 12, 0], 2) },
+    { inst: 'choir', vol: .045, need: 0, data: ph('E3+G3+B3/16 C3+E3+G3/16 A2+C3+E3/16 B2+D#3+F#3/16 E3+G3+B3/16 C3+E3+G3/16 D3+F#3+A3/16 B2+D#3+F#3/16') },
+    { inst: 'brass', vol: .03, need: 0, data: ph('E3+G3+B3/16 C3+E3+G3/16 A2+C3+E3/16 B2+D#3+F#3/16 E3+G3+B3/16 C3+E3+G3/16 D3+F#3+A3/16 B2+D#3+F#3/16') },
+    { inst: 'horn', vol: .07, need: 0, data: ph('B4/4 E5/4 D5/2 B4/2 G4/4  C5/4 E5/4 G5/4 E5/4  A4/4 C5/4 E5/6 D5/2  D#5/4 F#5/4 B5/8  E5/6 G5/2 F#5/4 E5/4  E5/4 G5/4 C6/6 B5/2  A5/4 F#5/4 D5/4 A5/4  B5/8 A5/4 F#5/4') },
+    { inst: 'trumpet', vol: .05, need: 0, data: ph('_/64 E5/6 G5/2 F#5/4 E5/4  E5/4 G5/4 C6/6 B5/2  A5/4 F#5/4 D5/4 A5/4  B5/8 A5/4 F#5/4') },
   ] },
-  elite: { bpm: 150, layers: [
-    { inst: 'timpani', need: 0, data: (() => { const r = ['B1', 'G1', 'E2', 'F#2']; const o = []; r.forEach((n, bar) => { const f = NOTE(n); for (let k = 0; k < 16; k++) o.push(bar === 3 ? (k % 2 === 0 || k > 11 ? { f } : null) : (k % 4 === 0 || k === 14 ? { f } : null)); }); return o; })() },
-    { inst: 'kick', data: hits([1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,1]), need: 0 },
+  // Elite boss in B minor: Bm G Em F# | Bm G A F#
+  elite: { bpm: 156, layers: [
+    { inst: 'taiko', need: 0, data: hits([1,0,1,0, 1,0,0,1, 1,0,1,0, 1,.7,1,.7]) },
+    { inst: 'timpani', need: 0, data: (() => { const o = []; ['B1', 'G1', 'E2', 'F#2', 'B1', 'G1', 'A1', 'F#2'].forEach((n, bar) => { const f = NOTE(n); for (let k = 0; k < 16; k++) o.push(bar % 4 === 3 ? (k % 2 === 0 || k > 11 ? { f } : null) : (k % 4 === 0 || k === 14 ? { f } : null)); }); return o; })() },
+    { inst: 'kick', data: hits([1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0]), need: 0 },
     { inst: 'snare', data: hits([0,0,0,0, 1,0,0,.4, 0,0,.4,0, 1,.4,.6,.8,  0,0,0,0, 1,0,0,.4, 0,0,.4,0, 1,.4,.6,.8,  0,0,0,0, 1,0,0,.4, 0,0,.4,0, 1,.4,.6,.8,  0,0,.5,0, 1,0,.5,0, 2,2,2,2, 2,2,2,2]), need: 0 },
-    { inst: 'crash', data: hits([1, ...Array(15).fill(0)]), need: 0 },
-    { inst: 'strings', vol: .05, need: 0, data: ostinato(['B2', 'G2', 'E2', 'F#2'], [0, 7, 12, 7], 1) },
-    { inst: 'choir', vol: .05, need: 0, data: chordsOf(['B3+D4+F#4', 'G3+B3+D4', 'E3+G3+B3', 'F#3+A#3+C#4']) },
-    { inst: 'tuba', vol: .16, need: 0, data: bassLine(['B1', '.', '.', '.', 'G1', '.', '.', '.', 'E1', '.', '.', '.', 'F#1', '.', 'F#1', '.'], 4, 6) },
-    { inst: 'trumpet', vol: .07, need: 0, data: mel(`F#5:4 . . . B5:4 . . . A5:2 . F#5:2 . D5:4 . . .  G5:4 . . . B5:4 . . . D6:4 . . . B5:4 . . .  E5:2 . G5:2 . B5:4 . . . A5:2 . G5:2 . F#5:2 . E5:2 .  F#5:4 . . . A#5:4 . . . C#6:4 . . . F#5:4 . . .`) },
-    { inst: 'glock', vol: .05, need: 0, data: mel(`F#5:4 . . . B5:4 . . . A5:2 . F#5:2 . D5:4 . . .  G5:4 . . . B5:4 . . . D6:4 . . . B5:4 . . .  E5:2 . G5:2 . B5:4 . . . A5:2 . G5:2 . F#5:2 . E5:2 .  F#5:4 . . . A#5:4 . . . C#6:4 . . . F#5:4 . . .`) },
+    { inst: 'crash', data: hits([1, ...Array(31).fill(0)]), need: 0 },
+    { inst: 'gong', data: hits([1, ...Array(63).fill(0)]), need: 0 },
+    { inst: 'braam', vol: .034, need: 0, data: ph('B1+F#2/8 _/8 G1+D2/8 _/8 E1+B1/8 _/8 F#1+C#2/8 _/8 B1+F#2/8 _/8 G1+D2/8 _/8 A1+E2/8 _/8 F#1+C#2/8 _/8') },
+    { inst: 'strings', vol: .045, need: 0, data: ostinato(['B2', 'G2', 'E2', 'F#2', 'B2', 'G2', 'A2', 'F#2'], [0, 7, 12, 7], 1) },
+    { inst: 'strings', vol: .025, need: 0, data: ostinato(['F#4', 'D4', 'B3', 'C#4', 'F#4', 'D4', 'E4', 'C#4'], [0, 0, 0, 0], 1) },
+    { inst: 'choir', vol: .05, need: 0, data: ph('B3+D4+F#4/16 G3+B3+D4/16 E3+G3+B3/16 F#3+A#3+C#4/16 B3+D4+F#4/16 G3+B3+D4/16 A3+C#4+E4/16 F#3+A#3+C#4/16') },
+    { inst: 'tuba', vol: .12, need: 0, data: bassLine(['B1', '.', '.', '.', 'G1', '.', '.', '.', 'E1', '.', '.', '.', 'F#1', '.', 'F#1', '.', 'B1', '.', '.', '.', 'G1', '.', '.', '.', 'A1', '.', '.', '.', 'F#1', '.', 'F#1', '.'], 4, 6) },
+    { inst: 'horn', vol: .065, need: 0, data: ph('F#5/4 B5/4 A5/2 F#5/2 D5/4  G5/4 B5/4 D6/6 B5/2  E5/2 G5/2 B5/4 A5/2 G5/2 F#5/2 E5/2  F#5/4 A#5/4 C#6/8  D6/6 C#6/2 B5/4 F#5/4  G5/4 B5/4 D6/4 E6/4  C#6/6 B5/2 A5/4 E5/4  F#5/8 A#5/4 C#6/4') },
+    { inst: 'trumpet', vol: .055, need: 0, data: ph('F#5/4 B5/4 A5/2 F#5/2 D5/4  G5/4 B5/4 D6/6 B5/2  E5/2 G5/2 B5/4 A5/2 G5/2 F#5/2 E5/2  F#5/4 A#5/4 C#6/8  D6/6 C#6/2 B5/4 F#5/4  G5/4 B5/4 D6/4 E6/4  C#6/6 B5/2 A5/4 E5/4  F#5/8 A#5/4 C#6/4') },
   ] },
 };
 const MUSIC = { on: store.get('rr-music', true) !== false, track: null, step: 0, next: 0, gain: null, layers: 0 };
 function musicOut() {
-  if (!MUSIC.gain) { MUSIC.gain = AC.createGain(); MUSIC.gain.gain.value = .55; MUSIC.gain.connect(master); }
+  if (!MUSIC.gain) {
+    MUSIC.gain = AC.createGain(); MUSIC.gain.gain.value = MUSIC.on ? .55 : 0; MUSIC.gain.connect(master);
+    // a hall reverb makes the orchestra sound big
+    const len = AC.sampleRate * 2.4, ir = AC.createBuffer(2, len, AC.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
+    const verb = AC.createConvolver(), wet = AC.createGain(); verb.buffer = ir; wet.gain.value = .32;
+    MUSIC.gain.connect(verb); verb.connect(wet); wet.connect(master);
+  }
   return MUSIC.gain;
 }
-// Which piece fits right now: Overlord music on every 50th level, boss music on boss levels, the march otherwise
+// Which piece fits right now: elite boss music on every 50th level, boss music on boss levels, the march otherwise
 function wantedTrack() {
   if (!['intro', 'play', 'clear', 'fail'].includes(G.state)) return null;
   return isEliteBoss(G.level) ? 'elite' : isBossLevel(G.level) ? 'boss' : 'battle';
 }
-// The march grows with enemy variety: 1 kind = drums and tuba, 2 = + glockenspiel, 3 = + trumpet, 4+ = + flute and hi-hats
+// The march grows with enemy variety: 1 kind = drums, tuba and low strings, 2 = + brass chords, 3 = + trumpet and horn melody, 4+ = + high strings, hi-hats and cymbal
 function musicIntensity() {
   if (G.state === 'intro') return 1;
   const kinds = new Set(G.tanks.filter(t => t.alive && t.team === 'e' && t.type !== 'dcy').map(t => t.type));
@@ -1169,9 +1213,9 @@ function makeEnemy(type, x, y) {
   return t;
 }
 function makeEliteBoss(x, y) {
-  const tier = G.level / 50 - 1, t = makeTank(x, y, 'e');
-  t.type = 'bossE'; t.spec = ELITE_BOSS; t.boss = true; t.r = 34;
-  t.maxhp = t.hp = Math.round(ELITE_BOSS.hp * (1 + .6 * tier) * (1 + .35 * (joinedCount() - 1)));
+  const tier = Math.max(0, Math.round(G.level / 50) - 1), idx = eliteIndex(G.level), B = ELITE_BOSSES[idx], t = makeTank(x, y, 'e');
+  t.type = 'bossE' + idx; t.spec = B; t.boss = true; t.r = 34;
+  t.maxhp = t.hp = Math.round(B.hp * (1 + .6 * tier) * (1 + .35 * (joinedCount() - 1)));
   t.ai = { atkT: 2.6 + sk('headstart'), atk: 0, dir: Math.PI, moveT: 0, flee: 0, charging: 0, tier: tier + 2 };
   return t;
 }
@@ -1399,6 +1443,7 @@ function looseShell(owner, x, y, ang, speed, bounces, life) {
 }
 // What special elite shells do when they stop (hit a wall for the last time or run out of time)
 function shellEnd(b) {
+  if (b.team === 'e') return bossShellEnd(b);
   const o = b.owner, boss = F.bossDmg(sk('heavy')), ch = o && o.team === 'p' ? chassisOf(o) : {}, bk = ch.blastK || 1;
   switch (b.wpn) {
     case 'grenade': shellBlast(b.x, b.y, o, 58, 2 * boss); break;
@@ -2138,10 +2183,23 @@ function updateBoss(t, dt, active) {
   if (!active) return;
   if (t.frozen > 0) { t.frozen -= dt; return; }
   const B = t.spec, ai = t.ai, target = nearestPlayer(t);
+  if (B.drones) { ai.droneT = (ai.droneT ?? 1.5) - dt; if (ai.droneT <= 0) { ai.droneT = 1.6; bossDrones(t); } }
+  if (ai.ionT > 0) {
+    // Ion Colossus: a continuous beam that slowly sweeps toward the nearest player
+    ai.ionT -= dt;
+    if (target) t.turret += clamp(angDiff(Math.atan2(target.y - t.y, target.x - t.x), t.turret), -B.turn * .3 * dt, B.turn * .3 * dt);
+    ai.ionTick = (ai.ionTick || 0) - dt;
+    if (ai.ionTick <= 0) { ai.ionTick = .07; beamShot(t, t.turret, 0, { color: '#7fe8ff', w: 7, life: .1, quiet: true, cdKey: 'ionHit' }); if (Math.random() < .3) sfx('zap'); }
+    return;
+  }
   if (ai.charging > 0) {
     ai.charging -= dt; t.charge = Math.max(0, ai.charging);
     if (ai.charging <= 0) {
       if (ai.pending === 'prism') { for (let k = -1; k <= 1; k++) beamShot(t, t.turret + k * .28, 2, { color: '#ffd27a', quiet: k !== 0 }); }
+      else if (ai.pending === 'tesla') bossTesla(t);
+      else if (ai.pending === 'lance') beamShot(t, t.turret, 0, { color: '#ff8a8a', w: 9 });
+      else if (ai.pending === 'rails') { for (let k = -2; k <= 2; k++) beamShot(t, t.turret + k * .24, 0, { color: '#c9b8ff', quiet: k !== 0 }); }
+      else if (ai.pending === 'ion') { ai.ionT = 1.8; ai.ionTick = 0; }
       else shoot(t, t.turret, 650 * F.jam(sk('slow')), 2, 'snipe');
       ai.pending = null;
     }
@@ -2180,15 +2238,68 @@ function bossAttack(t, atk) {
       }
       sfx('mine'); break;
     case 'snipe': t.ai.charging = .9; t.charge = .9; break;
-    // Overlord (elite boss) attacks
+    // Elite boss attacks: giant versions of the elite tanks' guns
     case 'prism': t.ai.charging = .9; t.charge = .9; t.ai.pending = 'prism'; break;
-    case 'swarm': for (let k = 0; k < 5; k++) shoot(t, a + (k - 2) * .3, 200 * slow, 0, 'missile', { fx: k === 0, homeP: 1.5 }); break;
+    case 'tesla': t.ai.charging = .8; t.charge = .8; t.ai.pending = 'tesla'; break;
+    case 'lance': t.ai.charging = .9; t.charge = .9; t.ai.pending = 'lance'; break;
+    case 'rails': t.ai.charging = 1; t.charge = 1; t.ai.pending = 'rails'; break;
+    case 'ion': t.ai.charging = .7; t.charge = .7; t.ai.pending = 'ion'; break;
+    case 'swarm': for (let k = 0; k < 7; k++) shoot(t, a + (k - 3) * .17, 215 * slow, 0, 'missile', { fx: k === 0, wpn: 'swarm' }); break;
+    case 'vorb': for (let k = -1; k <= 1; k++) shoot(t, a + k * .4, 150 * slow, 1, 'vortex', { fx: k === 0, wpn: 'vortex', life: 1.6 }); break;
+    case 'bomb': for (let k = -1; k <= 1; k++) shoot(t, a + k * .4, 165 * slow, 2, 'bomb', { fx: k === 0, wpn: 'bomb' }); break;
+    case 'cluster': for (let k = -1; k <= 1; k++) shoot(t, a + k * .3, 260 * slow, 0, 'rocket', { fx: k === 0, wpn: 'cluster' }); break;
+    case 'plasma': for (let k = -1; k <= 1; k += 2) shoot(t, a + k * .22, 140 * slow, 0, 'plasma', { fx: k === -1, wpn: 'plasma', life: 2.6 }); break;
+    case 'thunder': for (let k = -1; k <= 1; k += 2) shoot(t, a + k * .25, 165 * slow, 1, 'thunder', { fx: k === -1, wpn: 'thunder' }); break;
+    case 'stars': for (let k = 0; k < 5; k++) shoot(t, a + (k - 2) * .24, 290 * slow, 2, 'star', { fx: k === 0 }); break;
+    case 'napalm': for (let k = -1; k <= 1; k++) shoot(t, a + k * .32, 200 * slow, 0, 'shell', { fx: k === 0, wpn: 'napalm' }); break;
+    case 'disc': for (let k = -1; k <= 1; k += 2) shoot(t, a + k * .35, 200 * slow, 4, 'saw', { fx: k === -1, wpn: 'disc', life: 6 }); break;
+    case 'drones': bossDrones(t); t.ai.droneT = .5; break;
     case 'starfall': {
-      const tg = nearestPlayer(t); if (!tg) break;
-      for (let k = 0; k < 6; k++) G.strikes.push({ x: clamp(tg.x + rnd(-70, 70), 20, W - 20), y: clamp(tg.y + rnd(-70, 70), 20, H - 20), t: (1.1 + k * .15) / slow, team: 'e', owner: t });
+      for (const tg of aliveTanks.filter(p => p.alive && p.team === 'p').slice(0, 4))
+        for (let k = 0; k < 5; k++) G.strikes.push({ x: clamp(tg.x + rnd(-75, 75), 20, W - 20), y: clamp(tg.y + rnd(-75, 75), 20, H - 20), t: (1.1 + k * .15) / slow, team: 'e', owner: t });
       sfx('mortar'); break;
     }
     case 'vortex': { const tg = nearestPlayer(t); if (tg) { G.strikes.push({ x: tg.x, y: tg.y, t: 1.5 / slow, team: 'e', owner: t, r: 80, hole: true, mini: true }); sfx('hole'); } break; }
+  }
+}
+// Stormcoil: lightning that leaps between up to 3 players it can see (hide behind a wall during the charge-up)
+function bossTesla(t) {
+  const hit = [], pts = [[r1(t.x + Math.cos(t.turret) * 36), r1(t.y + Math.sin(t.turret) * 36)]];
+  let from = t;
+  for (let n = 0; n < 3; n++) {
+    const c = aliveTanks.filter(p => p.alive && p.team === 'p' && !p.under && !hit.includes(p) && dist(p, from) < (n ? 200 : 380) && clearPath(from, p)
+      && (n > 0 || Math.abs(angDiff(Math.atan2(p.y - t.y, p.x - t.x), t.turret)) < .7)).sort((x, y) => dist(x, from) - dist(y, from))[0];
+    if (!c) break;
+    hit.push(c); pts.push([r1(c.x), r1(c.y)]); from = c;
+  }
+  if (!hit.length) pts.push([r1(t.x + Math.cos(t.turret) * 160), r1(t.y + Math.sin(t.turret) * 160)]);
+  emit({ t: 'bolt', pts, c: '#9fe8ff' }); sfx('zap');
+  for (const p of hit) hurtTank(p, t, 1);
+}
+// Mothership drones: each one shoots at the nearest player it can see
+function bossDrones(t) {
+  const n = t.spec.drones; let shot = false;
+  for (let k = 0; k < n; k++) {
+    const [dx, dy] = dronePos(t, k, n, t.r + 16), d = { x: dx, y: dy };
+    const tgt = aliveTanks.filter(p => p.alive && p.team === 'p' && !p.under && dist(p, d) < 380 && clearPath(d, p)).sort((x, y) => dist(x, d) - dist(y, d))[0];
+    if (tgt) { const a = Math.atan2(tgt.y - dy, tgt.x - dx); looseShell(t, dx + Math.cos(a) * 8, dy + Math.sin(a) * 8, a, 230 * F.jam(sk('slow')), 0); shot = true; }
+  }
+  if (shot) sfx('fire');
+}
+// Elite boss shells: blasts that only hurt players
+function bossBlast(x, y, owner, BR) {
+  emit({ t: 'boom', x: r1(x), y: r1(y), c: '#ff7a3d', k: BR / 70 }); sfx('boom');
+  for (const p of G.tanks) if (p.alive && p.team === 'p' && Math.hypot(p.x - x, p.y - y) < BR + R * .5) hurtTank(p, owner, 1);
+}
+function bossShellEnd(b) {
+  const o = b.owner;
+  switch (b.wpn) {
+    case 'swarm': bossBlast(b.x, b.y, o, 30); break;
+    case 'bomb': bossBlast(b.x, b.y, o, 54); break;
+    case 'plasma': bossBlast(b.x, b.y, o, 66); break;
+    case 'vortex': G.strikes.push({ x: b.x, y: b.y, t: .9, team: 'e', owner: o, r: 70, hole: true, mini: true }); sfx('hole'); break;
+    case 'napalm': G.strikes.push({ x: b.x, y: b.y, t: 3.5, team: 'e', owner: o, r: 50, zone: true }); emit({ t: 'boom', x: r1(b.x), y: r1(b.y), c: '#ff7a2e', k: .6 }); sfx('flame'); break;
+    case 'cluster': { const back = Math.atan2(-b.dy, -b.dx); for (let k = 0; k < 5; k++) looseShell(o, b.x - b.dx * 6, b.y - b.dy * 6, back + (k / 4 - .5) * 1.8, 220 * F.jam(sk('slow')), 1); emit({ t: 'boom', x: r1(b.x), y: r1(b.y), c: '#ffb04d', k: .5 }); sfx('pop'); break; }
   }
 }
 function separateTanks() {
@@ -2236,8 +2347,8 @@ function updateBullets(dt) {
       // Thunder: zaps the nearest enemy within reach every 0.2 seconds while it flies
       b.zapT = (b.zapT || 0) - dt;
       if (b.zapT <= 0) {
-        const zc = chassisOf(b.owner); b.zapT = zc.zapT || .2;
-        const tgt = aliveTanks.filter(e => e.alive && e.team === 'e' && dist(e, b) < 85 * (zc.zapK || 1)).sort((x, y) => dist(x, b) - dist(y, b))[0];
+        const mine = b.team === 'p', zc = mine ? chassisOf(b.owner) : {}; b.zapT = zc.zapT || (mine ? .2 : .4);
+        const tgt = aliveTanks.filter(e => e.alive && e.team === (mine ? 'e' : 'p') && !e.under && dist(e, b) < (mine ? 85 * (zc.zapK || 1) : 60)).sort((x, y) => dist(x, b) - dist(y, b))[0];
         if (tgt) { emit({ t: 'bolt', pts: [[r1(b.x), r1(b.y)], [r1(tgt.x), r1(tgt.y)]], c: '#ffe066' }); sfx('zap'); hurtTank(tgt, b.owner, 1); }
       }
     }
@@ -2252,7 +2363,7 @@ function updateBullets(dt) {
     }
     const homeK = b.team === 'p' ? F.homing(sk('homing')) + (b.home || 0) : 0;
     if (b.homeP && b.team === 'e') {
-      // Salvo/Overlord rockets curve toward the nearest player
+      // Salvo missiles curve toward the nearest player
       let best = null, bd = 260;
       for (const pl of aliveTanks) if (pl.team === 'p' && pl.alive && !pl.under) { const d = Math.hypot(pl.x - b.x, pl.y - b.y); if (d < bd) { bd = d; best = pl; } }
       if (best) { const cur = Math.atan2(b.dy, b.dx), na = cur + clamp(angDiff(Math.atan2(best.y - b.y, best.x - b.x), cur), -b.homeP * dt, b.homeP * dt); b.dx = Math.cos(na); b.dy = Math.sin(na); }
@@ -2286,12 +2397,13 @@ function updateBullets(dt) {
       if (r === 'bounce') {
         b.bounced = true; sfx('bounce');
         if (b.accel) b.speed = Math.min(b.team === 'p' ? 600 : 520, b.speed * (1 + b.accel));
-        if (b.wpn === 'bomb') shellBlast(b.x, b.y, b.owner, 48 * (chassisOf(b.owner).blastK || 1), 2 * F.bossDmg(sk('heavy')));
+        if (b.wpn === 'bomb') { if (b.team === 'e') bossBlast(b.x, b.y, b.owner, 42); else shellBlast(b.x, b.y, b.owner, 48 * (chassisOf(b.owner).blastK || 1), 2 * F.bossDmg(sk('heavy'))); }
         if (b.wpn === 'disc') {
           // Razor Disc: speeds up and fires a shot at the nearest enemy every bounce
-          b.speed = Math.min(600, b.speed * 1.15);
-          const tgt = aliveTanks.filter(e => e.alive && e.team === 'e' && dist(e, b) < 320 && clearPath(b, e)).sort((x, y) => dist(x, b) - dist(y, b))[0];
-          if (tgt) looseShell(b.owner, b.x, b.y, Math.atan2(tgt.y - b.y, tgt.x - b.x), 340, 0);
+          const mine = b.team === 'p';
+          b.speed = Math.min(mine ? 600 : 400, b.speed * (mine ? 1.15 : 1.1));
+          const tgt = aliveTanks.filter(e => e.alive && e.team === (mine ? 'e' : 'p') && !e.under && dist(e, b) < 320 && clearPath(b, e)).sort((x, y) => dist(x, b) - dist(y, b))[0];
+          if (tgt) looseShell(b.owner, b.x, b.y, Math.atan2(tgt.y - b.y, tgt.x - b.x), mine ? 340 : 240, 0);
         }
         if (b.team === 'p' && sk('bboost')) b.speed = Math.min(b.base * 1.8, 600, b.speed * (1 + F.bounceBoost(sk('bboost'))));
         if (((b.team === 'p' && sk('fission')) || b.fis) && !b.split) {
@@ -2348,6 +2460,7 @@ function updateBullets(dt) {
           hurtTank(t, b.owner, b.team === 'p' ? F.bossDmg(sk('heavy')) + (b.bounced ? sk('bankshot') : 0) + (b.big ? 2 : 0) : 1);
           if (b.kind === 'ice' && b.team === 'p') freezeArea(b.x, b.y, chassisOf(b.owner).freezeR || 70, chassisOf(b.owner).freezeT || 2);
           if ((b.wpn === 'grenade' || b.wpn === 'bomb' || b.wpn === 'swarm' || b.wpn === 'napalm' || b.wpn === 'vortex') && t.team === 'e') { if (b.wpn !== 'vortex') hurtTank(t, b.owner, 1); shellEnd(b); killBullet(b, false); break; }
+          if (b.team === 'e' && b.wpn) { shellEnd(b); killBullet(b, false); break; }
           if (b.team === 'p' && t.team === 'e' && b.pierce > 0) { b.pierce--; b.hitIds.push(t.id); continue; }
           if (b.wpn === 'cluster') shellEnd(b);
           if (b.team === 'p' && sk('blast')) shellBlast(b.x, b.y, b.owner);
@@ -2377,7 +2490,7 @@ function updateBullets(dt) {
   G.bullets = G.bullets.filter(b => b.alive);
 }
 // Guardian Orbs: positions come from the clock, so online players can draw them without extra data
-const dronePos = (t, k, n) => { const a = G.time * 1.6 + k / n * TAU; return [t.x + Math.cos(a) * 30, t.y + Math.sin(a) * 30]; };
+const dronePos = (t, k, n, rad = 30) => { const a = G.time * 1.6 + k / n * TAU; return [t.x + Math.cos(a) * rad, t.y + Math.sin(a) * rad]; };
 const orbPos = (t, k, n) => { const a = G.time * 3 + k / n * TAU + t.slot; return [t.x + Math.cos(a) * 32, t.y + Math.sin(a) * 32]; };
 function updateOrbs() {
   const n = sk('orbit'); if (!n) return;
@@ -2413,6 +2526,7 @@ function updateAirstrikes(dt) {
     if (s.zone) {
       // Napalm: burning ground hurts enemies inside it every quarter second
       s.t -= dt; s.tick = (s.tick || 0) - dt;
+      if (s.tick <= 0 && s.team === 'e') { s.tick = .25; for (const p of aliveTanks) if (p.alive && p.team === 'p' && !p.under && Math.hypot(p.x - s.x, p.y - s.y) < s.r + R * .4) hurtTank(p, s.owner, 1); }
       if (s.tick <= 0) { s.tick = .25; for (const e of aliveTanks) if (e.alive && e.team === 'e' && Math.hypot(e.x - s.x, e.y - s.y) < s.r + (e.r || R) * .4 && (e.napCd || 0) <= G.time) { e.napCd = G.time + .5; hurtTank(e, s.owner, 1); } }
       if (s.t <= 0) s.done = true;
       continue;
@@ -2817,7 +2931,7 @@ function applySnap(s) {
     t.gsh = !!(a[19] & 1); t.bub = a[19] & 1; t.under = !!(a[19] & 2); t.emerge = !!(a[19] & 4); t.frozen = a[19] & 8 ? 1 : 0; t.orbs = a[20] || 0;
     t.charge = a[9] || 0; t.hp = a[10]; t.maxhp = a[11]; t.hit = a[12] || 0; t.armor = a[13] || 0; t.shState = a[14] || 0; t.bx = a[15] || 0; t.by = a[16] || 0; t.hv = a[17] || 0;
     if (typeof a[5] === 'number') { t.team = 'p'; t.slot = a[5]; t.ally = a[18] === 1 || a[18] >= 4; t.stat = a[18] === 4; t.kami = a[18] === 5; t.decoy = a[18] === 6; t.half = a[18] === 2 || a[18] === 3 ? a[18] - 1 : 0; t.r = t.decoy ? R : t.ally || t.half ? 10 : R; }
-    else if (a[5] === 'bossE') { t.team = 'e'; t.type = a[5]; t.boss = true; t.r = 34; t.spec = ELITE_BOSS; }
+    else if (String(a[5]).startsWith('bossE')) { t.team = 'e'; t.type = a[5]; t.boss = true; t.r = 34; t.spec = ELITE_BOSSES[+String(a[5]).slice(5)] || ELITE_BOSSES[0]; }
     else if (String(a[5]).startsWith('boss')) { t.team = 'e'; t.type = a[5]; t.boss = true; t.r = BOSS_R; t.spec = BOSSES[+String(a[5]).slice(4)] || BOSSES[0]; }
     else { t.team = 'e'; t.type = a[5]; t.spec = ETYPES[a[5]] || ETYPES.a; t.r = t.spec.r || R; }
     return t;
@@ -3273,7 +3387,7 @@ function render() {
       }
       if (t.charge > 0 && !t.spec.ram && !t.spec.pulse) {
         // sniper laser warning
-        const pts = aimPath(t, t.boss ? 2 : t.spec.bounces, 900);
+        const pts = aimPath(t, t.boss ? t.spec.warnB ?? 2 : t.spec.bounces, 900);
         c.save(); c.strokeStyle = '#ff2d2d'; c.globalAlpha = .35 + .5 * (1 - t.charge / (t.boss ? .9 : t.spec.charge || .75)); c.lineWidth = 1.5; c.setLineDash([6, 4]);
         c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const p of pts.slice(1)) c.lineTo(p[0], p[1]); c.stroke(); c.restore();
       }
@@ -3282,7 +3396,15 @@ function render() {
       if (t.spec.gen) { c.save(); c.strokeStyle = '#7fd6ff'; c.globalAlpha = .18; c.setLineDash([4, 6]); c.beginPath(); c.arc(t.x, t.y, t.spec.gen, 0, TAU); c.stroke(); c.restore(); }
       const a = t.spec.ghost ? Math.min(1, .07 + clamp(t.reveal, 0, 1) * .6) : 1;
       if (t.boss) drawTank(t, t.hit > 0 ? '#fff1d6' : t.spec.color, '#120c08', 1, t.r / R);
-      if (t.boss && t.spec.elite) { c.save(); c.strokeStyle = '#ffd27a'; c.lineWidth = 3; c.setLineDash([8, 6]); c.lineDashOffset = -G.time * 40; c.beginPath(); c.arc(t.x, t.y, t.r + 10, 0, TAU); c.stroke(); c.restore(); }
+      if (t.boss && t.spec.elite) {
+        c.save(); c.strokeStyle = '#ffd27a'; c.lineWidth = 3; c.setLineDash([8, 6]); c.lineDashOffset = -G.time * 40; c.beginPath(); c.arc(t.x, t.y, t.r + 10, 0, TAU); c.stroke(); c.restore();
+        for (let k = 0; k < (t.spec.drones || 0); k++) {
+          const [dx, dy] = dronePos(t, k, t.spec.drones, t.r + 16);
+          c.save(); c.translate(dx, dy); c.rotate(G.time * 4); c.fillStyle = '#c9d4d8'; c.strokeStyle = '#2b2620'; c.lineWidth = 1.4;
+          c.beginPath(); c.moveTo(0, -8); c.lineTo(8, 0); c.lineTo(0, 8); c.lineTo(-8, 0); c.closePath(); c.fill(); c.stroke();
+          c.fillStyle = '#e5484d'; c.beginPath(); c.arc(0, 0, 2.5, 0, TAU); c.fill(); c.restore();
+        }
+      }
       else drawEnemyTank(t, a);
     }
     if (t.frozen > 0) { c.save(); c.fillStyle = 'rgba(159,232,255,.45)'; c.strokeStyle = 'rgba(230,250,255,.9)'; c.lineWidth = 1.5; rrect(c, t.x - (t.r || R) - 4, t.y - (t.r || R) - 4, ((t.r || R) + 4) * 2, ((t.r || R) + 4) * 2, 5); c.fill(); c.stroke(); c.restore(); }
@@ -3428,7 +3550,7 @@ function drawReels() {
   c.textAlign = 'center'; c.textBaseline = 'middle';
   c.font = '400 40px Bungee, Impact, sans-serif'; c.fillStyle = '#f1e6cf'; c.fillText(`LEVEL ${lvl}`, W / 2, 70);
   c.font = '600 16px "Chakra Petch", system-ui, sans-serif'; c.fillStyle = boss ? '#ff8a7a' : '#a8987b';
-  c.fillText(boss ? `${isEliteBoss(lvl) ? 'Elite boss level' : 'Boss level'}: ${bossName(lvl)} is coming, with an escort` : 'Spinning up the next wave', W / 2, 108);
+  c.fillText(boss ? `${isEliteBoss(lvl) ? 'Elite boss level' : 'Boss level'}: ${bossName(lvl)}${isEliteBoss(lvl) ? ` (giant ${CHASSIS[ELITE_BOSSES[eliteIndex(lvl)].el].name})` : ''} is coming, with an escort` : 'Spinning up the next wave', W / 2, 108);
   const t = G.reelT;
   G.reels.forEach((res, i) => {
     const cx = W / 2 + (i - 1) * 270, top = 145, mw = 220, mh = 330;
