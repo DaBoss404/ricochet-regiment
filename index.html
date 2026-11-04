@@ -251,7 +251,7 @@ const ETYPES = {
   bur:  { name: 'Burrower',  color: '#78350f', speed: 50, bs: 230, bounces: 0, max: 1, cd: 1.4, turn: 3, aimEvery: .3, burrow: true, pref: 220, miss: .3, err: .1 },
   eng:  { name: 'Engineer',  color: '#57534e', speed: 38, bs: 180, bounces: 1, max: 1, cd: 2.6, turn: 2, aimEvery: .5, build: 8, pref: 340, miss: .4, err: .18 },
   tur:  { name: 'Turret',    color: '#78716c', r: 12, speed: 0, bs: 200, bounces: 1, max: 1, cd: 2.4, turn: 2.2, aimEvery: .4, smart: true, miss: .35, err: .14 },
-  sal:  { name: 'Salvo',     color: '#0e7490', speed: 45, bs: 180, bounces: 0, max: 3, cd: 3.8, burst: 3, burstGap: .18, kind: 'missile', homeP: 1.3, turn: 2.2, aimEvery: .35, smart: true, pref: 320, miss: .3, err: .2 },
+  sal:  { name: 'Salvo',     color: '#0e7490', speed: 45, bs: 190, bounces: 1, max: 5, cd: 3.8, burst: 5, burstGap: .13, kind: 'missile', turn: 2.2, aimEvery: .35, smart: true, pref: 320, miss: .3, err: .2 },
   orbt: { name: 'Orbiter',   color: '#6d28d9', speed: 40, bs: 220, bounces: 1, max: 1, cd: 1.6, turn: 2.4, aimEvery: .35, smart: true, orbs: 3, pref: 300, miss: .3, err: .12 },
   dbl:  { name: 'Double',    color: '#be185d', speed: 50, bs: 200, bounces: 1, max: 2, cd: 2, turn: 2.4, aimEvery: .35, smart: true, twinShot: .12, pref: 280, miss: .3, err: .12 },
   frz:  { name: 'Freezer',   color: '#38bdf8', speed: 45, bs: 210, bounces: 1, max: 1, cd: 2, turn: 2.2, aimEvery: .35, smart: true, kind: 'ice', freeze: 1.6, pref: 280, miss: .25, err: .1 },
@@ -513,7 +513,7 @@ const CHASSIS = {
   gen: { name: 'Generator', desc: 'A bubble shield blocks one hit, then recharges after 6 seconds.', bubble: 6, bubbles: 1 },
   bur: { name: 'Burrower',  desc: 'No mines. The mine button digs you underground for 1.5 seconds: you can\'t be hit and you move faster, but can\'t shoot.', burrow: true },
   eng: { name: 'Engineer',  desc: 'No mines. The mine button builds a turret that shoots enemies (up to 2).', build: true },
-  sal: { name: 'Salvo',     desc: 'Fires a burst of 3 heat-seeking missiles.', kind: 'missile', home: 2.5, bnc: -1, burst: 3, burstGap: .12, cd: 2.8 },
+  sal: { name: 'Salvo',     desc: 'Fires a burst of 5 bouncing missiles.', kind: 'missile', burst: 5, burstGap: .1, cd: 2.8 },
   dbl: { name: 'Double',    desc: 'Fires two shells at once in a narrow V.', twinShot: .12 },
   frz: { name: 'Freezer',   desc: 'Ice shells destroy what they hit and freeze nearby enemies in place for 2 seconds.', kind: 'ice', freezeT: 2, freezeR: 70 },
   cln: { name: 'Clone',     desc: 'No mines. The mine button sends out a decoy that looks like you; enemies chase and shoot it (up to 2).', clone: true },
@@ -660,8 +660,8 @@ const TANK_SKILLS = [
   { id: 'bur_cd', req: 'bur', rar: 'rare', name: 'Quick Dig', desc: 'Dig down again sooner.', max: 3, stat: ['Dig cooldown', n => secs(4 * Math.pow(.8, n))], mod: (c, n) => ({ burCd: 4 * Math.pow(.8, n) }) },
   addSk('eng', 'eng_more', 'rare', 'Bigger Crew', 'Build more turrets.', 2, 'turrets', 2, 1, 'Turrets at once'),
   { id: 'eng_fast', req: 'eng', rar: 'common', name: 'Fast Build', desc: 'Build turrets more often.', max: 3, stat: ['Build cooldown', n => secs(6 * Math.pow(.8, n))], mod: (c, n) => ({ bcd: 6 * Math.pow(.8, n) }) },
-  addSk('sal', 'sal_more', 'common', 'Bigger Salvo', 'Salvo fires more missiles per burst.', 3, 'burst', 3, 1, 'Missiles per burst'),
-  addSk('sal', 'sal_home', 'rare', 'Smart Rockets', 'Salvo missiles turn harder toward enemies.', 3, 'home', 2.5, 1, 'Homing strength'),
+  addSk('sal', 'sal_more', 'common', 'Bigger Salvo', 'Salvo fires more missiles per burst.', 3, 'burst', 5, 1, 'Missiles per burst'),
+  addSk('sal', 'sal_bnc', 'rare', 'Rubber Salvo', 'Salvo missiles bounce more.', 2, 'bnc', 0, 1, 'Extra bounces', v => '+' + v),
   rateSk('dbl', 'dbl_rate', 'common', 'Quick Doubles', 'The Double fires faster.', 3),
   addSk('dbl', 'dbl_bnc', 'rare', 'Double Bounce', 'Double shells bounce more.', 2, 'bnc', 0, 1, 'Extra bounces', v => '+' + v),
   addSk('frz', 'frz_time', 'common', 'Deep Freeze', 'Enemies stay frozen longer.', 3, 'freezeT', 2, .5, 'Freeze time', secs),
@@ -739,6 +739,15 @@ function tone(f, dur, type, vol, slide, delay = 0) {
   g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
   o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + .02);
 }
+// Victory fanfare: a bright brass note (two detuned saws through a filter, with a little vibrato)
+function trumpetNote(f, delay, dur) {
+  const t0 = AC.currentTime + delay, g = AC.createGain(), flt = AC.createBiquadFilter(), lfo = AC.createOscillator(), lg = AC.createGain();
+  flt.type = 'lowpass'; flt.frequency.setValueAtTime(1200, t0); flt.frequency.linearRampToValueAtTime(3200, t0 + .06);
+  lfo.frequency.value = 5.5; lg.gain.value = f * .006; lfo.connect(lg);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(.13, t0 + .03); g.gain.setValueAtTime(.13, t0 + dur * .7); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  for (const d of [-6, 6]) { const o = AC.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = d; lg.connect(o.frequency); o.connect(flt); o.start(t0); o.stop(t0 + dur + .05); }
+  flt.connect(g); g.connect(master); lfo.start(t0); lfo.stop(t0 + dur + .05);
+}
 function noise(dur, vol, cut, delay = 0) {
   const t0 = AC.currentTime + delay, s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
   s.buffer = noiseBuf; f.type = 'lowpass'; f.frequency.setValueAtTime(cut, t0); f.frequency.exponentialRampToValueAtTime(60, t0 + dur);
@@ -746,7 +755,7 @@ function noise(dur, vol, cut, delay = 0) {
   s.connect(f); f.connect(g); g.connect(master); s.start(t0); s.stop(t0 + dur);
 }
 // ---------- music (original pieces, generated live with Web Audio) ----------
-// Battle: a serious minor-key military march that adds instruments as more kinds of enemies are on the field.
+// Battle: a snare-driven toy-soldier march that adds instruments as more kinds of enemies are on the field.
 // Boss: a driving orchestral piece with war drums, choir and brass. Elite boss: faster and heavier still, with braams and a gong.
 const NOTE = n => { const m = /^([A-G])(#|b)?(\d)$/.exec(n); const base = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0); return 440 * Math.pow(2, (base + (+m[3] + 1) * 12 - 69) / 12); };
 // "D4:3" = note D4 held for 3 sixteenth-steps; "." = rest
@@ -784,26 +793,24 @@ const INST = {
   gong: t0 => { mOsc('sine', 58, t0, 3.2, .16, 400, .01); mOsc('triangle', 87, t0, 2.6, .05, 900, .01, 12); mNoise(t0, 2.6, .07, 'bandpass', 900, .6); },
   horn: (t0, v, sd, vol) => { mOsc('sawtooth', v.f / 2, t0, sd * v.len * .95, vol, 850, .05, -5); mOsc('sawtooth', v.f / 2, t0, sd * v.len * .95, vol * .7, 850, .05, 5); mOsc('sawtooth', v.f / 4, t0, sd * v.len * .95, vol * .6, 500, .05); },
   braam: (t0, v, sd, vol) => { for (const f of v.fs) for (const d of [-10, 0, 10]) mOsc('sawtooth', f, t0, sd * v.len, vol, 520, .04, d); },
+  glock: (t0, v, sd, vol) => { mOsc('sine', v.f * 2, t0, .45, vol, 9000, .002); mOsc('triangle', v.f * 4, t0, .2, vol * .35, 9000, .002); },
+  flute: (t0, v, sd, vol) => mOsc('triangle', v.f, t0, sd * v.len * .95, vol, 5000, .04, 0, .012),
   cello: (t0, v, sd, vol) => mOsc('sawtooth', v.f, t0, sd * v.len * .9, vol, 700, .01),
   strings: (t0, v, sd, vol) => { mOsc('sawtooth', v.f, t0, sd * v.len, vol, 1300, .01, -6); mOsc('sawtooth', v.f, t0, sd * v.len, vol * .7, 1300, .01, 6); },
   brass: (t0, v, sd, vol) => { for (const f of v.fs) { mOsc('sawtooth', f, t0, sd * v.len, vol, 1300, .12, -5); mOsc('sawtooth', f, t0, sd * v.len, vol * .6, 1100, .12, 5); } },
   choir: (t0, v, sd, vol) => { for (const f of v.fs) for (const d of [-9, 0, 9]) mOsc('sawtooth', f, t0, sd * v.len, vol * .45, 900, .25, d, .004); },
 };
-// ----- the three pieces (16 sixteenth-steps per bar, 8 bars each) -----
-// Battle march in D minor: Dm Bb C A | Dm Gm C Dm
+// ----- the three pieces (16 sixteenth-steps per bar) -----
 const MARCH_SNARE = hits([1,0,.3,.3, .6,0,.3,0, 1,0,.3,.3, .6,2,.6,2,  1,0,.3,.3, .6,0,.3,0, 1,0,.3,.3, .6,2,.6,2,  1,0,.3,.3, .6,0,.3,0, 1,0,.3,.3, .6,2,.6,2,  1,0,.4,0, .7,0,.4,0, 1,2,2,2, 1,2,2,2]);
 const TRACKS = {
-  battle: { bpm: 112, layers: [
+  battle: { bpm: 120, layers: [
     { inst: 'snare', data: MARCH_SNARE, need: 0 },
     { inst: 'kick', data: hits([1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0]), need: 0 },
-    { inst: 'tuba', vol: .15, need: 0, data: bassLine(['D2','A1','D2','A1', 'Bb1','F2','Bb1','F2', 'C2','G1','C2','G1', 'A1','E2','A1','C#2', 'D2','A1','D2','A1', 'G1','D2','G1','Bb1', 'C2','G1','C2','E2', 'D2','A1','D2','.']) },
-    { inst: 'cello', vol: .05, need: 0, data: ostinato(['D3', 'Bb2', 'C3', 'A2', 'D3', 'G2', 'C3', 'D3'], [0, 7, 12, 7], 2) },
-    { inst: 'brass', vol: .03, need: 2, data: ph('D3+F3+A3/16 Bb2+D3+F3/16 C3+E3+G3/16 A2+C#3+E3/16 D3+F3+A3/16 G2+Bb2+D3/16 C3+E3+G3/16 D3+F3+A3/16') },
-    { inst: 'trumpet', vol: .055, need: 3, data: ph('D4/3 D4/1 A4/4 F4/2 G4/2 A4/4  Bb4/3 A4/1 G4/4 F4/2 G4/2 D4/4  E4/3 F4/1 G4/4 C5/4 Bb4/2 A4/2  A4/6 G4/2 E4/2 C#4/2 E4/4  D4/3 D4/1 A4/4 D5/4 C5/2 A4/2  Bb4/3 C5/1 D5/4 G4/4 Bb4/4  A4/3 Bb4/1 C5/4 F4/2 G4/2 E4/4  D4/8 _/4 A3/2 C#4/2') },
-    { inst: 'horn', vol: .05, need: 3, data: ph('D4/3 D4/1 A4/4 F4/2 G4/2 A4/4  Bb4/3 A4/1 G4/4 F4/2 G4/2 D4/4  E4/3 F4/1 G4/4 C5/4 Bb4/2 A4/2  A4/6 G4/2 E4/2 C#4/2 E4/4  D4/3 D4/1 A4/4 D5/4 C5/2 A4/2  Bb4/3 C5/1 D5/4 G4/4 Bb4/4  A4/3 Bb4/1 C5/4 F4/2 G4/2 E4/4  D4/8 _/4 A3/2 C#4/2') },
-    { inst: 'strings', vol: .03, need: 4, data: ph('F5/8 E5/8 D5/16 E5/8 G5/8 E5/16 F5/8 A5/8 G5/8 Bb5/8 G5/8 E5/8 F5/8 E5/8') },
+    { inst: 'tuba', vol: .17, need: 0, data: bassLine(['D2','A1','D2','A1', 'G1','D2','G1','D2', 'A1','E2','A1','E2', 'D2','A1','D2','.']) },
+    { inst: 'glock', vol: .07, need: 2, data: mel(`. . D5:1 . . . F#5:1 . . . A5:1 . . . F#5:1 .  . . B4:1 . . . D5:1 . . . G5:1 . . . D5:1 .  . . C#5:1 . . . E5:1 . . . A5:1 . . . E5:1 .  . . D5:1 . F#5:1 . A5:1 . D6:1 . . . . . . .`) },
+    { inst: 'trumpet', vol: .06, need: 3, data: mel(`D4:3 . . F#4:1 A4:4 . . . D5:2 . C#5:2 . B4:2 . A4:2 .  G4:3 . . A4:1 B4:2 . G4:2 . E4:4 . . . F#4:2 . E4:2 .  A4:3 . . B4:1 C#5:2 . A4:2 . E5:4 . . . D5:2 . C#5:2 .  D5:2 . A4:2 . F#4:2 . E4:2 . D4:6 . . . . . . .`) },
+    { inst: 'flute', vol: .045, need: 4, data: mel(`. . . . F#5:2 . A5:2 . . . . . F#5:2 . . .  . . . . D5:2 . G5:2 . . . . . E5:2 . . .  . . . . E5:2 . A5:2 . . . . . G5:2 . . .  F#5:1 A5:1 F#5:1 A5:1 F#5:1 A5:1 F#5:1 . . . . . . . . .`) },
     { inst: 'hat', data: hits([0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0]), need: 4 },
-    { inst: 'crash', data: hits([1, ...Array(127).fill(0)]), need: 4 },
   ] },
   // Boss in E minor: Em C Am B | Em C D B
   boss: { bpm: 138, layers: [
@@ -843,7 +850,7 @@ function musicOut() {
     // a hall reverb makes the orchestra sound big
     const len = AC.sampleRate * 2.4, ir = AC.createBuffer(2, len, AC.sampleRate);
     for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
-    const verb = AC.createConvolver(), wet = AC.createGain(); verb.buffer = ir; wet.gain.value = .32;
+    const verb = AC.createConvolver(), wet = AC.createGain(); verb.buffer = ir; wet.gain.value = 0; MUSIC.wet = wet;
     MUSIC.gain.connect(verb); verb.connect(wet); wet.connect(master);
   }
   return MUSIC.gain;
@@ -853,7 +860,7 @@ function wantedTrack() {
   if (!['intro', 'play', 'clear', 'fail'].includes(G.state)) return null;
   return isEliteBoss(G.level) ? 'elite' : isBossLevel(G.level) ? 'boss' : 'battle';
 }
-// The march grows with enemy variety: 1 kind = drums, tuba and low strings, 2 = + brass chords, 3 = + trumpet and horn melody, 4+ = + high strings, hi-hats and cymbal
+// The march grows with enemy variety: 1 kind = drums and tuba, 2 = + glockenspiel, 3 = + trumpet, 4+ = + flute and hi-hats
 function musicIntensity() {
   if (G.state === 'intro') return 1;
   const kinds = new Set(G.tanks.filter(t => t.alive && t.team === 'e' && t.type !== 'dcy').map(t => t.type));
@@ -862,7 +869,7 @@ function musicIntensity() {
 function updateMusic() {
   if (!AC || AC.state !== 'running' || !MUSIC.on) return;
   const want = wantedTrack();
-  if (want !== MUSIC.track) { MUSIC.track = want; MUSIC.step = 0; MUSIC.next = AC.currentTime + .08; }
+  if (want !== MUSIC.track) { MUSIC.track = want; MUSIC.step = 0; MUSIC.next = AC.currentTime + .08; musicOut(); MUSIC.wet.gain.value = want === 'battle' ? 0 : .32; }
   if (!want) return;
   const T = TRACKS[want], sd = 60 / T.bpm / 4, lvl = want === 'battle' ? musicIntensity() : 9;
   MUSIC.layers = T.layers.filter(L => (L.need || 0) <= lvl).length;
@@ -895,7 +902,7 @@ function playSfx(n) {
     case 'blink': tone(1250, .03, 'square', .03); break;
     case 'join': tone(440, .08, 'triangle', .14); tone(660, .14, 'triangle', .14, null, .08); break;
     case 'revive': [440, 554, 659, 880].forEach((f, i) => tone(f, .12, 'triangle', .12, null, i * .06)); break;
-    case 'clear': [523, 659, 784, 1046].forEach((f, i) => tone(f, .2, 'triangle', .14, null, i * .12)); break;
+    case 'clear': [[392, 0, .1], [392, .12, .1], [392, .24, .1], [523, .36, .3], [392, .7, .14], [523, .86, .14], [659, 1.02, .14], [784, 1.18, .9]].forEach(([f, d, l]) => trumpetNote(f, d, l)); break;
     case 'fail': [392, 330, 262, 196].forEach((f, i) => tone(f, .25, 'triangle', .14, null, i * .16)); break;
     case 'tick': tone(900, .04, 'square', .05); break;
     case 'reel': tone(380, .07, 'square', .09); tone(760, .09, 'triangle', .08, null, .05); break;
@@ -2363,7 +2370,7 @@ function updateBullets(dt) {
     }
     const homeK = b.team === 'p' ? F.homing(sk('homing')) + (b.home || 0) : 0;
     if (b.homeP && b.team === 'e') {
-      // Salvo missiles curve toward the nearest player
+      // enemy homing rockets curve toward the nearest player
       let best = null, bd = 260;
       for (const pl of aliveTanks) if (pl.team === 'p' && pl.alive && !pl.under) { const d = Math.hypot(pl.x - b.x, pl.y - b.y); if (d < bd) { bd = d; best = pl; } }
       if (best) { const cur = Math.atan2(b.dy, b.dx), na = cur + clamp(angDiff(Math.atan2(best.y - b.y, best.x - b.x), cur), -b.homeP * dt, b.homeP * dt); b.dx = Math.cos(na); b.dy = Math.sin(na); }
