@@ -160,7 +160,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <header id="hud">
     <div class="hgroup"><span class="lbl">Level</span><b id="h-stage">–</b><span id="h-name"></span></div>
     <div class="hgroup"><span class="lbl">Enemies</span><b id="h-enemies">–</b><span class="lbl">Lives</span><b id="h-lives">–</b><span class="lbl" id="h-ff">Friendly fire off</span></div>
-    <div class="hgroup net"><button id="net-btn" class="hbtn" type="button">Play online</button><button id="voice-btn" class="hbtn" type="button" hidden>Voice off</button></div>
+    <div class="hgroup net"><button id="net-btn" class="hbtn" type="button">Play online</button><button id="voice-btn" class="hbtn" type="button" hidden>Voice off</button><button id="music-btn" class="hbtn" type="button">Music on</button></div>
     <div class="hud-slots">
       <div class="chip" data-state="empty" style="--c:var(--p1)"><i></i><b>P1</b><span>–</span></div>
       <div class="chip" data-state="empty" style="--c:var(--p2)"><i></i><b>P2</b><span>–</span></div>
@@ -251,12 +251,18 @@ const ETYPES = {
   bur:  { name: 'Burrower',  color: '#78350f', speed: 50, bs: 230, bounces: 0, max: 1, cd: 1.4, turn: 3, aimEvery: .3, burrow: true, pref: 220, miss: .3, err: .1 },
   eng:  { name: 'Engineer',  color: '#57534e', speed: 38, bs: 180, bounces: 1, max: 1, cd: 2.6, turn: 2, aimEvery: .5, build: 8, pref: 340, miss: .4, err: .18 },
   tur:  { name: 'Turret',    color: '#78716c', r: 12, speed: 0, bs: 200, bounces: 1, max: 1, cd: 2.4, turn: 2.2, aimEvery: .4, smart: true, miss: .35, err: .14 },
-  sal:  { name: 'Salvo',     color: '#0e7490', speed: 45, bs: 190, bounces: 0, max: 4, cd: 3.4, burst: 4, burstGap: .14, turn: 2.2, aimEvery: .35, kind: 'missile', homeP: 1.6, pref: 320, miss: .3, err: .2 },
+  sal:  { name: 'Salvo',     color: '#0e7490', speed: 45, bs: 190, bounces: 1, max: 5, cd: 3.8, burst: 5, burstGap: .13, turn: 2.2, aimEvery: .35, smart: true, pref: 320, miss: .3, err: .2 },
   orbt: { name: 'Orbiter',   color: '#6d28d9', speed: 40, bs: 220, bounces: 1, max: 1, cd: 1.6, turn: 2.4, aimEvery: .35, smart: true, orbs: 3, pref: 300, miss: .3, err: .12 },
+  dbl:  { name: 'Double',    color: '#be185d', speed: 50, bs: 200, bounces: 1, max: 2, cd: 2, turn: 2.4, aimEvery: .35, smart: true, twinShot: .12, pref: 280, miss: .3, err: .12 },
+  frz:  { name: 'Freezer',   color: '#38bdf8', speed: 45, bs: 210, bounces: 1, max: 1, cd: 2, turn: 2.2, aimEvery: .35, smart: true, kind: 'ice', freeze: 1.6, pref: 280, miss: .25, err: .1 },
+  cln:  { name: 'Clone',     color: '#0d9488', speed: 55, bs: 200, bounces: 1, max: 1, cd: 2.2, turn: 2.4, aimEvery: .35, smart: true, decoys: 2, pref: 280, miss: .3, err: .12 },
+  dcy:  { name: 'Clone',     color: '#0d9488', speed: 55, bs: 0, bounces: 0, max: 0, cd: 99, turn: 2.4, aimEvery: 1, decoy: true, pref: 280, miss: 0, err: 0 },
+  pls:  { name: 'Pulse',     color: '#c2410c', speed: 48, bs: 0, bounces: 0, max: 0, cd: 99, turn: 2, aimEvery: 1, pulse: 3.2, pulseR: 110, pref: 60, miss: 0, err: 0 },
+  rfl:  { name: 'Reflector', color: '#94a3b8', speed: 45, bs: 200, bounces: 1, max: 1, cd: 2.2, turn: 2.2, aimEvery: .35, smart: true, reflectP: .5, pref: 280, miss: .3, err: .12 },
   s: { name: 'Sniper',   color: '#5c6b2f', speed: 30, bs: 650, bounces: 1, max: 1, cd: 3.4, turn: 1.6, aimEvery: .45, kind: 'snipe', smart: true, charge: .6, pref: 420, miss: .15, err: .05 },
 };
 // When each enemy type can start showing up on the slot machines
-const UNLOCK = { a: 1, b: 1, c: 3, h: 4, d: 5, k: 5, e: 6, n: 6, m: 7, z: 7, f: 8, w: 8, i: 8, s: 9, v: 9, q: 10, x: 11, l: 11, g: 12, j: 13, u: 14, sie: 10, kam: 12, mag: 15, gen: 16, bur: 17, eng: 18, sal: 19, orbt: 21 };
+const UNLOCK = { a: 1, b: 1, c: 3, h: 4, d: 5, k: 5, e: 6, n: 6, m: 7, z: 7, f: 8, w: 8, i: 8, s: 9, v: 9, q: 10, x: 11, l: 11, g: 12, j: 13, u: 14, sie: 10, kam: 12, mag: 15, gen: 16, bur: 17, eng: 18, sal: 19, orbt: 21, dbl: 9, frz: 13, cln: 16, pls: 20, rfl: 23 };
 const unlockedTypes = lvl => Object.keys(UNLOCK).filter(k => lvl >= UNLOCK[k]);
 const BOSSES = [
   { name: 'Juggernaut', color: '#6b2a2a', hp: 26, speed: 34, turn: 1.6, gap: 2.1, pref: 260, attacks: ['fan', 'mines', 'fan', 'ring'] },
@@ -489,7 +495,12 @@ const CHASSIS = {
   gen: { name: 'Generator', desc: 'A bubble shield blocks one hit, then recharges after 6 seconds.', bubble: 6, bubbles: 1 },
   bur: { name: 'Burrower',  desc: 'No mines. The mine button digs you underground for 1.5 seconds: you can\'t be hit and you move faster, but can\'t shoot.', burrow: true },
   eng: { name: 'Engineer',  desc: 'No mines. The mine button builds a turret that shoots enemies (up to 2).', build: true },
-  sal: { name: 'Salvo',     desc: 'Fires a burst of 4 rockets that curve toward enemies.', burst: 4, burstGap: .1, kind: 'missile', home: 2, bnc: -1, cd: 2.4 },
+  sal: { name: 'Salvo',     desc: 'Fires a burst of 5 bouncing shells.', burst: 5, burstGap: .1, cd: 2.8 },
+  dbl: { name: 'Double',    desc: 'Fires two shells at once in a narrow V.', twinShot: .12 },
+  frz: { name: 'Freezer',   desc: 'Ice shells destroy what they hit and freeze nearby enemies in place for 2 seconds.', kind: 'ice', freezeT: 2, freezeR: 70 },
+  cln: { name: 'Clone',     desc: 'No mines. The mine button sends out a decoy that looks like you; enemies chase and shoot it (up to 2).', clone: true },
+  pls: { name: 'Pulse',     desc: 'No gun. Fire sends out a shockwave that destroys nearby enemies and their shells.', pulse: true, cd: 14 },
+  rfl: { name: 'Reflector', desc: 'Enemy shells that hit you have a 40% chance to bounce back as yours.', reflectP: .4 },
   orbt: { name: 'Orbiter',  desc: 'Three orbs circle you and block enemy shells. Fire launches an orb; they grow back over time.', orbs: 3 },
   u:   { name: 'Summoner', desc: 'Summons a minion tank every 6 seconds (up to 3) that fights on its own.', summon: true, minions: 3, sumT: 6 },
   z:   { name: 'Scorcher', desc: 'Hold fire to spray a short-range stream of flame.', flame: true },
@@ -520,7 +531,7 @@ const CHASSIS = {
   dsc:  { name: 'Razor Disc',desc: 'Elite. A disc that cuts through everything, speeds up on every bounce, and fires a shot at the nearest enemy each time.', elite: true, wpn: 'disc', kind: 'saw', spd: .9, bnc: 5, pierce: 99, ammo: 2, cd: 1.8, hr: 5, unlock: { level: 40 } },
   cmd:  { name: 'Plasma',    desc: 'Elite. A big plasma orb that passes through enemies and explodes where it stops.', elite: true, wpn: 'plasma', kind: 'plasma', spd: .75, bnc: -1, pierce: 99, ammo: 2, life: 2.2, cd: 2.4, hr: 6, unlock: { level: 25 } },
 };
-const CHASSIS_ORDER = ['std', 'vet', 'reb', 'iron', 'twn', 'hunt', 'spr', 'prc', 'cmd', 'thn', 'ion', 'shu', 'car', 'nap', 'rst', 'sfl', 'dsc', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j', 'n', 'l', 'i', 'u', 'sie', 'kam', 'mag', 'gen', 'bur', 'eng', 'sal', 'orbt'];
+const CHASSIS_ORDER = ['std', 'vet', 'reb', 'iron', 'twn', 'hunt', 'spr', 'prc', 'cmd', 'thn', 'ion', 'shu', 'car', 'nap', 'rst', 'sfl', 'dsc', 'c', 'm', 's', 'h', 'f', 'v', 'x', 'z', 'q', 'k', 'w', 'g', 'j', 'n', 'l', 'i', 'u', 'sie', 'kam', 'mag', 'gen', 'bur', 'eng', 'sal', 'orbt', 'dbl', 'frz', 'cln', 'pls', 'rfl'];
 const KILL_TANKS = CHASSIS_ORDER.filter(k => k !== 'std' && !CHASSIS[k].unlock);
 const ELITE_TANKS = CHASSIS_ORDER.filter(k => CHASSIS[k].unlock);
 let BEST = Object.assign({ level: 0, kills: 0 }, store.get('rr-best-v1', {}) || {});
@@ -631,8 +642,18 @@ const TANK_SKILLS = [
   { id: 'bur_cd', req: 'bur', rar: 'rare', name: 'Quick Dig', desc: 'Dig down again sooner.', max: 3, stat: ['Dig cooldown', n => secs(4 * Math.pow(.8, n))], mod: (c, n) => ({ burCd: 4 * Math.pow(.8, n) }) },
   addSk('eng', 'eng_more', 'rare', 'Bigger Crew', 'Build more turrets.', 2, 'turrets', 2, 1, 'Turrets at once'),
   { id: 'eng_fast', req: 'eng', rar: 'common', name: 'Fast Build', desc: 'Build turrets more often.', max: 3, stat: ['Build cooldown', n => secs(6 * Math.pow(.8, n))], mod: (c, n) => ({ bcd: 6 * Math.pow(.8, n) }) },
-  addSk('sal', 'sal_more', 'common', 'Bigger Salvo', 'Salvo fires more rockets per burst.', 3, 'burst', 4, 1, 'Rockets per burst'),
-  addSk('sal', 'sal_home', 'rare', 'Smart Rockets', 'Salvo rockets turn harder toward enemies.', 3, 'home', 2, 1, 'Homing strength'),
+  addSk('sal', 'sal_more', 'common', 'Bigger Salvo', 'Salvo fires more shells per burst.', 3, 'burst', 5, 1, 'Shells per burst'),
+  addSk('sal', 'sal_bnc', 'rare', 'Rubber Salvo', 'Salvo shells bounce more.', 2, 'bnc', 0, 1, 'Extra bounces', v => '+' + v),
+  rateSk('dbl', 'dbl_rate', 'common', 'Quick Doubles', 'The Double fires faster.', 3),
+  addSk('dbl', 'dbl_bnc', 'rare', 'Double Bounce', 'Double shells bounce more.', 2, 'bnc', 0, 1, 'Extra bounces', v => '+' + v),
+  addSk('frz', 'frz_time', 'common', 'Deep Freeze', 'Enemies stay frozen longer.', 3, 'freezeT', 2, .5, 'Freeze time', secs),
+  addSk('frz', 'frz_area', 'rare', 'Cold Snap', 'Freeze enemies in a wider area.', 3, 'freezeR', 70, 15, 'Freeze area', v => v + 'px'),
+  addSk('cln', 'cln_more', 'rare', 'Hall of Mirrors', 'Send out more decoys at once.', 2, 'decoys', 2, 1, 'Decoys at once'),
+  { id: 'cln_fast', req: 'cln', rar: 'common', name: 'Quick Copy', desc: 'Send out decoys more often.', max: 3, stat: ['Decoy cooldown', n => secs(5 * Math.pow(.8, n))], mod: (c, n) => ({ dcd: 5 * Math.pow(.8, n) }) },
+  pctSk('pls', 'pls_size', 'common', 'Big Wave', 'Pulses reach farther.', 3, 'pulseK', .15, 'Pulse size'),
+  rateSk('pls', 'pls_rate', 'rare', 'Quick Pulse', 'Pulse more often.', 3, .85),
+  addSk('rfl', 'rfl_chance', 'rare', 'Polished Armor', 'Reflect enemy shells more often.', 3, 'reflectP', .4, .1, 'Reflect chance', pct),
+  rateSk('rfl', 'rfl_rate', 'common', 'Quick Reflexes', 'The Reflector fires faster.', 3),
   addSk('orbt', 'orbt_more', 'rare', 'More Orbs', 'Carry more orbs.', 2, 'orbs', 3, 1, 'Orbs'),
   { id: 'orbt_fast', req: 'orbt', rar: 'common', name: 'Fast Regrow', desc: 'Orbs grow back faster.', max: 3, stat: ['New orb every', n => secs(2.5 * Math.pow(.8, n))], mod: (c, n) => ({ orbT: 2.5 * Math.pow(.8, n) }) },
 ];
@@ -705,6 +726,73 @@ function noise(dur, vol, cut, delay = 0) {
   s.buffer = noiseBuf; f.type = 'lowpass'; f.frequency.setValueAtTime(cut, t0); f.frequency.exponentialRampToValueAtTime(60, t0 + dur);
   g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
   s.connect(f); f.connect(g); g.connect(master); s.start(t0); s.stop(t0 + dur);
+}
+// ---------- music: a military march for battles, darker and faster music for bosses (made live with Web Audio) ----------
+const NOTE = n => { const m = /^([A-G])(#|b)?(\d)$/.exec(n); const base = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0); return 440 * Math.pow(2, (base + (+m[3] + 1) * 12 - 69) / 12); };
+const seq = s => s.split(' ').map(x => x === '.' ? 0 : NOTE(x));
+const TRACKS = {
+  battle: { bpm: 108,
+    kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+    snare: [0,0,.3,0, 1,0,.3,.3, 0,0,.3,0, 1,0,.5,.5, 0,0,.3,0, 1,0,.3,.3, 0,0,.3,0, 1,.4,.6,.8],
+    bass: seq('D2 . . . D2 . . . A1 . . . A1 . . . Bb1 . . . Bb1 . . . A1 . . . A1 . . .'),
+    lead: seq('D4 . . D4 F4 . A4 . D5 . . . C5 . A4 . Bb4 . . A4 G4 . F4 . E4 . F4 . D4 . . .'),
+    leadLen: 2 },
+  boss: { bpm: 148,
+    kick:  [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,1,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,1,1],
+    snare: [0,0,0,0, 1,0,0,.3, 0,0,0,0, 1,0,0,.4, 0,0,0,0, 1,0,0,.3, 0,0,.3,0, 1,.5,.7,.9],
+    bass: seq('E2 . E2 E3 E2 . G2 . E2 . E2 E3 F2 . E2 . E2 . E2 E3 E2 . G2 . A2 . G2 . F2 . D#2 .'),
+    lead: seq('E4 . . . F4 . . . E4 . D4 . E4 . . . G4 . . . F4 . E4 . D#4 . . . B3 . . .'),
+    leadLen: 3 },
+};
+const MUSIC = { on: store.get('rr-music', true) !== false, track: null, step: 0, next: 0, gain: null };
+function musicOut() {
+  if (!MUSIC.gain) { MUSIC.gain = AC.createGain(); MUSIC.gain.gain.value = .55; MUSIC.gain.connect(master); }
+  return MUSIC.gain;
+}
+function mNote(f, t0, dur, type, vol, cut) {
+  const o = AC.createOscillator(), g = AC.createGain(), flt = AC.createBiquadFilter();
+  o.type = type; o.frequency.setValueAtTime(f, t0); flt.type = 'lowpass'; flt.frequency.value = cut;
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .015); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(flt); flt.connect(g); g.connect(musicOut()); o.start(t0); o.stop(t0 + dur + .05);
+}
+function mDrum(kind, t0, vol) {
+  if (kind === 'kick') {
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.frequency.setValueAtTime(130, t0); o.frequency.exponentialRampToValueAtTime(40, t0 + .14);
+    g.gain.setValueAtTime(.55 * vol, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + .22);
+    o.connect(g); g.connect(musicOut()); o.start(t0); o.stop(t0 + .25);
+  } else {
+    const s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+    s.buffer = noiseBuf; f.type = 'highpass'; f.frequency.value = 1400;
+    g.gain.setValueAtTime(.3 * vol, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + .11);
+    s.connect(f); f.connect(g); g.connect(musicOut()); s.start(t0, Math.random() * .5); s.stop(t0 + .12);
+  }
+}
+// Which music fits right now: boss music on boss levels, the march in other battles, quiet elsewhere
+function wantedTrack() {
+  if (!['intro', 'play', 'paused', 'clear', 'fail'].includes(G.state)) return null;
+  return isBossLevel(G.level) ? 'boss' : 'battle';
+}
+function updateMusic() {
+  if (!AC || AC.state !== 'running' || !MUSIC.on) return;
+  const want = G.state === 'paused' ? null : wantedTrack();
+  if (want !== MUSIC.track) { MUSIC.track = want; MUSIC.step = 0; MUSIC.next = AC.currentTime + .08; }
+  if (!want) return;
+  const T = TRACKS[want], stepDur = 60 / T.bpm / 4;
+  if (MUSIC.next < AC.currentTime - .2) MUSIC.next = AC.currentTime + .05; // tab was in the background
+  while (MUSIC.next < AC.currentTime + .15) {
+    const i = MUSIC.step % 32, t0 = MUSIC.next;
+    if (T.kick[i]) mDrum('kick', t0, T.kick[i]);
+    if (T.snare[i]) mDrum('snare', t0, T.snare[i]);
+    if (T.bass[i]) mNote(T.bass[i], t0, stepDur * 1.8, 'sawtooth', .13, 520);
+    if (T.lead[i]) { mNote(T.lead[i], t0, stepDur * T.leadLen, 'sawtooth', .05, 1900); mNote(T.lead[i] * 1.004, t0, stepDur * T.leadLen, 'square', .03, 1500); }
+    MUSIC.step++; MUSIC.next += stepDur;
+  }
+}
+function setMusic(on) {
+  MUSIC.on = on; store.set('rr-music', on); MUSIC.track = null;
+  if (MUSIC.gain) MUSIC.gain.gain.value = on ? .55 : 0;
+  const b = $('#music-btn'); b.textContent = on ? 'Music on' : 'Music off'; b.dataset.on = on ? '1' : '0';
 }
 function playSfx(n) {
   if (!AC || AC.state !== 'running') return;
@@ -847,6 +935,7 @@ function applyFx(e) {
     case 'puff': puff(e.x, e.y, e.n || 4, '#8f8270', e.v || 30, e.z || 3, .45); break;
     case 'spk': for (let i = 0; i < e.n; i++) G.parts.push({ kind: 'spark', x: e.x, y: e.y, vx: rnd(-e.v, e.v), vy: rnd(-e.v, e.v), life: .18, max: .18, size: 1.5, grow: 0, color: '#fff0b8', drag: 5 }); break;
     case 'crate': for (let i = 0; i < 9; i++) G.parts.push({ kind: 'debris', x: e.x + rnd(-12, 12), y: e.y + rnd(-12, 12), vx: rnd(-160, 160), vy: rnd(-160, 160), life: rnd(.5, 1), max: 1, size: rnd(4, 8), grow: 0, color: Math.random() < .5 ? '#d1a96c' : '#9a7440', drag: 3, rot: Math.random() * TAU, vr: rnd(-10, 10) }); break;
+    case 'pulse': G.parts.push({ kind: 'ring', x: e.x, y: e.y, vx: 0, vy: 0, life: .35, max: .35, size: 8, grow: (e.r - 8) / .35, color: e.c, drag: 0 }); break;
     case 'ring': G.parts.push({ kind: 'ring', x: e.x, y: e.y, vx: 0, vy: 0, life: .5, max: .5, size: 8, grow: 90, color: e.c, drag: 0 }); break;
     case 'sc': G.scorch.push({ x: e.x, y: e.y, r: e.r }); break;
     case 'reset': G.parts = []; G.marks = []; G.scorch = []; break;
@@ -896,6 +985,7 @@ function bulletTrail(b, dt) {
   const x = b.x - b.dx * 6, y = b.y - b.dy * 6, P = G.parts;
   if (b.kind === 'plasma') { b.trailT = .02; P.push({ kind: 'fire', x: b.x, y: b.y, vx: rnd(-15, 15), vy: rnd(-15, 15), life: .3, max: .3, size: 5, grow: 2, color: '#b07cff', drag: 2 }); return; }
   if (b.kind === 'saw' || b.kind === 'boomer' || b.kind === 'grenade' || b.kind === 'bomb' || b.kind === 'star' || b.kind === 'cannon') { b.trailT = 1; return; }
+  if (b.kind === 'ice') { b.trailT = .03; P.push({ kind: 'twinkle', x: b.x + rnd(-3, 3), y: b.y + rnd(-3, 3), vx: 0, vy: 0, life: .35, max: .35, size: 3, grow: 0, color: '#bfefff', drag: 0 }); return; }
   if (b.kind === 'orb') { b.trailT = .02; P.push({ kind: 'fire', x: b.x, y: b.y, vx: 0, vy: 0, life: .2, max: .2, size: 4, grow: 0, color: '#b48cff', drag: 0 }); return; }
   if (b.kind === 'vortex' || b.kind === 'thunder') { b.trailT = .025; P.push({ kind: 'fire', x: b.x, y: b.y, vx: rnd(-12, 12), vy: rnd(-12, 12), life: .25, max: .25, size: 4, grow: 2, color: b.kind === 'vortex' ? '#b07cff' : '#ffe066', drag: 2 }); return; }
   if (b.kind === 'flame') { b.trailT = .03; P.push({ kind: 'fire', x: b.x, y: b.y, vx: rnd(-20, 20), vy: rnd(-20, 20), life: .2, max: .2, size: rnd(3, 6), grow: 6, color: Math.random() < .5 ? '#ff7a2e' : '#ffc24d', drag: 2 }); return; }
@@ -1209,7 +1299,7 @@ function shoot(t, ang, speed, bounces, kind = 'shell', o = {}) {
   t.recoil = 1;
   if (bb(tx, ty)) { if (o.fx !== false) { emit({ t: 'puff', x: r1(tx), y: r1(ty), n: 5 }); sfx('pop'); } return; }
   G.bullets.push({ id: ++G.idSeq, x: tx, y: ty, dx: Math.cos(ang), dy: Math.sin(ang), speed, bounces, owner: t, team: t.team,
-    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0, pierce: o.pierce || 0, hitIds: [], base: speed, fis: o.fis || false, accel: o.accel || 0, homeP: o.homeP || 0, home: o.home || 0, big: !!o.big, wpn: o.wpn || null, hr: o.hr || 0 });
+    slot: t.team === 'p' ? t.slot : -1, kind, rocket: kind === 'rocket' || kind === 'missile', life: o.life || 0, age: 0, bounced: false, alive: true, trailT: 0, pierce: o.pierce || 0, hitIds: [], base: speed, fis: o.fis || false, accel: o.accel || 0, homeP: o.homeP || 0, freeze: o.freeze || 0, home: o.home || 0, big: !!o.big, wpn: o.wpn || null, hr: o.hr || 0 });
   t.bullets++; t.lastShot = G.time;
   if (o.fx !== false && kind !== 'flame') {
     emit({ t: 'muz', x: r1(tx), y: r1(ty), a: r2(ang) });
@@ -1226,8 +1316,9 @@ function enemyFire(t) {
   if (S.pellets) {
     for (let i = 0; i < S.pellets; i++) shoot(t, ang + (i / (S.pellets - 1) - .5) * S.spread + rnd(-.04, .04), enemyShotSpeed(S) * rnd(.9, 1.1), S.bounces, 'pellet', { life: S.life, fx: i === 0 });
   } else if (S.laser) beamShot(t, ang, 0, { color: '#ff3b3b', w: 4 });
+  else if (S.twinShot) { shoot(t, ang - S.twinShot, enemyShotSpeed(S), S.bounces, 'shell'); shoot(t, ang + S.twinShot, enemyShotSpeed(S), S.bounces, 'shell', { fx: false }); }
   else if (S.orbs) { if (t.orbs > 0) { t.orbs--; shoot(t, ang, enemyShotSpeed(S), S.bounces, 'orb'); } }
-  else shoot(t, ang, enemyShotSpeed(S), S.bounces, S.kind || 'shell', { fis: S.fis, accel: S.accel, homeP: S.homeP, hr: S.hr });
+  else shoot(t, ang, enemyShotSpeed(S), S.bounces, S.kind || 'shell', { fis: S.fis, accel: S.accel, homeP: S.homeP, hr: S.hr, freeze: S.freeze });
 }
 function layMine(t) {
   const max = t.team === 'p' ? F.mines(sk('mines')) : (t.spec.mines || 0);
@@ -1442,6 +1533,7 @@ function autoFire(t, dt, rate, speed, bounces) {
 function updateAlly(t, dt, active) {
   if (!active) return;
   if (t.stat) { autoFire(t, dt, 1.1, 240, 1); return; } // Engineer turret
+  if (t.decoy) { t.ai.moveT = t.ai.moveT || 0; chase(t, null, 70, dt); return; } // Clone decoy wanders
   if (t.kami) {
     // bomb car: race to the nearest enemy and explode
     t.life -= dt;
@@ -1483,6 +1575,7 @@ function makeFriend(owner, x, y, kind) {
 function updatePlayer(t, dt, active) {
   if (!active) return;
   const inp = INP[t.dev]; if (!inp) return;
+  if (t.frozen > 0) { t.frozen -= dt; return; } // frozen by a Freezer
   const mag = Math.min(1, Math.hypot(inp.mx, inp.my)), ch = chassisOf(t);
   t.dashCd = (t.dashCd || 0) - dt; t.blinkCd = (t.blinkCd || 0) - dt;
   if (t.dashT > 0) {
@@ -1511,6 +1604,8 @@ function updatePlayer(t, dt, active) {
     // Burrower: underground, can't shoot; pops back up when time runs out
     t.underT -= dt;
     if (t.underT <= 0) { t.under = false; collideTank(t); emit({ t: 'puff', x: r1(t.x), y: r1(t.y), n: 10, v: 60, z: 5 }); sfx('pop'); }
+  } else if (ch.pulse) {
+    if (inp.fire && t.cool <= 0) { doPulse(t, 110 * (ch.pulseK || 1)); t.cool = PCD * (ch.cd || 14) * rateK; rumble(t.dev, .5, .5, 150); }
   } else if (ch.kamiLaunch) {
     if (inp.fire && t.cool <= 0 && G.tanks.filter(o => o.alive && o.kami && o.owner === t).length < (ch.kmax || 3)) {
       const a = t.turret, x = t.x + Math.cos(a) * 26, y = t.y + Math.sin(a) * 26;
@@ -1618,7 +1713,15 @@ function updatePlayer(t, dt, active) {
       emit({ t: 'ring', x: r1(t.x), y: r1(t.y), c: slotColor(t.slot) });
     }
   }
-  if (ch.blink) blinkPlayer(t, inp, ch, dt);
+  t.dcCd = (t.dcCd || 0) - dt;
+  if (ch.clone) {
+    // Clone: the mine button sends out a decoy that looks like you
+    if (inp.mine && t.dcCd <= 0 && G.tanks.filter(o => o.alive && o.decoy && o.owner === t).length < (ch.decoys || 2)) {
+      const a = t.turret + Math.PI / 2, x = t.x + Math.cos(a) * 32, y = t.y + Math.sin(a) * 32;
+      if (tankFree(x, y)) { const d = makeFriend(t, x, y, 'ally'); d.decoy = true; d.r = R; d.body = t.body; d.turret = t.turret; t.dcCd = ch.dcd || 5; emit({ t: 'puff', x: r1(x), y: r1(y), n: 6, z: 4 }); sfx('blinkport'); }
+    }
+  }
+  else if (ch.blink) blinkPlayer(t, inp, ch, dt);
   else if (ch.burrow) { if (inp.mine && !t.under && t.burCdT <= 0) { t.under = true; t.underT = ch.burT || 1.5; t.burCdT = (ch.burCd || 4) + t.underT; emit({ t: 'puff', x: r1(t.x), y: r1(t.y), n: 10, v: 60, z: 5 }); sfx('mortar'); } }
   else if (ch.build) {
     if (inp.mine && t.buildCd <= 0 && G.tanks.filter(o => o.alive && o.stat && o.owner === t).length < (ch.turrets || 2)) {
@@ -1634,6 +1737,7 @@ function volleyShape(ch) {
   const nf = ch.pellets || ch.swarm ? 0 : sk('triple'), ns = F.sides(sk('twin')) + (ch.sidesAdd || 0);
   const angles = ch.pellets ? Array.from({ length: ch.pellets }, (_, k) => (k / (ch.pellets - 1) - .5) * ch.spread)
     : ch.swarm ? Array.from({ length: ch.swarm }, (_, k) => (k / (ch.swarm - 1) - .5) * ch.spread)
+    : ch.twinShot ? [-ch.twinShot, ch.twinShot]
     : Array.from({ length: F.fan(nf) }, (_, k) => (k - nf) * .16);
   const sides = Array.from({ length: ns }, (_, k) => (k - (ns - 1) / 2) * 8);
   const per = angles.length * sides.length;
@@ -1789,6 +1893,18 @@ function updateSpiker(t, dt, target) {
   }
   if (steerBody(t, ai.dir, 6, dt) < .7) moveTank(t, Math.cos(ai.dir) * S.speed * tar, Math.sin(ai.dir) * S.speed * tar, dt);
 }
+// Freezer (player): enemies near the hit can't move or shoot for a moment
+function freezeArea(x, y, rad, time) {
+  emit({ t: 'pulse', x: r1(x), y: r1(y), r: rad, c: '#9fe8ff' });
+  for (const e of aliveTanks) if (e.alive && e.team === 'e' && Math.hypot(e.x - x, e.y - y) < rad + (e.r || R) * .5) e.frozen = Math.max(e.frozen || 0, e.boss ? time * .3 : time);
+}
+// Pulse: a shockwave that destroys the other side's shells and hurts their tanks nearby
+function doPulse(t, rad) {
+  const foe = t.team === 'p' ? 'e' : 'p';
+  emit({ t: 'pulse', x: r1(t.x), y: r1(t.y), r: rad, c: t.team === 'p' ? slotColor(t.slot) : '#ff7a2e' }); sfx('boom'); shake(5);
+  for (const b of G.bullets) if (b.alive && b.team === foe && Math.hypot(b.x - t.x, b.y - t.y) < rad) killBullet(b, false);
+  for (const o of G.tanks) if (o.alive && o.team === foe && Math.hypot(o.x - t.x, o.y - t.y) < rad + (o.r || R) * .5) hurtTank(o, t, o.boss ? 2 * F.bossDmg(sk('heavy')) : 1);
+}
 // Bomb blast for Kamikaze tanks and bomb cars: hurts the other side and breaks crates
 function kamiBoom(t, size) {
   const foe = t.team === 'p' ? 'e' : 'p';
@@ -1817,6 +1933,26 @@ function chase(t, target, speed, dt) {
 function updateEnemy(t, dt, active) {
   if (!active) return;
   const S = t.spec, ai = t.ai, target = nearestPlayer(t);
+  if (t.frozen > 0) { t.frozen -= dt; return; }
+  if (S.decoys) {
+    // Clone: sends out look-alike decoys (up to 2)
+    ai.dcT = (ai.dcT ?? .8) - dt;
+    if (ai.dcT <= 0) {
+      ai.dcT = 7;
+      for (let k = 0; k < 2 - G.tanks.filter(o => o.alive && o.maker === t.id).length; k++) for (let q = 0; q < 12; q++) {
+        const a = Math.random() * TAU, x = t.x + Math.cos(a) * 40, y = t.y + Math.sin(a) * 40;
+        if (tankFree(x, y)) { const d = makeEnemy('dcy', x, y); d.maker = t.id; d.turret = t.turret; d.body = t.body; G.tanks.push(d); emit({ t: 'puff', x: r1(x), y: r1(y), n: 6, z: 4 }); break; }
+      }
+    }
+  }
+  if (S.decoy) { chase(t, target && dist(target, t) > 200 ? target : null, S.speed * F.tar(sk('tar')), dt); if (target) t.turret += angDiff(Math.atan2(target.y - t.y, target.x - t.x), t.turret) * Math.min(1, dt * 3); return; }
+  if (S.pulse) {
+    // Pulse: closes in, glows as a warning, then sends out a shockwave
+    if (ai.pch > 0) { ai.pch -= dt; t.charge = Math.max(0, ai.pch); if (ai.pch <= 0) doPulse(t, S.pulseR); return; }
+    ai.pT = (ai.pT ?? rnd(1.5, 3)) - dt;
+    if (ai.pT <= 0 && target && dist(target, t) < S.pulseR * .8) { ai.pT = S.pulse; ai.pch = .7; t.charge = .7; sfx('charge'); return; }
+    chase(t, target, S.speed * F.tar(sk('tar')), dt); return;
+  }
   if (S.kami) {
     // Kamikaze: rushes you and explodes up close
     chase(t, target, S.speed * F.tar(sk('tar')), dt);
@@ -1920,7 +2056,7 @@ function updateEnemy(t, dt, active) {
     if (ai.charging <= 0) { enemyFire(t); t.cool = S.cd * t.cdK * rnd(.8, 1.2); }
   } else t.turret += clamp(angDiff(ai.target, t.turret), -S.turn * dt, S.turn * dt);
   ai.fireCheck -= dt;
-  const shots = S.pellets || 1;
+  const shots = S.pellets || (S.twinShot ? 2 : 1);
   const inRange = !S.range || (target && dist(target, t) < S.range);
   if (target && inRange && !(ai.charging > 0) && t.cool <= 0 && t.bullets + shots <= S.max && ai.fireCheck <= 0) {
     ai.fireCheck = .08;
@@ -1956,6 +2092,7 @@ function updateEnemy(t, dt, active) {
 function updateBoss(t, dt, active) {
   t.hit = Math.max(0, t.hit - dt);
   if (!active) return;
+  if (t.frozen > 0) { t.frozen -= dt; return; }
   const B = t.spec, ai = t.ai, target = nearestPlayer(t);
   if (ai.charging > 0) {
     ai.charging -= dt; t.charge = Math.max(0, ai.charging);
@@ -2125,6 +2262,20 @@ function updateBullets(dt) {
         if (!t.alive) continue;
         const hr = (t.r || R) + 3 + (b.team === 'p' ? F.big(sk('big')) : 0) + (b.big ? 6 : 0) + (b.hr || 0);
         if ((t.x - b.x) ** 2 + (t.y - b.y) ** 2 < hr * hr && canHit(b, t) && !b.hitIds.includes(t.id)) {
+          if (b.kind === 'ice' && b.team === 'e' && t.team === 'p') {
+            // Freezer: frozen in place instead of destroyed
+            t.frozen = Math.max(t.frozen || 0, b.freeze || 1.6); killBullet(b, false);
+            emit({ t: 'spk', x: r1(t.x), y: r1(t.y), n: 10, v: 120 }); sfx('clank'); rumble(t.dev, .3, .3, 150); break;
+          }
+          const rp = t.team === 'e' ? (t.spec && t.spec.reflectP) || 0 : (!t.ally && !t.half ? chassisOf(t).reflectP || 0 : 0);
+          if (b.team !== t.team && rp && Math.random() < rp) {
+            // Reflector: the shell bounces back for the other side
+            const d = Math.hypot(b.x - t.x, b.y - t.y) || 1;
+            if (!b.free) b.owner.bullets = Math.max(0, b.owner.bullets - 1);
+            b.owner = t; b.team = t.team; b.slot = t.team === 'p' ? t.slot : -1; b.free = true;
+            b.dx = (b.x - t.x) / d; b.dy = (b.y - t.y) / d; b.bounced = true; b.hitIds = [t.id];
+            emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 6, v: 120 }); sfx('clank'); break;
+          }
           if (b.team === 'e' && t.team === 'p' && sk('reflect') && Math.random() < F.reflect(sk('reflect'))) {
             // Mirror Plating: the shell flips sides and flies back out
             const d = Math.hypot(b.x - t.x, b.y - t.y) || 1;
@@ -2151,6 +2302,7 @@ function updateBullets(dt) {
             break;
           }
           hurtTank(t, b.owner, b.team === 'p' ? F.bossDmg(sk('heavy')) + (b.bounced ? sk('bankshot') : 0) + (b.big ? 2 : 0) : 1);
+          if (b.kind === 'ice' && b.team === 'p') freezeArea(b.x, b.y, chassisOf(b.owner).freezeR || 70, chassisOf(b.owner).freezeT || 2);
           if ((b.wpn === 'grenade' || b.wpn === 'bomb' || b.wpn === 'swarm' || b.wpn === 'napalm' || b.wpn === 'vortex') && t.team === 'e') { if (b.wpn !== 'vortex') hurtTank(t, b.owner, 1); shellEnd(b); killBullet(b, false); break; }
           if (b.team === 'p' && t.team === 'e' && b.pierce > 0) { b.pierce--; b.hitIds.push(t.id); continue; }
           if (b.wpn === 'cluster') shellEnd(b);
@@ -2543,8 +2695,8 @@ function sendSnapshot() {
     grid: G.grid.length ? G.grid.map(r => r.join('')).join('') : '',
     sl: G.slots.map(s => s ? [s.dev, s.kills, s.deaths, s.color, s.trail, s.chassis || 'std'] : null),
     tk: G.tanks.filter(t => t.alive).map(t => [t.id, r1(t.x), r1(t.y), r2(t.body), r2(t.turret), t.team === 'p' ? t.slot : t.type, r2(t.recoil), r2(Math.max(0, t.reveal)), r2(t.shield),
-      r2(t.charge || 0), t.maxhp ? t.hp : 0, t.maxhp || 0, r2(t.hit || 0), t.armor || 0, t.shState || 0, r1(t.bx || 0), r1(t.by || 0), r2(t.hv || 0), t.ally ? (t.stat ? 4 : t.kami ? 5 : 1) : t.half ? 1 + t.half : 0,
-      (t.gsh || t.bub > 0 ? 1 : 0) | (t.under ? 2 : 0) | (t.emerge ? 4 : 0), t.orbs || 0]),
+      r2(t.charge || 0), t.maxhp ? t.hp : 0, t.maxhp || 0, r2(t.hit || 0), t.armor || 0, t.shState || 0, r1(t.bx || 0), r1(t.by || 0), r2(t.hv || 0), t.ally ? (t.stat ? 4 : t.kami ? 5 : t.decoy ? 6 : 1) : t.half ? 1 + t.half : 0,
+      (t.gsh || t.bub > 0 ? 1 : 0) | (t.under ? 2 : 0) | (t.emerge ? 4 : 0) | (t.frozen > 0 ? 8 : 0), t.orbs || 0]),
     bl: G.bullets.filter(b => b.alive).map(b => [b.id, r1(b.x), r1(b.y), r3(b.dx), r3(b.dy), b.speed, b.bounces, b.kind, b.slot, b.big ? 1 : 0]),
     mn: G.mines.map(m => [r1(m.x), r1(m.y), m.team === 'p' ? m.slot : m.type, r2(m.t), r2(m.fuse)]),
     wr: G.wrecks.map(w => [r1(w.x), r1(w.y), w.slot, r2(w.prog), r2(w.body)]),
@@ -2618,9 +2770,9 @@ function applySnap(s) {
     let t = old.get(a[0]);
     if (!t) t = { id: a[0], x: a[1], y: a[2], body: a[3], turret: a[4], tread: 0, trail: 0 };
     t.tx = a[1]; t.ty = a[2]; t.tb = a[3]; t.tt = a[4]; t.recoil = a[6]; t.reveal = a[7]; t.shield = a[8]; t.alive = true;
-    t.gsh = !!(a[19] & 1); t.bub = a[19] & 1; t.under = !!(a[19] & 2); t.emerge = !!(a[19] & 4); t.orbs = a[20] || 0;
+    t.gsh = !!(a[19] & 1); t.bub = a[19] & 1; t.under = !!(a[19] & 2); t.emerge = !!(a[19] & 4); t.frozen = a[19] & 8 ? 1 : 0; t.orbs = a[20] || 0;
     t.charge = a[9] || 0; t.hp = a[10]; t.maxhp = a[11]; t.hit = a[12] || 0; t.armor = a[13] || 0; t.shState = a[14] || 0; t.bx = a[15] || 0; t.by = a[16] || 0; t.hv = a[17] || 0;
-    if (typeof a[5] === 'number') { t.team = 'p'; t.slot = a[5]; t.ally = a[18] === 1 || a[18] >= 4; t.stat = a[18] === 4; t.kami = a[18] === 5; t.half = a[18] === 2 || a[18] === 3 ? a[18] - 1 : 0; t.r = t.ally || t.half ? 10 : R; }
+    if (typeof a[5] === 'number') { t.team = 'p'; t.slot = a[5]; t.ally = a[18] === 1 || a[18] >= 4; t.stat = a[18] === 4; t.kami = a[18] === 5; t.decoy = a[18] === 6; t.half = a[18] === 2 || a[18] === 3 ? a[18] - 1 : 0; t.r = t.decoy ? R : t.ally || t.half ? 10 : R; }
     else if (a[5] === 'bossE') { t.team = 'e'; t.type = a[5]; t.boss = true; t.r = 34; t.spec = ELITE_BOSS; }
     else if (String(a[5]).startsWith('boss')) { t.team = 'e'; t.type = a[5]; t.boss = true; t.r = BOSS_R; t.spec = BOSSES[+String(a[5]).slice(4)] || BOSSES[0]; }
     else { t.team = 'e'; t.type = a[5]; t.spec = ETYPES[a[5]] || ETYPES.a; t.r = t.spec.r || R; }
@@ -2757,6 +2909,8 @@ const toggleVoice = () => { if (NET.mode !== 'off') setVoice(!NET.voice); };
 
 // ---------- online dialog ----------
 const netEl = $('#net'), netBtn = $('#net-btn'), voiceBtn = $('#voice-btn');
+$('#music-btn').addEventListener('click', e => { unlockAudio(); e.currentTarget.blur(); setMusic(!MUSIC.on); });
+setMusic(MUSIC.on);
 // ---------- cheat window ----------
 const cheatEl = $('#cheat'), cheatIn = $('#cheat-in');
 function cheatSummary() {
@@ -3043,6 +3197,7 @@ function render() {
     }
     if (t.gsh) { c.save(); c.strokeStyle = '#7fd6ff'; c.globalAlpha = .55 + .2 * Math.sin(G.time * 6); c.lineWidth = 2; c.beginPath(); c.arc(t.x, t.y, (t.r || R) + 8, 0, TAU); c.stroke(); c.globalAlpha = .1; c.fillStyle = '#7fd6ff'; c.fill(); c.restore(); }
     if (t.orbs > 0) for (let k = 0; k < t.orbs; k++) { const [ox, oy] = orbitPt(t, k); c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = '#b48cff'; c.globalAlpha = .5; c.beginPath(); c.arc(ox, oy, 7, 0, TAU); c.fill(); c.globalAlpha = 1; c.fillStyle = '#efe4ff'; c.beginPath(); c.arc(ox, oy, 3.5, 0, TAU); c.fill(); c.restore(); }
+    if (t.team === 'p' && t.decoy) { drawStyledTank(t, chassisOf(t), slotColor(t.slot), slotDark(t.slot), .95); continue; }
     if (t.team === 'p' && t.kami) { const col = slotColor(t.slot); drawTank(t, col, '#ff5a1e', 1, t.r / R); c.fillStyle = Math.sin(G.time * 30) > 0 ? '#ff3b2f' : '#ffd27a'; c.beginPath(); c.arc(t.x, t.y, 2.5, 0, TAU); c.fill(); continue; }
     if (t.team === 'p' && (t.ally || t.half)) {
       // Summoner minion or Hive half: a small tank in the player's color
@@ -3068,7 +3223,11 @@ function render() {
         c.save(); c.strokeStyle = t.spec.color; c.globalAlpha = .5 + .4 * Math.sin(G.time * 30); c.lineWidth = 2; c.setLineDash([4, 4]);
         c.beginPath(); c.arc(t.bx, t.by, 18, 0, TAU); c.stroke(); c.setLineDash([]); c.globalAlpha = .25; c.fillStyle = t.spec.color; c.beginPath(); c.arc(t.bx, t.by, 14, 0, TAU); c.fill(); c.restore();
       }
-      if (t.charge > 0 && !t.spec.ram) {
+      if (t.charge > 0 && t.spec.pulse) {
+        c.save(); c.strokeStyle = '#ff7a2e'; c.globalAlpha = .3 + .5 * (1 - t.charge / .7); c.lineWidth = 3; c.setLineDash([6, 5]);
+        c.beginPath(); c.arc(t.x, t.y, t.spec.pulseR, 0, TAU); c.stroke(); c.restore();
+      }
+      if (t.charge > 0 && !t.spec.ram && !t.spec.pulse) {
         // sniper laser warning
         const pts = aimPath(t, t.boss ? 2 : t.spec.bounces, 900);
         c.save(); c.strokeStyle = '#ff2d2d'; c.globalAlpha = .35 + .5 * (1 - t.charge / (t.boss ? .9 : t.spec.charge || .75)); c.lineWidth = 1.5; c.setLineDash([6, 4]);
@@ -3082,6 +3241,7 @@ function render() {
       if (t.boss && t.spec.elite) { c.save(); c.strokeStyle = '#ffd27a'; c.lineWidth = 3; c.setLineDash([8, 6]); c.lineDashOffset = -G.time * 40; c.beginPath(); c.arc(t.x, t.y, t.r + 10, 0, TAU); c.stroke(); c.restore(); }
       else drawEnemyTank(t, a);
     }
+    if (t.frozen > 0) { c.save(); c.fillStyle = 'rgba(159,232,255,.45)'; c.strokeStyle = 'rgba(230,250,255,.9)'; c.lineWidth = 1.5; rrect(c, t.x - (t.r || R) - 4, t.y - (t.r || R) - 4, ((t.r || R) + 4) * 2, ((t.r || R) + 4) * 2, 5); c.fill(); c.stroke(); c.restore(); }
     if (t.team === 'p' && t.armor > 0) { c.strokeStyle = 'rgba(241,230,207,.75)'; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath(); c.arc(t.x, t.y, 21, 0, TAU); c.stroke(); c.setLineDash([]); }
   }
   for (const b of G.bullets) {
@@ -3097,6 +3257,10 @@ function render() {
         c.strokeStyle = slotColor(b.slot); c.lineWidth = 3.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(-8, -6); c.quadraticCurveTo(0, 0, -8, 6); c.moveTo(-8, -6); c.lineTo(6, 0); c.lineTo(-8, 6); c.stroke();
       }
       c.restore(); continue;
+    }
+    if (b.kind === 'ice') {
+      c.save(); c.translate(b.x, b.y); c.rotate(Math.atan2(b.dy, b.dx)); c.fillStyle = '#e0f7ff'; c.strokeStyle = '#38bdf8'; c.lineWidth = 1.5;
+      c.beginPath(); c.moveTo(8, 0); c.lineTo(0, -4); c.lineTo(-7, 0); c.lineTo(0, 4); c.closePath(); c.fill(); c.stroke(); c.restore(); continue;
     }
     if (b.kind === 'cannon') {
       c.beginPath(); c.arc(b.x + 3, b.y + 4, 9, 0, TAU); c.fill();
@@ -3421,6 +3585,8 @@ function frame(now) {
   pollPads(); buildInputs();
   if (G.state === 'intro' && G.level > BEST.level && G.slots.some(sl => sl && isMine(sl.dev))) { const before = unlockedChassis(); BEST.level = G.level; saveBest(before); }
   if (NET.mode !== 'off') for (const dev in INP) if (INP[dev].voice) { toggleVoice(); break; }
+  if (kb.pressed.has('KeyM')) setMusic(!MUSIC.on);
+  updateMusic();
   if (G.state === 'title') for (const dev in INP) {
     // tank choice is checked on the computer that owns the controller, since unlocks are saved there
     const inp = INP[dev]; if (!inp.cl && !inp.cr) continue;
@@ -3438,7 +3604,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 addEventListener('beforeunload', () => { try { if (NET.peer) NET.peer.destroy(); } catch (e) {} });
-if (location.hash === '#debug') window.RR_DEBUG = { G, loadLevel, genLayout, chooseSkill, pickSkills, SKILLS, aimPath, makeEnemy, hurt: hurtTank };
+if (location.hash === '#debug') window.RR_DEBUG = { G, loadLevel, genLayout, chooseSkill, pickSkills, SKILLS, aimPath, makeEnemy, hurt: hurtTank, MUSIC };
 resize(); renderNet();
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { staticDirty = true; });

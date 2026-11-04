@@ -4,7 +4,7 @@ A top-down co-op tank game for 1–4 players in the browser. Shells bounce off w
 
 Runs are endless. After every level, three slot machines spin to decide the next wave (each lands on an enemy type, then on how many of it), and in a solo run you pick one of three skills after every 3rd level (co-op runs with 2 or more players have no skill picks). Every 10th level is a boss fight, and every 50th level is the Overlord, an elite boss with elite weapons. If the squad is wiped out, you replay the same map. Enemy shells and mines never hurt other enemies.
 
-Destroy 20 of an enemy type to unlock it as a playable tank: Hornet, Missile, Sniper, Shotgun, Brute, Splitter, Hive, Scorcher, Mortar, Spiker, Bulwark, Ghost, Blinker, Heavy, Laser, Bouncer, Summoner, Siege, Kamikaze, Magnet, Generator, Burrower, Engineer, Salvo or Orbiter. The Hive splits into two small tanks when destroyed (left stick/WASD steers one, right stick/arrow keys the other, and both fire on their own), and the Summoner calls in minion tanks that fight for you. Each plays differently. Every tank has its own skills that only show up while you drive it, and a solo Spiker never gets shooting skills.
+Destroy 20 of an enemy type to unlock it as a playable tank: Hornet, Missile, Sniper, Shotgun, Brute, Splitter, Hive, Scorcher, Mortar, Spiker, Bulwark, Ghost, Blinker, Heavy, Laser, Bouncer, Summoner, Siege, Kamikaze, Magnet, Generator, Burrower, Engineer, Salvo, Orbiter, Double, Freezer, Clone, Pulse or Reflector. The Hive splits into two small tanks when destroyed (left stick/WASD steers one, right stick/arrow keys the other, and both fire on their own), and the Summoner calls in minion tanks that fight for you. Each plays differently. Every tank has its own skills that only show up while you drive it, and a solo Spiker never gets shooting skills.
 
 There are also 16 elite tanks, each with its own special gun: Prism (bouncing laser), Vortex (mini black hole), Swarm (homing missiles), Bomber, Tesla (chain lightning), Lancer (rail beam), Cluster, Plasma, Thunder, Ion (continuous beam), Shuriken, Carrier (auto-firing drones), Napalm, Railstorm, Starfall and Razor Disc. They unlock by reaching a level for the first time or by total kills across all your runs. A squad with a Spiker in it starts with 5 lives instead of 3. Unlock progress is saved in your browser and carries across runs; the title screen has a Delete progress button (click it twice) to start over. Pick your tank on the title screen with LB/RB, Z/C or the arrow buttons.
 
@@ -24,6 +24,7 @@ The game is a single static page (`index.html`), so any static host works (this 
 | Pause | Start | Esc or P |
 | Friendly fire on/off | Y | F |
 | Voice chat on/off (online) | View | V |
+| Music on/off | | M (or the Music button) |
 
 On the title screen, each player can change their tank color (D-pad left/right or the arrow buttons), their shell trail (D-pad up/down or the arrow buttons), and their tank type once unlocked (LB/RB, Z/C or the arrow buttons). Your choices are saved in the browser for each controller.
 
