@@ -516,7 +516,7 @@ const CHASSIS = {
   sal: { name: 'Salvo',     desc: 'Fires a burst of 5 bouncing missiles.', kind: 'missile', burst: 5, burstGap: .1, cd: 2.8 },
   dbl: { name: 'Double',    desc: 'Fires two shells at once in a narrow V.', twinShot: .12 },
   frz: { name: 'Freezer',   desc: 'Ice shells destroy what they hit and freeze nearby enemies in place for 2 seconds.', kind: 'ice', freezeT: 2, freezeR: 70 },
-  cln: { name: 'Clone',     desc: 'No mines. The mine button sends out a decoy that looks like you; enemies chase and shoot it (up to 2).', clone: true },
+  cln: { name: 'Clone',     desc: 'No mines. The mine button sends out a decoy that looks like you and charges the nearest enemy, sometimes dodging shells; enemies chase and shoot it (up to 2).', clone: true },
   pls: { name: 'Pulse',     desc: 'No gun. Fire sends out a shockwave that destroys nearby enemies and their shells.', pulse: true, cd: 14 },
   rfl: { name: 'Reflector', desc: 'Enemy shells that hit you have a 40% chance to bounce back as yours.', reflectP: .4 },
   orbt: { name: 'Orbiter',  desc: 'Three orbs circle you and block enemy shells. Fire launches an orb; they grow back over time.', orbs: 3 },
@@ -1615,6 +1615,29 @@ function steerBody(t, ang, rate, dt) {
   t.body += clamp(d, -rate * dt, rate * dt);
   return Math.abs(d);
 }
+// A tank that sees an enemy shell about to hit it may (chance, decided once per shell) sidestep out of its path
+function dodgeShells(t, dt, chance, speed) {
+  const ai = t.ai, seen = ai.seen || (ai.seen = {});
+  if (ai.dodgeT > 0) {
+    ai.dodgeT -= dt; steerBody(t, ai.dodgeDir, 12, dt);
+    const ox = t.x, oy = t.y; moveTank(t, Math.cos(ai.dodgeDir) * speed, Math.sin(ai.dodgeDir) * speed, dt);
+    if (Math.hypot(t.x - ox, t.y - oy) < speed * dt * .3) ai.dodgeDir += Math.PI; // blocked: try the other side
+    return true;
+  }
+  for (const b of G.bullets) {
+    if (!b.alive || b.team === t.team) continue;
+    const rx = t.x - b.x, ry = t.y - b.y, along = rx * b.dx + ry * b.dy;
+    if (along <= 0 || along > 140) continue;
+    const side = rx * b.dy - ry * b.dx; // signed distance from the shell's path
+    if (Math.abs(side) > (t.r || R) + 8) continue;
+    if (!(b.id in seen)) seen[b.id] = Math.random() < chance;
+    if (!seen[b.id]) continue;
+    const s = side === 0 ? (Math.random() < .5 ? 1 : -1) : Math.sign(side);
+    ai.dodgeDir = Math.atan2(-b.dx * s, b.dy * s); ai.dodgeT = .35; ai.moveT = 0;
+    return true;
+  }
+  return false;
+}
 // Friendly small tanks: find a target and fire on their own
 function autoFire(t, dt, rate, speed, bounces) {
   const tgt = aliveTanks.filter(e => e.alive && e.team === 'e' && dist(e, t) < 420 && clearPath(t, e)).sort((a, b) => dist(a, t) - dist(b, t))[0];
@@ -1629,7 +1652,14 @@ function autoFire(t, dt, rate, speed, bounces) {
 function updateAlly(t, dt, active) {
   if (!active) return;
   if (t.stat) { autoFire(t, dt, 1.1, 240, 1); return; } // Engineer turret
-  if (t.decoy) { t.ai.moveT = t.ai.moveT || 0; chase(t, null, 70, dt); return; } // Clone decoy wanders
+  if (t.decoy) {
+    // Clone decoy: drives right up to the nearest enemy to draw its fire, and sometimes sidesteps incoming shells
+    if (dodgeShells(t, dt, .5, 150)) return;
+    const prey = aliveTanks.filter(e => e.alive && e.team === 'e' && !e.under).sort((a, b) => dist(a, t) - dist(b, t))[0];
+    if (prey) t.turret += angDiff(Math.atan2(prey.y - t.y, prey.x - t.x), t.turret) * Math.min(1, dt * 5);
+    chase(t, prey && dist(prey, t) > 95 ? prey : null, 100, dt);
+    return;
+  }
   if (t.kami) {
     // bomb car: race to the nearest enemy and explode
     t.life -= dt;
