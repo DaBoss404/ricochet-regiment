@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ricochet Regiment</title>
+<title>Tank Team</title>
+<meta name="application-name" content="Tank Team">
+<meta name="apple-mobile-web-app-title" content="Tank Team">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600;700&display=swap">
@@ -3808,7 +3810,7 @@ function overlayHTML() {
         ? `<div class="note">Playing with friends on other computers? Click <b>Play online</b> at the top.</div>`
         : `<div class="note">Online room <b>${esc(NET.code)}</b> · ${Math.max(1, NET.roster.length)} connected.${NET.voice ? ' Voice chat is on.' : ' Press <span class="k">V</span> or <span class="k">VIEW</span> to turn voice chat on.'}</div>`;
       const tvLine = TOUCH.on && NET.mode === 'off' ? `<div class="note">Want the game on a TV? Open this site in the TV's browser (or on a computer plugged into the TV), click <b>Play online</b> → <b>Host a game</b>, then scan the QR code with this phone to use it as a controller.</div>` : '';
-      return `<div class="panel title"><h1 data-act="title">Ricochet <span>Regiment</span></h1>
+      return `<div class="panel title"><h1 data-act="title">Tank <span>Team</span></h1>
         ${NET.mode === 'host' ? `<div class="qr">${qrImg(NET.code)}<span class="note">Phones can be controllers: scan this code with a phone camera, then press A on the phone to join.</span></div>` : `<p class="sub">Endless co-op tank combat for up to four players. Shells bounce off walls, mines clear crates, and a destroyed tank sits out until the next level. After every level the slot machines pick the next wave, and solo players pick a skill every 3 levels. A boss arrives every 10 levels.</p>`}
         <div class="slots">${[0, 1, 2, 3].map(slotCard).join('')}</div>
         <div class="row"><span>${ffTxt}</span><span class="note">D-pad ◀ ▶ color, ▲ ▼ trail, <span class="k">LB</span> <span class="k">RB</span> or <span class="k">Z</span> <span class="k">C</span> tank.</span></div>

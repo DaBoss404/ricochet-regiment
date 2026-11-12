@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Ricochet Regiment">
-  <!-- Ricochet Regiment icon: a simple tank, readable at 16px -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Tank Team">
+  <!-- Tank Team icon: a simple tank, readable at 16px -->
   <g transform="translate(0 -2.2)">
   <!-- barrel -->
   <rect x="17" y="9.2" width="13.5" height="3.6" rx="1.2" fill="#1f5f26"/>
