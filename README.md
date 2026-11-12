@@ -1,4 +1,4 @@
-# Ricochet Regiment
+# Tank Team
 
 A top-down co-op tank game for 1–4 players in the browser. Shells bounce off walls and mines clear crates. A destroyed tank sits out until the next level.
 

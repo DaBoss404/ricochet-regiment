@@ -6,10 +6,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>Ricochet Regiment</title>
+<title>Tank Team</title>
+<meta name="application-name" content="Tank Team">
+<meta name="apple-mobile-web-app-title" content="Tank Team">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600;700&display=swap">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="icon" href="icon-512.png" type="image/png" sizes="512x512">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#17140f">
 <style>
 /* Layout: one fitted arena canvas (toy blocks on a sand-colored desk), HUD strip above, control legend below, on a dark workshop surround. Single committed dark look. */
 :root{
@@ -3872,7 +3878,7 @@ function overlayHTML() {
         ? `<div class="note">Playing with friends on other computers? Click <b>Play online</b> at the top.</div>`
         : `<div class="note">Online room <b>${esc(NET.code)}</b> · ${Math.max(1, NET.roster.length)} connected.${NET.voice ? ' Voice chat is on.' : ' Press <span class="k">V</span> or <span class="k">VIEW</span> to turn voice chat on.'}</div>`;
       const tvLine = TOUCH.on && NET.mode === 'off' ? `<div class="note">Want the game on a TV? Open this site in the TV's browser (or on a computer plugged into the TV), click <b>Play online</b> → <b>Host as display only (TV)</b>, then scan the QR code with this phone to use it as a controller. An iPad can also host and be mirrored to an Apple TV.</div>` : '';
-      return `<div class="panel title"><h1 data-act="title">Ricochet <span>Regiment</span></h1>
+      return `<div class="panel title"><h1 data-act="title">Tank <span>Team</span></h1>
         ${NET.mode === 'host' ? `<div class="qr">${qrImg(NET.code)}<span class="note">Phones can be controllers: scan this code with a phone camera, then press A on the phone to join.</span></div>` : `<p class="sub">Endless co-op tank combat for up to four players. Shells bounce off walls, mines clear crates, and a destroyed tank sits out until the next level. After every level the slot machines pick the next wave, and solo players pick a skill every 3 levels. A boss arrives every 10 levels.</p>`}
         <div class="slots">${[0, 1, 2, 3].map(slotCard).join('')}</div>
         <div class="row"><span>${ffTxt}</span><span class="note">D-pad ◀ ▶ color, ▲ ▼ trail, <span class="k">LB</span> <span class="k">RB</span> or <span class="k">Z</span> <span class="k">C</span> tank.</span></div>
@@ -4073,7 +4079,7 @@ function lobbyHTML() {
   const waiting = phones - new Set(G.slots.filter(Boolean).map(sl => sl.dev.split(':')[1])).size;
   return `<div class="panel lobby">
     <div class="lobby-top"><div class="qrbig">${qrImg(NET.code)}</div>
-      <div><div class="eyebrow">Ricochet Regiment · TV display</div><div class="lbl">Room code</div><div class="bigcode">${esc(NET.code)}</div>
+      <div><div class="eyebrow">Tank Team · TV display</div><div class="lbl">Room code</div><div class="bigcode">${esc(NET.code)}</div>
       <div class="note">Scan the QR code with a phone camera, or open <b>${esc(location.host + location.pathname)}</b> on the phone, tap <b>Play online</b>, enter the code and tap <b>Use this phone as a controller</b>.</div></div></div>
     <div class="slots">${[0, 1, 2, 3].map(card).join('')}</div>
     <div class="go">${n ? `${n}/4 ready · press ☰ on any joined phone to start` : 'Press A on your phone to join'}</div>
