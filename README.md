@@ -34,15 +34,43 @@ On the title screen, each player can change their tank color (D-pad left/right o
 
 On a touchscreen, on-screen controls appear: the left stick moves, the right stick aims (push it all the way out to fire), plus MINE and ☰ (pause/start) buttons and A/B on menus. Hold the phone sideways.
 
-**Phone as a controller, game on the TV:** open the site in the TV's browser (or on a computer plugged into the TV), click **Play online → Host a game**, and scan the QR code that appears with a phone. The phone becomes a controller (sticks, A, B, LB/RB, MINE, ☰) and the game shows only on the TV. Up to 4 phones and controllers can mix. A phone can also join by clicking **Play online**, entering the room code and tapping **Use this phone as a controller**. Screen mirroring can't be detected by a web page, and a mirrored phone would show the controls on the TV too, so the TV needs to run the game itself.
+**Phones as controllers, game on the TV (display-only host):** see [TV mode](#tv-mode-ipad--apple-tv-or-a-laptop-on-hdmi) below. A phone can also join any room by clicking **Play online**, entering the room code and tapping **Use this phone as a controller**.
 
 The QR code is made with [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) by Kazuhiko Arase (MIT licensed, bundled as `qrcode.js` with its license header).
+
+## TV mode: iPad + Apple TV, or a laptop on HDMI
+
+One device shows the game on the TV and runs it; up to four phones are the controllers. The display device never takes a player slot and shows no on-screen controls.
+
+1. On the iPad (Safari) or laptop, open the site and click **Play online → Host as display only (TV)**.
+2. Put that screen on the TV:
+   - **iPad:** Control Center → Screen Mirroring → your Apple TV. Hold the iPad sideways. Tap **Full screen** at the top for a cleaner picture, or add the site to the Home Screen and open it from there.
+   - **Laptop:** plug it into the TV with HDMI and use the TV as a mirrored or extended display; drag the window there and click **Full screen**.
+3. Each player scans the QR code on the TV with their phone camera (or opens the site, taps **Play online**, enters the room code and taps **Use this phone as a controller**).
+4. On each phone, press **A** to join (players get P1–P4 in order), change color with the left stick, tank with LB/RB, and press **☰** to start. The phones also pause (☰), resume (☰), quit to the lobby (B while paused), pick skills (stick + A) and restart after a game over (A). Nobody needs to touch the TV device.
+
+Good to know:
+- Keep the iPad or laptop awake, unlocked and on the game page. The page asks the browser to keep the screen on, but switching apps or locking the iPad pauses the game and can drop the phones.
+- Screen mirroring copies the iPad's screen, so the iPad and the TV always show the same picture.
+- A fifth phone can connect but waits until someone leaves; it can't take over a slot or start the game.
+- If a phone locks or loses Wi-Fi, it reconnects by itself when you come back to the page; press A and it gets its old player number, color and tank back. The other players keep playing meanwhile.
+- Tanks a phone can pick depend on unlocks saved on that phone.
+- To end TV mode, tap the top of the iPad screen to show the menu buttons, open the room button and choose **Leave room**.
+- **Host & play** (the other hosting button) works as before: the host device plays too, and friends join from their own computers or phones.
+
+## Tests
+
+Browser tests cover offline play, Host & play, and TV mode with five phones (joining, a full game, independent controls, pause/resume, disconnect and reconnect, restart, manual code entry). They need Node and Playwright with Chromium, and replace PeerJS with a local stand-in (`tests/fakepeer.js`):
+
+```bash
+node tests/tv-host.test.js
+```
 
 ## Online play
 
 Click **Play online** at the top of the page.
 
-- One person clicks **Host a game** and shares the 5-letter room code.
+- One person clicks **Host & play** and shares the 5-letter room code (or **Host as display only (TV)**, see above).
 - Friends open the same site, click **Play online**, enter the code and click **Join**.
 - Up to 4 players in total, across up to 4 computers. Each computer can have more than one player on it.
 - The host's browser runs the game for everyone, so the host should keep the game tab in front.

@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>Ricochet Regiment</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -203,15 +206,33 @@ body.padmode #t-a{right:18px}body.padmode #t-b{right:84px}
 body.padmode #t-lb,body.padmode #t-rb{bottom:auto;top:max(8px,env(safe-area-inset-top,0px))}
 .qr{display:flex;gap:12px;align-items:center;justify-content:center}
 .qr img{width:96px;height:96px;image-rendering:pixelated;border-radius:4px;background:#fff;padding:4px;pointer-events:auto}
+/* Display-only TV host: a clean game screen meant to be mirrored to a TV (no local controls) */
+body.display #touch,body.display #rotate,body.display #legend{display:none!important}
+body.display .hgroup.net{transition:opacity .4s}
+body.display.playing:not(.peek) .hgroup.net{opacity:0;pointer-events:none}
+#h-room{display:none;font-family:var(--display);letter-spacing:.08em;color:var(--accent)}
+body.display #h-room{display:inline}
+.panel.lobby{max-width:92%;width:92%;gap:1.1em;font-size:1.15em}
+.lobby-top{display:flex;gap:2em;align-items:center}
+.lobby-top .qrbig img{width:clamp(120px,24cqh,260px);height:clamp(120px,24cqh,260px);image-rendering:pixelated;background:#fff;padding:6px;border-radius:6px;display:block}
+.lobby .lbl{font-size:.8em}
+.lobby .bigcode{font:400 clamp(36px,7cqw,96px)/1 var(--display);letter-spacing:.14em;color:var(--accent)}
+.lobby .slots{grid-template-columns:repeat(4,1fr)}
+.lobby .lslot{border:2px dashed #4a3e2f;border-radius:6px;padding:.8em;display:flex;flex-direction:column;gap:.3em;min-height:5.2em}
+.lobby .lslot.on{border-style:solid;border-color:var(--c)}
+.lobby .lslot .pn{font:400 1.6em var(--display);color:var(--c)}
+.lobby .lslot .st{color:var(--muted)}
+.lobby .lslot.on .st{color:var(--ink)}
+.lobby .full{color:var(--p1);font-weight:700}
 @media (max-width:700px){#legend{display:none}.title,.skillp{width:auto}.slots{grid-template-columns:repeat(2,1fr)}.skills{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div id="app">
   <header id="hud">
-    <div class="hgroup"><span class="lbl">Level</span><b id="h-stage">–</b><span id="h-name"></span></div>
+    <div class="hgroup"><span class="lbl">Level</span><b id="h-stage">–</b><span id="h-name"></span><span id="h-room"></span></div>
     <div class="hgroup"><span class="lbl">Enemies</span><b id="h-enemies">–</b><span class="lbl">Lives</span><b id="h-lives">–</b><span class="lbl" id="h-ff">Friendly fire off</span></div>
-    <div class="hgroup net"><button id="net-btn" class="hbtn" type="button">Play online</button><button id="voice-btn" class="hbtn" type="button" hidden>Voice off</button><button id="music-btn" class="hbtn" type="button">Music on</button></div>
+    <div class="hgroup net"><button id="net-btn" class="hbtn" type="button">Play online</button><button id="voice-btn" class="hbtn" type="button" hidden>Voice off</button><button id="music-btn" class="hbtn" type="button">Music on</button><button id="fs-btn" class="hbtn" type="button" hidden>Full screen</button></div>
     <div class="hud-slots">
       <div class="chip" data-state="empty" style="--c:var(--p1)"><i></i><b>P1</b><span>–</span></div>
       <div class="chip" data-state="empty" style="--c:var(--p2)"><i></i><b>P2</b><span>–</span></div>
@@ -243,7 +264,9 @@ body.padmode #t-lb,body.padmode #t-rb{bottom:auto;top:max(8px,env(safe-area-inse
     <h3 id="net-title">Play online</h3>
     <label class="field">Your name<input id="net-name" maxlength="16" autocomplete="nickname"></label>
     <div id="net-offline" style="display:flex;flex-direction:column;gap:12px">
-      <button id="net-host" class="pbtn" type="button">Host a game</button>
+      <button id="net-host" class="pbtn" type="button">Host &amp; play</button>
+      <button id="net-host-tv" class="pbtn" type="button">Host as display only (TV)</button>
+      <p class="note">Display only: this screen shows the game for a TV (AirPlay mirroring or HDMI) and never takes a player slot. Up to 4 phones scan the QR code and play.</p>
       <div class="or">or join a friend's game</div>
       <div class="joinrow"><input id="net-code" maxlength="5" placeholder="CODE" autocomplete="off" aria-label="Room code"><button id="net-join" class="pbtn" type="button">Join</button></div>
       <button id="net-pad" class="pbtn ghost" type="button">Use this phone as a controller for that room</button>
@@ -556,7 +579,7 @@ const slotDark = i => DARK[G.slots[i] ? G.slots[i].color : i % 4];
 
 // ---------- network state ----------
 const PREFIX = 'ricochet-regiment-';
-const NET = { mode: 'off', peer: null, myId: null, hostId: null, code: '', name: '', conns: {}, hostConn: null, roster: [], events: [],
+const NET = { display: false, wantDisplay: false, held: {}, mode: 'off', peer: null, myId: null, hostId: null, code: '', name: '', conns: {}, hostConn: null, roster: [], events: [],
   snapT: 0, voice: false, stream: null, outCalls: {}, audio: {}, cnt: {}, lastSend: '', lastSendT: 0, prefSent: {}, lastGrid: null, status: '', err: false };
 NET.name = store.get('rr-name', '') || 'Player';
 const isMine = dev => NET.mode === 'client' ? dev.startsWith('r:' + NET.myId + ':') : !dev.startsWith('r:');
@@ -1261,8 +1284,10 @@ function buildLayout(lvl) {
 const slotOf = dev => G.slots.findIndex(s => s && s.dev === dev);
 const joinedCount = () => G.slots.filter(Boolean).length;
 function join(dev) {
-  const i = G.slots.findIndex(s => !s); if (i < 0) return -1;
+  let i = G.slots.findIndex(s => !s); if (i < 0) return -1;
+  const held = heldSlotFor(dev); if (held && !G.slots[held.i]) i = held.i;
   const s = { dev, kills: 0, deaths: 0, conn: true, color: i, trail: 0, chassis: 'std' };
+  if (held) Object.assign(s, held.keep);
   if (isMine(dev)) {
     const p = PREFS[localKey(dev)];
     if (p) {
@@ -2773,7 +2798,7 @@ function update(dt) {
         } else {
           if (inp.a && slot < 0) slot = join(dev);
           if (inp.b && slot >= 0) { G.slots[slot] = null; slot = -1; sfx('tick'); }
-          if (inp.start) { if (slot < 0) slot = join(dev); startGame(); }
+          if (inp.start) { if (slot < 0) slot = join(dev); if (slot >= 0) startGame(); }
         }
         if (inp.y) toggleFF();
         if (slot >= 0 && G.state === 'title') {
@@ -2892,8 +2917,9 @@ function netErr(e) {
 function setNetStatus(msg, err) { NET.status = msg || ''; NET.err = !!err; renderNet(); }
 
 // ---------- online: host ----------
-function hostRoom() {
+function hostRoom(display) {
   if (NET.mode !== 'off' || NET.peer) return;
+  NET.wantDisplay = !!display;
   setNetStatus('Opening a room…');
   loadPeer().then(() => openHostPeer(0), () => setNetStatus('Could not load the online module. Check your internet connection.', true));
 }
@@ -2903,9 +2929,11 @@ function openHostPeer(attempt) {
   try { peer = new window.Peer(PREFIX + code, PEER_OPTS); } catch (e) { setNetStatus(netErr(e), true); return; }
   NET.peer = peer;
   peer.on('open', id => {
-    NET.mode = 'host'; NET.myId = id; NET.hostId = id; NET.code = code; NET.conns = {}; NET.events = [];
+    NET.mode = 'host'; NET.myId = id; NET.hostId = id; NET.code = code; NET.conns = {}; NET.events = []; NET.held = {};
+    if (NET.wantDisplay) enterDisplayMode();
     updateRoster();
-    setNetStatus('Room open. Share the code with your friends.');
+    setNetStatus(NET.display ? 'TV room open. Players scan the QR code with their phones.' : 'Room open. Share the code with your friends.');
+    if (NET.display) closeNet();
   });
   peer.on('connection', onIncomingConn);
   peer.on('call', onCall);
@@ -2920,8 +2948,10 @@ function openHostPeer(attempt) {
 }
 function onIncomingConn(conn) {
   conn.on('open', () => {
-    if (Object.keys(NET.conns).length >= 3) { try { conn.send({ t: 'full' }); } catch (e) {} setTimeout(() => conn.close(), 400); return; }
-    NET.conns[conn.peer] = { conn, name: 'Player', voice: false, input: {}, used: {} };
+    // Player slots (max 4) are handed out when someone presses A, so extra phones may stay connected and wait for a free slot.
+    // This only caps how many browsers can be connected at once.
+    if (Object.keys(NET.conns).length >= MAX_REMOTE_CONNS) { try { conn.send({ t: 'full' }); } catch (e) {} setTimeout(() => conn.close(), 400); return; }
+    NET.conns[conn.peer] = { conn, name: 'Player', voice: false, input: {}, used: {}, seen: performance.now() };
     updateRoster();
   });
   conn.on('data', d => onHostData(conn.peer, d));
@@ -2930,8 +2960,16 @@ function onIncomingConn(conn) {
 }
 function onHostData(pid, d) {
   const p = NET.conns[pid]; if (!p || !d || typeof d !== 'object') return;
+  p.seen = performance.now();
   switch (d.t) {
-    case 'hello': p.name = cleanName(d.name); updateRoster(); break;
+    case 'hello':
+      p.name = cleanName(d.name);
+      if (typeof d.tok === 'string' && d.tok.length <= 40) {
+        // the same browser tab reconnecting: drop its old connection so it can never hold two slots
+        p.tok = d.tok;
+        for (const other in NET.conns) if (other !== pid && NET.conns[other].tok === d.tok) { try { NET.conns[other].conn.close(); } catch (e) {} dropPeer(other); }
+      }
+      updateRoster(); break;
     case 'in': if (d.d && typeof d.d === 'object') p.input = d.d; break;
     case 'pref': { const s = G.slots[d.slot]; if (s && s.dev.startsWith('r:' + pid + ':')) applyPref(d.slot, d.patch); break; }
     case 'voice': p.voice = !!d.on; updateRoster(); break;
@@ -2940,14 +2978,35 @@ function onHostData(pid, d) {
 }
 function dropPeer(pid) {
   if (!NET.conns[pid]) return;
+  const tok = NET.conns[pid].tok;
   delete NET.conns[pid];
-  G.slots.forEach((s, i) => { if (s && s.dev.startsWith('r:' + pid + ':')) removeSlot(i); });
+  G.slots.forEach((s, i) => {
+    if (!s || !s.dev.startsWith('r:' + pid + ':')) return;
+    // remember the slot for a minute so the same phone gets it back (same player number, color and tank) when it reconnects
+    if (tok) NET.held[tok + '|' + localKey(s.dev)] = { i, until: performance.now() + 60000, keep: { color: s.color, trail: s.trail, chassis: s.chassis, kills: s.kills, deaths: s.deaths } };
+    removeSlot(i);
+  });
   closeVoiceWith(pid);
   updateRoster();
 }
+const MAX_REMOTE_CONNS = 8;
+// A reconnecting phone (same tab, new connection) can take back the slot it had
+function heldSlotFor(dev) {
+  if (!dev.startsWith('r:') || !NET.held) return null;
+  const p = NET.conns[dev.split(':')[1]]; if (!p || !p.tok) return null;
+  const key = p.tok + '|' + localKey(dev), h = NET.held[key];
+  if (!h) return null;
+  delete NET.held[key];
+  return h.until > performance.now() ? h : null;
+}
+// Connections that stop sending (a phone that went to sleep) are dropped so their slot frees up
+function checkStaleConns() {
+  const now = performance.now();
+  for (const pid in NET.conns) if (now - (NET.conns[pid].seen || now) > 15000) { try { NET.conns[pid].conn.close(); } catch (e) {} dropPeer(pid); }
+}
 function updateRoster() {
   if (NET.mode !== 'host') return;
-  NET.roster = [{ id: NET.myId, name: NET.name, voice: NET.voice, host: true },
+  NET.roster = [{ id: NET.myId, name: NET.display ? 'TV display' : NET.name, voice: NET.voice, host: true },
     ...Object.entries(NET.conns).map(([id, p]) => ({ id, name: p.name, voice: p.voice }))];
   broadcast({ t: 'roster', list: NET.roster });
   onRosterChanged();
@@ -3003,6 +3062,7 @@ function openClientPeer(code) {
     try { peer.destroy(); } catch (e) {}
     if (NET.peer === peer) NET.peer = null;
     setNetStatus(msg, true);
+    padReconnectLater();
   };
   const to = setTimeout(() => fail('Could not reach that room. Check the code, and make sure the host still has the game open.'), 15000);
   peer.on('open', id => {
@@ -3013,8 +3073,8 @@ function openClientPeer(code) {
       NET.mode = 'client'; NET.hostConn = conn; NET.hostId = PREFIX + code; NET.code = code;
       NET.cnt = {}; NET.prefSent = {}; NET.lastGrid = null; NET.lastSend = '';
       G.slots = [null, null, null, null]; toTitle();
-      conn.send({ t: 'hello', name: NET.name });
-      setNetStatus('Connected. Press A (or Space) to take a slot.');
+      conn.send({ t: 'hello', name: NET.name, tok: tabToken() });
+      setNetStatus('Connected. Press A (or Space) to take a slot.'); PAD.retries = 0;
     });
     conn.on('data', onClientData);
     conn.on('close', () => { if (NET.mode === 'client' && NET.hostConn === conn) leaveRoom('The host closed the room.'); });
@@ -3131,11 +3191,12 @@ function leaveRoom(msg) {
   setVoice(false, true);
   for (const id in NET.audio) removeAudio(id);
   try { if (NET.peer) NET.peer.destroy(); } catch (e) {}
-  NET.peer = null; NET.conns = {}; NET.hostConn = null; NET.mode = 'off'; NET.roster = []; NET.code = ''; NET.events = [];
+  NET.peer = null; NET.conns = {}; NET.hostConn = null; NET.mode = 'off'; NET.roster = []; NET.code = ''; NET.events = []; NET.held = {};
+  if (NET.display) exitDisplayMode();
   if (was === 'client') { G.slots = [null, null, null, null]; toTitle(); }
   else if (was === 'host') G.slots.forEach((s, i) => { if (s && s.dev.startsWith('r:')) removeSlot(i); });
   setNetStatus(msg || '', !!msg);
-  if (PAD.mode) { if (msg) $('#pad-retry').hidden = false; return; }
+  if (PAD.mode) { if (msg) padReconnectLater(); return; }
   if (msg) openNet();
 }
 
@@ -3233,9 +3294,12 @@ function renderNet() {
   $('#net-offline').style.display = on ? 'none' : 'flex';
   $('#net-online').hidden = !on; $('#net-online').style.display = on ? 'flex' : 'none';
   $('#net-leave').hidden = !on;
-  $('#net-host').disabled = $('#net-join').disabled = !!NET.peer && !on;
+  $('#net-host').disabled = $('#net-host-tv').disabled = $('#net-join').disabled = !!NET.peer && !on;
   $('#net-room').textContent = NET.code;
-  $('#net-hint').textContent = NET.mode === 'host'
+  $('#net-title').textContent = NET.display ? 'TV display mode' : 'Play online';
+  $('#net-hint').textContent = NET.display
+    ? 'This screen is the TV display: it shows the game and never takes a player slot. Players scan the QR code with their phones and press A to join. Leave the room to end TV mode.'
+    : NET.mode === 'host'
     ? 'Friends open this same page, click Play online, and enter the code. Keep this tab in front while you play: your computer runs the game for everyone.'
     : 'You are connected. Your controllers and keyboard join the game just like at home.';
   const qr = $('#net-qr'); qr.hidden = NET.mode !== 'host';
@@ -3250,7 +3314,8 @@ netBtn.addEventListener('click', () => { unlockAudio(); netBtn.blur(); openNet()
 voiceBtn.addEventListener('click', () => { voiceBtn.blur(); toggleVoice(); });
 $('#net-close').addEventListener('click', closeNet);
 netEl.addEventListener('click', e => { if (e.target === netEl) closeNet(); });
-$('#net-host').addEventListener('click', hostRoom);
+$('#net-host').addEventListener('click', () => hostRoom(false));
+$('#net-host-tv').addEventListener('click', () => { unlockAudio(); hostRoom(true); });
 $('#net-join').addEventListener('click', () => joinRoom(codeIn.value));
 $('#net-pad').addEventListener('click', () => { unlockAudio(); startPadMode(codeIn.value); });
 codeIn.addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(codeIn.value); });
@@ -3264,7 +3329,7 @@ $('#net-copy').addEventListener('click', () => {
 });
 nameIn.addEventListener('change', () => {
   NET.name = cleanName(nameIn.value); nameIn.value = NET.name; store.set('rr-name', NET.name);
-  if (NET.mode === 'client') send({ t: 'hello', name: NET.name }); else if (NET.mode === 'host') updateRoster();
+  if (NET.mode === 'client') send({ t: 'hello', name: NET.name, tok: tabToken() }); else if (NET.mode === 'host') updateRoster();
 });
 
 // ---------- customization clicks on the title screen ----------
@@ -3272,6 +3337,7 @@ let wipeArm = -1e9, wipedAt = -1e9, titleTaps = [];
 ov.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   b.blur(); unlockAudio();
+  if (NET.display) return; // TV display: everything is done from the phones
   if (b.dataset.act === 'skill') { const i = +b.dataset.i; if (NET.mode === 'client') send({ t: 'pick', i }); else chooseSkill(i); return; }
   if (b.dataset.act === 'title') {
     // three quick taps on the title open the cheat window
@@ -3744,13 +3810,14 @@ function drawTitleScene() {
 }
 
 // ---------- HUD + overlay ----------
-const hud = { stage: $('#h-stage'), name: $('#h-name'), en: $('#h-enemies'), lives: $('#h-lives'), ff: $('#h-ff'), chips: [...document.querySelectorAll('.chip')] };
+const hud = { room: $('#h-room'), stage: $('#h-stage'), name: $('#h-name'), en: $('#h-enemies'), lives: $('#h-lives'), ff: $('#h-ff'), chips: [...document.querySelectorAll('.chip')] };
 function setText(el, v) { v = String(v); if (el._v !== v) { el._v = v; el.textContent = v; } }
 function setAttr(el, k, v) { if (el.dataset[k] !== v) el.dataset[k] = v; }
 function updateHud() {
   const inGame = G.state !== 'title';
   setText(hud.stage, inGame ? G.level : '–');
   setText(hud.name, inGame && isBossLevel(G.level) ? 'Boss' : '');
+  setText(hud.room, NET.display ? 'Room ' + NET.code : '');
   setText(hud.en, inGame ? G.tanks.filter(t => t.alive && t.team === 'e').length : '–');
   setText(hud.lives, inGame ? G.lives : '–');
   setText(hud.ff, G.ff ? 'Friendly fire on' : 'Friendly fire off'); setAttr(hud.ff, 'on', G.ff ? '1' : '0');
@@ -3794,6 +3861,7 @@ function slotCard(i) {
 }
 function overlayHTML() {
   const ffTxt = `${BY} <span class="k">F</span> Friendly fire: <b>${G.ff ? 'On' : 'Off'}</b>`;
+  if (NET.display && G.state === 'title') return lobbyHTML();
   switch (G.state) {
     case 'title': {
       const nPads = Object.values(pads).filter(p => p.connected).length;
@@ -3803,7 +3871,7 @@ function overlayHTML() {
       const netLine = NET.mode === 'off'
         ? `<div class="note">Playing with friends on other computers? Click <b>Play online</b> at the top.</div>`
         : `<div class="note">Online room <b>${esc(NET.code)}</b> · ${Math.max(1, NET.roster.length)} connected.${NET.voice ? ' Voice chat is on.' : ' Press <span class="k">V</span> or <span class="k">VIEW</span> to turn voice chat on.'}</div>`;
-      const tvLine = TOUCH.on && NET.mode === 'off' ? `<div class="note">Want the game on a TV? Open this site in the TV's browser (or on a computer plugged into the TV), click <b>Play online</b> → <b>Host a game</b>, then scan the QR code with this phone to use it as a controller.</div>` : '';
+      const tvLine = TOUCH.on && NET.mode === 'off' ? `<div class="note">Want the game on a TV? Open this site in the TV's browser (or on a computer plugged into the TV), click <b>Play online</b> → <b>Host as display only (TV)</b>, then scan the QR code with this phone to use it as a controller. An iPad can also host and be mirrored to an Apple TV.</div>` : '';
       return `<div class="panel title"><h1 data-act="title">Ricochet <span>Regiment</span></h1>
         ${NET.mode === 'host' ? `<div class="qr">${qrImg(NET.code)}<span class="note">Phones can be controllers: scan this code with a phone camera, then press A on the phone to join.</span></div>` : `<p class="sub">Endless co-op tank combat for up to four players. Shells bounce off walls, mines clear crates, and a destroyed tank sits out until the next level. After every level the slot machines pick the next wave, and solo players pick a skill every 3 levels. A boss arrives every 10 levels.</p>`}
         <div class="slots">${[0, 1, 2, 3].map(slotCard).join('')}</div>
@@ -3880,7 +3948,8 @@ const TOUCH = { on: false, mx: 0, my: 0, ax: 0, ay: 0, am: 0, btn: {} };
 const PAD = { mode: false, code: '' };
 const touchEl = $('#touch');
 function enableTouch() {
-  if (TOUCH.on) return;
+  TOUCH.capable = true;
+  if (TOUCH.on || NET.display) return;
   TOUCH.on = true; touchEl.hidden = false; document.body.classList.add('touchy');
 }
 function stickZone(el, which) {
@@ -3913,6 +3982,7 @@ addEventListener('touchstart', enableTouch, { passive: true });
 if (matchMedia('(pointer:coarse)').matches && !matchMedia('(pointer:fine)').matches) enableTouch();
 let lastTouchMode = '';
 function updateTouchUi() {
+  if (NET.display) { const playing = G.state !== 'title'; if (document.body.classList.contains('playing') !== playing) document.body.classList.toggle('playing', playing); }
   if (!TOUCH.on) return;
   const mode = PAD.mode ? 'pad' : ['play', 'intro', 'clear', 'fail'].includes(G.state) ? 'play' : 'menu';
   if (mode !== lastTouchMode) { lastTouchMode = mode; touchEl.dataset.mode = mode; }
@@ -3928,36 +3998,123 @@ function qrImg(code) {
 }
 function startPadMode(code) {
   code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  PAD.mode = true; PAD.code = code; enableTouch(); document.body.classList.add('padmode');
+  PAD.mode = true; PAD.code = code; PAD.retries = 0; enableTouch(); document.body.classList.add('padmode'); requestWake();
   closeNet(); $('#pad-retry').hidden = true; PAD.msg = ''; PAD.err = '';
   joinRoom(code);
 }
-$('#pad-retry').addEventListener('click', () => startPadMode(PAD.code));
+$('#pad-retry').addEventListener('click', () => { PAD.retries = 0; startPadMode(PAD.code); });
 let lastPadUi = '';
 function updatePadUi() {
-  const i = slotOf('r:' + NET.myId + ':pad' + TOUCH_PAD), sl = i >= 0 ? G.slots[i] : null;
+  const i = slotOf('r:' + NET.myId + ':pad' + TOUCH_PAD), sl = i >= 0 ? G.slots[i] : null, n = G.slots.filter(Boolean).length;
   let title, msg;
   if (NET.mode !== 'client') {
     title = 'Phone controller';
-    msg = NET.err ? NET.status : `Connecting to room ${PAD.code}…`;
-    $('#pad-retry').hidden = !NET.err || !!NET.peer;
+    msg = NET.err ? NET.status + (PAD.retries > 0 && PAD.retryT ? ' Trying again…' : '') : `Connecting to room ${PAD.code}…`;
+    $('#pad-retry').hidden = !NET.err || !!NET.peer || !!PAD.retryT;
   } else if (!sl) {
-    title = `Room ${NET.code}`; msg = 'Press A to join the game on the TV.';
+    title = `Room ${NET.code} · ${n}/4 players`;
+    msg = n >= 4 ? 'The game is full (4 players). You can join as soon as someone leaves.'
+      : ['title', 'intro', 'gameover'].includes(G.state) ? 'Press A to join the game on the TV.'
+      : 'A game is running. Press A to drop in when the next level starts.';
   } else {
     title = `You are P${i + 1}`;
-    msg = G.state === 'title' ? 'Move stick ◀ ▶ color, ▲ ▼ trail, LB / RB tank. Press ☰ to deploy.'
+    msg = G.state === 'title' ? `${n}/4 players. Move stick ◀ ▶ color, ▲ ▼ trail, LB / RB tank, B to leave. Press ☰ to start the game.`
       : G.state === 'skill' ? 'Pick a skill: move stick to choose, A to take it.'
-      : G.state === 'paused' ? 'Paused. ☰ resumes, B quits to the title.'
-      : `Level ${G.level} · ${G.lives} ${G.lives === 1 ? 'life' : 'lives'}. Left stick moves, right stick aims (push far to fire).`;
+      : G.state === 'paused' ? 'Paused. ☰ resumes, B quits to the lobby.'
+      : G.state === 'reels' ? 'Spinning up the next wave. Press A to skip.'
+      : G.state === 'gameover' ? 'Game over. Press A to go back to the lobby.'
+      : G.state === 'clear' ? 'Level cleared!'
+      : `Level ${G.level} · ${G.lives} ${G.lives === 1 ? 'life' : 'lives'}. Left stick moves, right stick aims (push far to fire). ☰ pauses.`;
   }
   const col = sl ? slotColor(i) : 'transparent', key = title + '|' + msg + '|' + col;
   if (key === lastPadUi) return; lastPadUi = key;
   $('#pad-title').textContent = title; $('#pad-msg').textContent = msg; $('#pad-swatch').style.background = col;
 }
+// A phone that loses its connection (screen lock, Wi-Fi blip) reconnects on its own, and gets its old slot back
+function padReconnectLater() {
+  if (!PAD.mode || PAD.retryT || (PAD.retries || 0) >= 8) return;
+  PAD.retries = (PAD.retries || 0) + 1;
+  PAD.retryT = setTimeout(() => { PAD.retryT = 0; if (PAD.mode && NET.mode === 'off' && !NET.peer) joinRoom(PAD.code); }, 2500);
+}
+// Each browser tab has its own id, so the host can tell a reconnecting phone from a new one
+function tabToken() {
+  let t = null; try { t = sessionStorage.getItem('rr-tab'); } catch (e) {}
+  if (!t) { t = Math.random().toString(36).slice(2, 12); try { sessionStorage.setItem('rr-tab', t); } catch (e) {} }
+  return t;
+}
+// ---------- TV display mode (host shows the game only; phones are the controllers) ----------
+function enterDisplayMode() {
+  NET.display = true;
+  G.slots.forEach((sl, i) => { if (sl && !sl.dev.startsWith('r:')) removeSlot(i); }); // the host never holds a slot
+  if (G.state !== 'title' && !joinedCount()) toTitle();
+  TOUCH.on = false; touchEl.hidden = true; document.body.classList.remove('touchy');
+  document.body.classList.add('display');
+  $('#fs-btn').hidden = !canFullscreen();
+  requestWake(); lastOv = null;
+}
+function exitDisplayMode() {
+  NET.display = false;
+  document.body.classList.remove('display', 'playing', 'peek');
+  $('#fs-btn').hidden = true; releaseWake();
+  if (TOUCH.capable) enableTouch();
+  lastOv = null;
+}
+// In TV mode, nothing on the host device (keyboard, mouse, touch, controllers) can join or control the game
+function stripLocalInputs() { for (const k in INP) if (!k.startsWith('r:')) delete INP[k]; }
+function lobbyHTML() {
+  const n = joinedCount(), phones = Object.keys(NET.conns).length;
+  const nameOf = sl => { const p = NET.conns[sl.dev.split(':')[1]]; return p && p.name !== 'Player' ? esc(p.name) : 'Phone'; };
+  const card = i => {
+    const sl = G.slots[i];
+    if (!sl) return `<div class="lslot" style="--c:var(--p${i + 1})"><div class="pn">P${i + 1}</div><div class="st">Open · press A on a phone</div></div>`;
+    const col = COLORS[sl.color];
+    return `<div class="lslot on" style="--c:${col[1]}"><div class="pn">P${i + 1} ✓</div><div class="st">${nameOf(sl)} · ${col[0]}</div><div class="st">${CHASSIS[slotChassis(i)].name}</div></div>`;
+  };
+  const waiting = phones - new Set(G.slots.filter(Boolean).map(sl => sl.dev.split(':')[1])).size;
+  return `<div class="panel lobby">
+    <div class="lobby-top"><div class="qrbig">${qrImg(NET.code)}</div>
+      <div><div class="eyebrow">Ricochet Regiment · TV display</div><div class="lbl">Room code</div><div class="bigcode">${esc(NET.code)}</div>
+      <div class="note">Scan the QR code with a phone camera, or open <b>${esc(location.host + location.pathname)}</b> on the phone, tap <b>Play online</b>, enter the code and tap <b>Use this phone as a controller</b>.</div></div></div>
+    <div class="slots">${[0, 1, 2, 3].map(card).join('')}</div>
+    <div class="go">${n ? `${n}/4 ready · press ☰ on any joined phone to start` : 'Press A on your phone to join'}</div>
+    ${n >= 4 ? '<div class="full">All 4 player slots are full.</div>' : ''}
+    <div class="note">${phones} phone${phones === 1 ? '' : 's'} connected${waiting > 0 ? ` · ${waiting} not playing yet` : ''}. Keep this screen awake with the game open.${canFullscreen() ? ' Tap <b>Full screen</b> at the top for a cleaner TV picture.' : ''}</div>
+  </div>`;
+}
+// Full screen where the browser allows it (iPad Safari supports it for pages; iPhone Safari does not)
+const fsEl = document.documentElement;
+const canFullscreen = () => !!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen);
+function toggleFullscreen() {
+  const d = document;
+  try {
+    if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
+    else { const r = (fsEl.requestFullscreen || fsEl.webkitRequestFullscreen).call(fsEl); if (r && r.catch) r.catch(() => {}); }
+  } catch (e) {}
+}
+$('#fs-btn').addEventListener('click', () => { $('#fs-btn').blur(); toggleFullscreen(); });
+// Keep the screen on while hosting for a TV or using a phone as a controller
+let wakeLock = null;
+async function requestWake() {
+  if (wakeLock || document.hidden || !navigator.wakeLock) return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } catch (e) { wakeLock = null; }
+}
+function releaseWake() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  if (NET.display || PAD.mode) requestWake();
+  if (PAD.mode && NET.mode === 'off' && !NET.peer) { PAD.retries = 0; joinRoom(PAD.code); }
+});
+// Tapping the TV host during a game shows its menu buttons for a few seconds
+let peekT = 0;
+addEventListener('pointerdown', () => {
+  if (NET.display || PAD.mode) requestWake();
+  if (!NET.display) return;
+  document.body.classList.add('peek'); clearTimeout(peekT); peekT = setTimeout(() => document.body.classList.remove('peek'), 4000);
+}, { passive: true });
 function frame(now) {
   const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now;
   G.skSig = JSON.stringify(G.skills);
-  pollPads(); buildInputs(); touchFire(); updateTouchUi();
+  pollPads(); buildInputs(); touchFire(); updateTouchUi(); if (NET.display) stripLocalInputs();
   if (G.state === 'intro' && G.level > BEST.level && G.slots.some(sl => sl && isMine(sl.dev))) { const before = unlockedChassis(); BEST.level = G.level; saveBest(before); }
   if (NET.mode !== 'off') for (const dev in INP) if (INP[dev].voice) { toggleVoice(); break; }
   if (kb.pressed.has('KeyM')) setMusic(!MUSIC.on);
@@ -3970,7 +4127,7 @@ function frame(now) {
   }
   if (NET.mode === 'client') { clientSendInputs(now); clientUpdate(dt); }
   else {
-    if (NET.mode === 'host') addRemoteInputs();
+    if (NET.mode === 'host') { addRemoteInputs(); checkStaleConns(); }
     update(dt);
     if (NET.mode === 'host') { NET.snapT -= dt; if (NET.snapT <= 0) { NET.snapT = 1 / 30; sendSnapshot(); } }
   }
