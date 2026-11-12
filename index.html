@@ -152,6 +152,57 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 @media (prefers-reduced-motion:reduce){.sk.r-mythic{animation:none}}
 @keyframes pulse{50%{opacity:.55}}
 @media (prefers-reduced-motion:reduce){.go{animation:none}}
+/* touch controls (phones and tablets) */
+#touch{position:fixed;inset:0;z-index:5;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#touch .zone{position:absolute;bottom:0;height:62%;width:42%;pointer-events:auto;touch-action:none}
+#t-move{left:0}#t-aim{right:0}
+#touch .base{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:2px solid rgba(241,230,207,.35);background:rgba(20,16,10,.25);display:none}
+#touch .knob{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:rgba(241,230,207,.55)}
+#touch .zone.live .base{display:block}
+#touch .hint{position:absolute;bottom:14px;font:600 11px var(--body);letter-spacing:.12em;text-transform:uppercase;color:rgba(241,230,207,.35)}
+#t-move .hint{left:18px}#t-aim .hint{right:18px}
+#touch .tb{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;border:2px solid rgba(241,230,207,.5);background:rgba(20,16,10,.55);color:#f1e6cf;font:700 15px var(--body);display:grid;place-items:center;width:58px;height:58px}
+#touch .tb.on{background:rgba(241,230,207,.85);color:#17140f}
+#touch .tb.small{width:46px;height:34px;border-radius:8px;font-size:11px;letter-spacing:.06em}
+#t-mine{right:18px;bottom:calc(62% + 8px)}
+#t-a{right:18px;bottom:calc(62% + 8px)}
+#t-b{right:84px;bottom:calc(62% + 8px)}
+#t-start{left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));margin-left:-23px}
+body.padmode #t-start{bottom:auto;top:max(8px,env(safe-area-inset-top,0px))}
+#t-lb{left:18px;bottom:calc(62% + 8px)}#t-rb{left:72px;bottom:calc(62% + 8px)}
+#touch[data-mode="menu"] .zone,#touch[data-mode="menu"] #t-mine,#touch[data-mode="menu"] #t-lb,#touch[data-mode="menu"] #t-rb{display:none}
+#touch[data-mode="menu"] #t-start{left:18px;margin-left:0}
+#touch[data-mode="menu"] #t-a{right:18px;bottom:18px}#touch[data-mode="menu"] #t-b{right:84px;bottom:18px}
+#touch[data-mode="play"] #t-a,#touch[data-mode="play"] #t-b,#touch[data-mode="play"] #t-lb,#touch[data-mode="play"] #t-rb{display:none}
+body.touchy{touch-action:none;overscroll-behavior:none}
+body.touchy #legend{display:none}
+@media (max-height:520px){
+  body.touchy:not(.padmode) #app{gap:4px;padding-block:max(4px,env(safe-area-inset-top,0px)) max(4px,env(safe-area-inset-bottom,0px))}
+  body.touchy .hud-slots,body.touchy #h-ff,body.touchy #h-name{display:none}
+  body.touchy #hud{flex-wrap:nowrap;font-size:11px}
+  body.touchy #hud b{font-size:13px}
+  body.touchy .hbtn{padding:3px 8px;font-size:11px}
+}
+/* phones: long menus scroll inside the game area */
+body.touchy #overlay .panel{max-height:calc(100% - 16px);overflow-y:auto;pointer-events:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+body.touchy #overlay .title .sub{display:none}
+body.touchy #cv{cursor:default}
+#rotate{display:none}
+@media (orientation:portrait){body.touchy:not(.padmode) #rotate{display:grid;position:fixed;inset:0;z-index:15;place-items:center;background:var(--bg);color:var(--ink);font:600 16px var(--body);text-align:center;padding:24px}}
+/* phone-as-controller mode: the game is on the TV, the phone shows only controls */
+body.padmode #hud,body.padmode #wrap,body.padmode #legend{display:none}
+#padui{display:none}
+body.padmode #padui{display:flex;position:fixed;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px;text-align:center;pointer-events:none}
+#padui h2{margin:0;font:400 22px var(--display)}
+#padui .swatch{width:46px;height:46px;border-radius:10px;border:2px solid var(--line)}
+#padui p{margin:0;color:var(--muted);max-width:420px}
+#padui button{pointer-events:auto}
+body.padmode #touch .zone{height:100%}
+body.padmode #t-a,body.padmode #t-b{bottom:auto;top:max(8px,env(safe-area-inset-top,0px))}
+body.padmode #t-a{right:18px}body.padmode #t-b{right:84px}
+body.padmode #t-lb,body.padmode #t-rb{bottom:auto;top:max(8px,env(safe-area-inset-top,0px))}
+.qr{display:flex;gap:12px;align-items:center;justify-content:center}
+.qr img{width:96px;height:96px;image-rendering:pixelated;border-radius:4px;background:#fff;padding:4px;pointer-events:auto}
 @media (max-width:700px){#legend{display:none}.title,.skillp{width:auto}.slots{grid-template-columns:repeat(2,1fr)}.skills{grid-template-columns:1fr}}
 </style>
 </head>
@@ -175,6 +226,18 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   </footer>
 </div>
 
+<div id="touch" hidden data-mode="menu">
+  <div class="zone" id="t-move"><div class="base"><div class="knob"></div></div><span class="hint">Move</span></div>
+  <div class="zone" id="t-aim"><div class="base"><div class="knob"></div></div><span class="hint">Aim · push far to fire</span></div>
+  <div class="tb" id="t-mine" data-b="6">MINE</div>
+  <div class="tb" id="t-a" data-b="0">A</div>
+  <div class="tb" id="t-b" data-b="1">B</div>
+  <div class="tb small" id="t-start" data-b="9">☰</div>
+  <div class="tb small" id="t-lb" data-b="4">LB</div>
+  <div class="tb small" id="t-rb" data-b="5">RB</div>
+</div>
+<div id="padui"><div class="swatch" id="pad-swatch"></div><h2 id="pad-title">Phone controller</h2><p id="pad-msg">Connecting…</p><button id="pad-retry" class="pbtn ghost" type="button" hidden>Try again</button></div>
+<div id="rotate">Turn your phone sideways to play.</div>
 <div id="net" hidden>
   <div class="net-card" role="dialog" aria-modal="true" aria-labelledby="net-title">
     <h3 id="net-title">Play online</h3>
@@ -183,10 +246,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       <button id="net-host" class="pbtn" type="button">Host a game</button>
       <div class="or">or join a friend's game</div>
       <div class="joinrow"><input id="net-code" maxlength="5" placeholder="CODE" autocomplete="off" aria-label="Room code"><button id="net-join" class="pbtn" type="button">Join</button></div>
+      <button id="net-pad" class="pbtn ghost" type="button">Use this phone as a controller for that room</button>
     </div>
     <div id="net-online" hidden style="flex-direction:column;gap:12px">
       <div class="roomline"><span class="lbl">Room code</span><span id="net-room" class="roomcode"></span><button id="net-copy" class="pbtn ghost" type="button">Copy</button></div>
       <p class="note" id="net-hint"></p>
+      <div class="qr" id="net-qr" hidden></div>
       <ul id="net-roster"></ul>
       <button id="net-voice" class="pbtn ghost" type="button">Turn voice chat on</button>
     </div>
@@ -210,6 +275,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   </div>
 </div>
 
+<script src="qrcode.js"></script>
 <script>
 (() => {
 'use strict';
@@ -516,7 +582,7 @@ const CHASSIS = {
   sal: { name: 'Salvo',     desc: 'Fires a burst of 5 bouncing missiles.', kind: 'missile', burst: 5, burstGap: .1, cd: 2.8 },
   dbl: { name: 'Double',    desc: 'Fires two shells at once in a narrow V.', twinShot: .12 },
   frz: { name: 'Freezer',   desc: 'Ice shells destroy what they hit and freeze nearby enemies in place for 2 seconds.', kind: 'ice', freezeT: 2, freezeR: 70 },
-  cln: { name: 'Clone',     desc: 'No mines. The mine button sends out a decoy that looks like you and charges the nearest enemy, sometimes dodging shells; enemies chase and shoot it (up to 2).', clone: true },
+  cln: { name: 'Clone',     desc: 'No mines. The mine button sends out a decoy that looks like you, charges the nearest enemy, shoots at it and sometimes dodges shells; enemies chase and shoot it (up to 2).', clone: true },
   pls: { name: 'Pulse',     desc: 'No gun. Fire sends out a shockwave that destroys nearby enemies and their shells.', pulse: true, cd: 14 },
   rfl: { name: 'Reflector', desc: 'Enemy shells that hit you have a 40% chance to bounce back as yours.', reflectP: .4 },
   orbt: { name: 'Orbiter',  desc: 'Three orbs circle you and block enemy shells. Fire launches an orb; they grow back over time.', orbs: 3 },
@@ -867,7 +933,7 @@ function musicIntensity() {
   return Math.max(1, kinds.size);
 }
 function updateMusic() {
-  if (!AC || AC.state !== 'running' || !MUSIC.on) return;
+  if (!AC || AC.state !== 'running' || !MUSIC.on || PAD.mode) return;
   const want = wantedTrack();
   if (want !== MUSIC.track) { MUSIC.track = want; MUSIC.step = 0; MUSIC.next = AC.currentTime + .08; musicOut(); MUSIC.wet.gain.value = want === 'battle' ? 0 : .32; }
   if (!want) return;
@@ -890,7 +956,7 @@ function setMusic(on) {
   const b = $('#music-btn'); b.textContent = on ? 'Music on' : 'Music off'; b.dataset.on = on ? '1' : '0';
 }
 function playSfx(n) {
-  if (!AC || AC.state !== 'running') return;
+  if (!AC || AC.state !== 'running' || PAD.mode) return;
   switch (n) {
     case 'fire': tone(520, .09, 'square', .1, 150); noise(.06, .14, 3000); break;
     case 'rocket': tone(260, .2, 'sawtooth', .08, 900); noise(.16, .18, 5000); break;
@@ -958,6 +1024,20 @@ function pollPads() {
     s.axes = gp.axes;
     if (s.btn.some((b, i) => b && !s.prev[i])) unlockAudio();
   }
+  if (TOUCH.on) {
+    // the on-screen controls act as one more Xbox-style controller (number 9)
+    seen.add(TOUCH_PAD);
+    const s = pads[TOUCH_PAD] || (pads[TOUCH_PAD] = { btn: [], prev: [] });
+    s.connected = true; s.touch = true; s.prev = s.btn;
+    s.btn = Array.from({ length: 17 }, (_, i) => !!TOUCH.btn[i]);
+    if (!['play', 'intro', 'clear', 'fail'].includes(G.state)) {
+      // on menus the move stick works as a D-pad
+      const { mx, my } = TOUCH;
+      if (Math.max(Math.abs(mx), Math.abs(my)) > .6) { if (Math.abs(mx) > Math.abs(my)) s.btn[mx > 0 ? 15 : 14] = true; else s.btn[my > 0 ? 13 : 12] = true; }
+    }
+    s.axes = [TOUCH.mx, TOUCH.my, TOUCH.ax, TOUCH.ay];
+    if (s.btn.some((b, i) => b && !s.prev[i])) unlockAudio();
+  }
   for (const k in pads) if (!seen.has(+k)) { pads[k].connected = false; pads[k].btn = []; pads[k].prev = []; }
 }
 const padIdx = dev => +localKey(dev).slice(3);
@@ -1007,9 +1087,16 @@ function buildInputs() {
       sl: pp(14) || (sx === -1 && was !== -1), sr: pp(15) || (sx === 1 && was !== 1), cl: pp(4), cr: pp(5) };
   }
 }
+// Touch aiming: pushing the aim stick far out fires (held), a small push only aims
+function touchFire() {
+  const i = INP['pad' + TOUCH_PAD]; if (!TOUCH.on || !i) return;
+  const f = TOUCH.am > .6 && !i.mineHeld;
+  i.fire = i.fire || f; i.fireHeld = i.fireHeld || f;
+}
 function endInputFrame() { kb.pressed.clear(); kb.click = false; kb.rclick = false; }
 function rumbleLocal(dev, strong, weak, ms) {
   if (!dev || dev === 'kb') return;
+  if (pads[padIdx(dev)] && pads[padIdx(dev)].touch) { try { if (navigator.vibrate) navigator.vibrate(Math.min(200, ms)); } catch (e) {} return; }
   const s = pads[padIdx(dev)]; const act = s && s.gp && s.gp.vibrationActuator;
   if (!act || !act.playEffect) return;
   try { act.playEffect('dual-rumble', { startDelay: 0, duration: ms, weakMagnitude: weak, strongMagnitude: strong }).catch(() => {}); } catch (e) {}
@@ -1654,9 +1741,9 @@ function updateAlly(t, dt, active) {
   if (t.stat) { autoFire(t, dt, 1.1, 240, 1); return; } // Engineer turret
   if (t.decoy) {
     // Clone decoy: drives right up to the nearest enemy to draw its fire, and sometimes sidesteps incoming shells
+    autoFire(t, dt, 1.4, 220, 1);
     if (dodgeShells(t, dt, .5, 150)) return;
     const prey = aliveTanks.filter(e => e.alive && e.team === 'e' && !e.under).sort((a, b) => dist(a, t) - dist(b, t))[0];
-    if (prey) t.turret += angDiff(Math.atan2(prey.y - t.y, prey.x - t.x), t.turret) * Math.min(1, dt * 5);
     chase(t, prey && dist(prey, t) > 95 ? prey : null, 100, dt);
     return;
   }
@@ -3048,6 +3135,7 @@ function leaveRoom(msg) {
   if (was === 'client') { G.slots = [null, null, null, null]; toTitle(); }
   else if (was === 'host') G.slots.forEach((s, i) => { if (s && s.dev.startsWith('r:')) removeSlot(i); });
   setNetStatus(msg || '', !!msg);
+  if (PAD.mode) { if (msg) $('#pad-retry').hidden = false; return; }
   if (msg) openNet();
 }
 
@@ -3150,6 +3238,8 @@ function renderNet() {
   $('#net-hint').textContent = NET.mode === 'host'
     ? 'Friends open this same page, click Play online, and enter the code. Keep this tab in front while you play: your computer runs the game for everyone.'
     : 'You are connected. Your controllers and keyboard join the game just like at home.';
+  const qr = $('#net-qr'); qr.hidden = NET.mode !== 'host';
+  if (NET.mode === 'host') qr.innerHTML = `${qrImg(NET.code)}<span class="note">Phones can be controllers: scan this, or open this page on the phone, click Play online, enter the code and tap <b>Use this phone as a controller</b>.</span>`;
   $('#net-roster').innerHTML = NET.roster.map(r => `<li><span>${esc(r.name)}${r.id === NET.myId ? ' (you)' : ''}${r.host ? ' · host' : ''}</span><span class="tag ${r.voice ? 'on' : ''}">${r.voice ? 'Voice on' : 'Voice off'}</span></li>`).join('');
   $('#net-voice').textContent = NET.voice ? 'Turn voice chat off' : 'Turn voice chat on';
   const st = $('#net-status'); st.textContent = NET.status; st.dataset.err = NET.err ? '1' : '0';
@@ -3162,6 +3252,7 @@ $('#net-close').addEventListener('click', closeNet);
 netEl.addEventListener('click', e => { if (e.target === netEl) closeNet(); });
 $('#net-host').addEventListener('click', hostRoom);
 $('#net-join').addEventListener('click', () => joinRoom(codeIn.value));
+$('#net-pad').addEventListener('click', () => { unlockAudio(); startPadMode(codeIn.value); });
 codeIn.addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(codeIn.value); });
 $('#net-leave').addEventListener('click', () => leaveRoom(''));
 $('#net-voice').addEventListener('click', toggleVoice);
@@ -3177,7 +3268,7 @@ nameIn.addEventListener('change', () => {
 });
 
 // ---------- customization clicks on the title screen ----------
-let wipeArm = 0, wipedAt = 0, titleTaps = [];
+let wipeArm = -1e9, wipedAt = -1e9, titleTaps = [];
 ov.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   b.blur(); unlockAudio();
@@ -3712,8 +3803,9 @@ function overlayHTML() {
       const netLine = NET.mode === 'off'
         ? `<div class="note">Playing with friends on other computers? Click <b>Play online</b> at the top.</div>`
         : `<div class="note">Online room <b>${esc(NET.code)}</b> · ${Math.max(1, NET.roster.length)} connected.${NET.voice ? ' Voice chat is on.' : ' Press <span class="k">V</span> or <span class="k">VIEW</span> to turn voice chat on.'}</div>`;
+      const tvLine = TOUCH.on && NET.mode === 'off' ? `<div class="note">Want the game on a TV? Open this site in the TV's browser (or on a computer plugged into the TV), click <b>Play online</b> → <b>Host a game</b>, then scan the QR code with this phone to use it as a controller.</div>` : '';
       return `<div class="panel title"><h1 data-act="title">Ricochet <span>Regiment</span></h1>
-        <p class="sub">Endless co-op tank combat for up to four players. Shells bounce off walls, mines clear crates, and a destroyed tank sits out until the next level. After every level the slot machines pick the next wave, and solo players pick a skill every 3 levels. A boss arrives every 10 levels.</p>
+        ${NET.mode === 'host' ? `<div class="qr">${qrImg(NET.code)}<span class="note">Phones can be controllers: scan this code with a phone camera, then press A on the phone to join.</span></div>` : `<p class="sub">Endless co-op tank combat for up to four players. Shells bounce off walls, mines clear crates, and a destroyed tank sits out until the next level. After every level the slot machines pick the next wave, and solo players pick a skill every 3 levels. A boss arrives every 10 levels.</p>`}
         <div class="slots">${[0, 1, 2, 3].map(slotCard).join('')}</div>
         <div class="row"><span>${ffTxt}</span><span class="note">D-pad ◀ ▶ color, ▲ ▼ trail, <span class="k">LB</span> <span class="k">RB</span> or <span class="k">Z</span> <span class="k">C</span> tank.</span></div>
         <div class="go">${joinedCount() ? `Press ${ST} or <span class="k">ENTER</span> to deploy` : `Press ${BA} to join`}</div>
@@ -3721,7 +3813,7 @@ function overlayHTML() {
         ${CHEAT.all || CHEAT.god || CHEAT.level > 1 || CHEAT.lives ? '<div class="warn">Cheats are on for this session.</div>' : ''}
         <div class="note">Tank unlocks (destroy ${KILL_NEED} of a type to play as it): ${KILL_TANKS.map(k => (KILLS[k] || 0) >= KILL_NEED ? `<b>${CHASSIS[k].name} ✓</b>` : `${CHASSIS[k].name} ${KILLS[k] || 0}/${KILL_NEED}`).join(' · ')}</div>
         <div class="row"><button type="button" class="mini danger" data-act="wipe">${performance.now() - wipeArm < 4000 ? 'Click again to delete all unlocks' : 'Delete progress'}</button>${performance.now() - wipedAt < 3000 ? '<span class="note">Progress deleted.</span>' : ''}</div>
-        ${padLine}${netLine}</div>`;
+        ${padLine}${netLine}${tvLine}</div>`;
     }
     case 'intro': {
       const counts = {}, info = {};
@@ -3782,10 +3874,90 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 let last = performance.now();
+// ---------- touch controls and phone-as-controller mode ----------
+const TOUCH_PAD = 9;
+const TOUCH = { on: false, mx: 0, my: 0, ax: 0, ay: 0, am: 0, btn: {} };
+const PAD = { mode: false, code: '' };
+const touchEl = $('#touch');
+function enableTouch() {
+  if (TOUCH.on) return;
+  TOUCH.on = true; touchEl.hidden = false; document.body.classList.add('touchy');
+}
+function stickZone(el, which) {
+  const base = el.querySelector('.base'), knob = el.querySelector('.knob'), R0 = 50;
+  let id = null, x0 = 0, y0 = 0;
+  const set = (x, y) => {
+    let dx = x - x0, dy = y - y0; const m = Math.hypot(dx, dy);
+    if (m > R0) { dx *= R0 / m; dy *= R0 / m; }
+    knob.style.transform = `translate(${dx}px,${dy}px)`;
+    if (which === 'move') { TOUCH.mx = dx / R0; TOUCH.my = dy / R0; } else { TOUCH.ax = dx / R0; TOUCH.ay = dy / R0; TOUCH.am = Math.min(1, m / R0); }
+  };
+  el.addEventListener('pointerdown', e => {
+    if (id !== null) return;
+    e.preventDefault(); id = e.pointerId; try { el.setPointerCapture(id); } catch (er) {}
+    const r = el.getBoundingClientRect(); x0 = e.clientX; y0 = e.clientY;
+    base.style.left = (x0 - r.left) + 'px'; base.style.top = (y0 - r.top) + 'px'; el.classList.add('live'); set(x0, y0); unlockAudio();
+  });
+  el.addEventListener('pointermove', e => { if (e.pointerId === id) { e.preventDefault(); set(e.clientX, e.clientY); } });
+  const end = e => { if (e.pointerId !== id) return; id = null; el.classList.remove('live'); set(x0, y0); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+}
+stickZone($('#t-move'), 'move'); stickZone($('#t-aim'), 'aim');
+touchEl.querySelectorAll('.tb').forEach(b => {
+  const n = +b.dataset.b;
+  b.addEventListener('pointerdown', e => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (er) {} TOUCH.btn[n] = true; b.classList.add('on'); unlockAudio(); if (navigator.vibrate) try { navigator.vibrate(8); } catch (er) {} });
+  const up = () => { TOUCH.btn[n] = false; b.classList.remove('on'); };
+  b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
+});
+addEventListener('touchstart', enableTouch, { passive: true });
+if (matchMedia('(pointer:coarse)').matches && !matchMedia('(pointer:fine)').matches) enableTouch();
+let lastTouchMode = '';
+function updateTouchUi() {
+  if (!TOUCH.on) return;
+  const mode = PAD.mode ? 'pad' : ['play', 'intro', 'clear', 'fail'].includes(G.state) ? 'play' : 'menu';
+  if (mode !== lastTouchMode) { lastTouchMode = mode; touchEl.dataset.mode = mode; }
+  if (PAD.mode) updatePadUi();
+}
+// The page a phone opens to become a controller: <site>#pad=CODE
+const padUrl = code => location.origin + location.pathname + '#pad=' + code;
+const qrCache = {};
+function qrImg(code) {
+  if (!window.qrcode) return '';
+  if (!qrCache[code]) { const q = window.qrcode(0, 'M'); q.addData(padUrl(code)); q.make(); qrCache[code] = q.createDataURL(6, 2); }
+  return `<img src="${qrCache[code]}" alt="QR code that opens the phone controller for room ${esc(code)}">`;
+}
+function startPadMode(code) {
+  code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  PAD.mode = true; PAD.code = code; enableTouch(); document.body.classList.add('padmode');
+  closeNet(); $('#pad-retry').hidden = true; PAD.msg = ''; PAD.err = '';
+  joinRoom(code);
+}
+$('#pad-retry').addEventListener('click', () => startPadMode(PAD.code));
+let lastPadUi = '';
+function updatePadUi() {
+  const i = slotOf('r:' + NET.myId + ':pad' + TOUCH_PAD), sl = i >= 0 ? G.slots[i] : null;
+  let title, msg;
+  if (NET.mode !== 'client') {
+    title = 'Phone controller';
+    msg = NET.err ? NET.status : `Connecting to room ${PAD.code}…`;
+    $('#pad-retry').hidden = !NET.err || !!NET.peer;
+  } else if (!sl) {
+    title = `Room ${NET.code}`; msg = 'Press A to join the game on the TV.';
+  } else {
+    title = `You are P${i + 1}`;
+    msg = G.state === 'title' ? 'Move stick ◀ ▶ color, ▲ ▼ trail, LB / RB tank. Press ☰ to deploy.'
+      : G.state === 'skill' ? 'Pick a skill: move stick to choose, A to take it.'
+      : G.state === 'paused' ? 'Paused. ☰ resumes, B quits to the title.'
+      : `Level ${G.level} · ${G.lives} ${G.lives === 1 ? 'life' : 'lives'}. Left stick moves, right stick aims (push far to fire).`;
+  }
+  const col = sl ? slotColor(i) : 'transparent', key = title + '|' + msg + '|' + col;
+  if (key === lastPadUi) return; lastPadUi = key;
+  $('#pad-title').textContent = title; $('#pad-msg').textContent = msg; $('#pad-swatch').style.background = col;
+}
 function frame(now) {
   const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now;
   G.skSig = JSON.stringify(G.skills);
-  pollPads(); buildInputs();
+  pollPads(); buildInputs(); touchFire(); updateTouchUi();
   if (G.state === 'intro' && G.level > BEST.level && G.slots.some(sl => sl && isMine(sl.dev))) { const before = unlockedChassis(); BEST.level = G.level; saveBest(before); }
   if (NET.mode !== 'off') for (const dev in INP) if (INP[dev].voice) { toggleVoice(); break; }
   if (kb.pressed.has('KeyM')) setMusic(!MUSIC.on);
@@ -3802,13 +3974,14 @@ function frame(now) {
     update(dt);
     if (NET.mode === 'host') { NET.snapT -= dt; if (NET.snapT <= 0) { NET.snapT = 1 / 30; sendSnapshot(); } }
   }
-  render(); updateHud(); updateOverlay();
+  if (!PAD.mode) { render(); updateHud(); updateOverlay(); }
   endInputFrame();
   requestAnimationFrame(frame);
 }
 addEventListener('beforeunload', () => { try { if (NET.peer) NET.peer.destroy(); } catch (e) {} });
 if (location.hash === '#debug') window.RR_DEBUG = { G, loadLevel, genLayout, chooseSkill, pickSkills, SKILLS, aimPath, makeEnemy, hurt: hurtTank, MUSIC, TRACKS };
 resize(); renderNet();
+{ const m = /^#pad=([A-Za-z0-9]{5})$/.exec(location.hash); if (m) startPadMode(m[1]); }
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { staticDirty = true; });
 })();
