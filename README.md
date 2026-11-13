@@ -47,7 +47,7 @@ One device shows the game on the TV and runs it; up to four phones are the contr
    - **iPad:** Control Center → Screen Mirroring → your Apple TV. Hold the iPad sideways. Tap **Full screen** at the top for a cleaner picture, or add the site to the Home Screen and open it from there.
    - **Laptop:** plug it into the TV with HDMI and use the TV as a mirrored or extended display; drag the window there and click **Full screen**.
 3. Each player scans the QR code on the TV with their phone camera (or opens the site, taps **Play online**, enters the room code and taps **Use this phone as a controller**).
-4. On each phone, press **A** to join (players get P1–P4 in order), change color with the left stick, tank with LB/RB, and press **☰** to start. The phones also pause (☰), resume (☰), quit to the lobby (B while paused), pick skills (stick + A) and restart after a game over (A). Nobody needs to touch the TV device.
+4. On each phone, tap **Join the game** (players get P1–P4 in order). While the TV shows the lobby, each phone shows a garage: a live preview of your tank firing with your shell trail, plus color, trail and tank pickers (locked tanks show what unlocks them). Tap **Start game** when everyone is ready; the phone then switches to the controller. The phones also pause (☰), resume (☰), quit to the lobby (B while paused), pick skills (stick + A) and restart after a game over (A). Nobody needs to touch the TV device.
 
 Good to know:
 - Keep the iPad or laptop awake, unlocked and on the game page. The page asks the browser to keep the screen on, but switching apps or locking the iPad pauses the game and can drop the phones.

@@ -80,7 +80,7 @@ async function until(fn, ms = 4000) { const t0 = Date.now(); while (Date.now() -
     phones.push(p);
   }
   check('QR link: all 5 phones connect in controller mode', (await Promise.all(phones.map(p => until(async () => (await p.textContent('#pad-title')).startsWith('Room'))))).every(Boolean));
-  for (let k = 0; k < 4; k++) { await tap(phones[k], '#t-a'); await wait(150); }
+  for (let k = 0; k < 4; k++) { await phones[k].click('#padcust [data-pc="join"]'); await wait(150); }
   let sl = await slots(tv);
   const ids = await Promise.all(phones.slice(0, 4).map(p => p.evaluate(() => document.querySelector('#pad-title').textContent)));
   check('four phones get P1–P4, no duplicates', sl.every(Boolean) && new Set(sl).size === 4, JSON.stringify(ids));
@@ -93,8 +93,25 @@ async function until(fn, ms = 4000) { const t0 = Date.now(); while (Date.now() -
   check('TV lobby says all 4 slots are full', await tv.evaluate(() => /All 4 player slots are full/.test(document.querySelector('#overlay').textContent)));
   await tv.screenshot({ path: path.join(__dirname, 'out-tv-lobby-full.png') });
 
+  // phone garage in the TV lobby: preview, color, trail and tank picks reach the TV
+  const P1 = phones[0];
+  check('phone garage shows in the lobby', await P1.evaluate(() => document.body.classList.contains('cust') && !!document.querySelector('#pc-prev') && document.querySelectorAll('#padcust .sw').length > 5));
+  check('controller sticks are hidden while in the garage', await P1.evaluate(() => getComputedStyle(document.querySelector('#touch')).display === 'none'));
+  await P1.click('#padcust .sw[data-v="5"]'); await wait(250);
+  await P1.click('#padcust .pchip[data-v="4"]'); await wait(250);
+  const s0 = await G(tv, () => { const s = RR_DEBUG.G.slots[0]; return [s.color, s.trail, s.chassis]; });
+  check('garage color and trail picks reach the TV', s0[0] === 5 && s0[1] === 4, JSON.stringify(s0));
+  const locked = await P1.evaluate(() => [...document.querySelectorAll('#padcust .tk')].filter(b => b.disabled).length);
+  check('locked tanks are shown but cannot be picked', locked > 0);
+  const previewPainted = await P1.evaluate(() => { const c = document.querySelector('#pc-prev'), d = c.getContext('2d').getImageData(150, 150, 120, 60).data; let dark = 0; for (let k = 0; k < d.length; k += 4) if (d[k] < 90) dark++; return dark > 50; });
+  check('tank preview is drawn', previewPainted);
+  await P1.screenshot({ path: path.join(__dirname, 'out-phone-garage.png') });
+  await P1.setViewportSize({ width: 390, height: 664 }); await wait(200);
+  await P1.screenshot({ path: path.join(__dirname, 'out-phone-garage-portrait.png') });
+  await P1.setViewportSize({ width: 844, height: 390 });
+
   // remote start, independent controls
-  await tap(phones[0], '#t-start');
+  await phones[0].click('#padcust [data-pc="start"]');
   check('remote start from a phone', await until(async () => ['intro', 'play'].includes(await state(tv))));
   await until(async () => (await state(tv)) === 'play', 6000);
   await G(tv, () => { RR_DEBUG.G.tanks.forEach(t => { if (t.team === 'p') t.shield = 999; if (t.team === 'e') t.cool = 999; }); });
@@ -110,6 +127,31 @@ async function until(fn, ms = 4000) { const t0 = Date.now(); while (Date.now() -
   await ptr(phones[1], '#t-aim', 'pointerup', 0, 0, 2);
   check('phone 2 fires as P2 only', shots.join() === '1', JSON.stringify(shots));
   await tv.screenshot({ path: path.join(__dirname, 'out-tv-play.png') });
+  check('garage hides and controller shows once the game starts', await P1.evaluate(() => !document.body.classList.contains('cust') && getComputedStyle(document.querySelector('#touch')).display !== 'none'));
+  // controller buttons never overlap or leave the screen (iPhone landscape, short Safari landscape, iPhone SE, portrait)
+  for (const [w, h] of [[844, 390], [844, 320], [667, 325], [568, 300], [390, 664], [375, 560]]) {
+    await P1.setViewportSize({ width: w, height: h }); await wait(120);
+    const bad = await P1.evaluate(() => {
+      const els = ['#t-a', '#t-b', '#t-start', '#t-lb', '#t-rb', '#t-mine'].map(q => [q, document.querySelector(q).getBoundingClientRect()]);
+      const out = [];
+      for (const [q, r] of els) if (r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight) out.push(q + ' off-screen');
+      for (let x = 0; x < els.length; x++) for (let y = x + 1; y < els.length; y++) { const [qa, a] = els[x], [qb, b] = els[y]; if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) out.push(qa + ' overlaps ' + qb); }
+      const msg = document.querySelector('#pad-msg').getBoundingClientRect(), mine = document.querySelector('#t-mine').getBoundingClientRect();
+      if (msg.bottom > mine.top && msg.right > mine.left && msg.left < mine.right) out.push('status text overlaps MINE');
+      return out;
+    });
+    check(`phone controller layout ${w}×${h}: no overlaps`, bad.length === 0, bad.join(', '));
+    if (w === 844 && h === 320) await P1.screenshot({ path: path.join(__dirname, 'out-phone-controller-short.png') });
+  }
+  await P1.setViewportSize({ width: 844, height: 390 });
+  // a quick second tap is not allowed to zoom the page
+  const blocked = await P1.evaluate(() => {
+    const t = document.querySelector('#padui');
+    const mk = () => new TouchEvent('touchend', { bubbles: true, cancelable: true });
+    t.dispatchEvent(mk()); const e2 = mk(); t.dispatchEvent(e2); return e2.defaultPrevented;
+  });
+  check('double tap does not zoom (second quick tap is blocked)', blocked);
+  check('page zoom is turned off in the viewport settings', await P1.evaluate(() => /user-scalable=no/.test(document.querySelector('meta[name=viewport]').content)));
   check('TV: no controls drawn over the game', await tv.evaluate(() => document.querySelector('#touch').hidden));
 
   // pause / resume from phones
@@ -132,7 +174,7 @@ async function until(fn, ms = 4000) { const t0 = Date.now(); while (Date.now() -
   const back = watch(await ctx.newPage(), 'phone2-again');
   await back.goto(URL + '#pad=' + code); await back.setViewportSize({ width: 844, height: 390 });
   check('reconnecting phone connects', await until(async () => (await back.textContent('#pad-title')).startsWith('Room')));
-  await tap(back, '#t-a'); await wait(300);
+  await back.click('#padcust [data-pc="join"]'); await wait(300);
   sl = await slots(tv);
   check('reconnected phone takes the free slot, no duplicates', sl.every(Boolean) && new Set(sl).size === 4, JSON.stringify(sl));
 
@@ -140,7 +182,7 @@ async function until(fn, ms = 4000) { const t0 = Date.now(); while (Date.now() -
   const dupBefore = (await slots(tv)).filter(Boolean).length;
   await phones[2].reload(); await phones[2].setViewportSize({ width: 844, height: 390 });
   await until(async () => (await phones[2].textContent('#pad-title')).startsWith('Room'));
-  await tap(phones[2], '#t-a'); await wait(400);
+  await phones[2].click('#padcust [data-pc="join"]'); await wait(400);
   sl = await slots(tv);
   check('reloaded phone 3 gets P3 back (same slot), no duplicate', sl.filter(Boolean).length === dupBefore && /You are P3/.test(await phones[2].textContent('#pad-title')), JSON.stringify(sl));
 
@@ -161,13 +203,13 @@ async function until(fn, ms = 4000) { const t0 = Date.now(); while (Date.now() -
   check('duplicate connection from the same phone replaces the old one (still 4 players, P4 kept)', sl.filter(Boolean).length === 4 && (sl[3] || '').startsWith('r:' + dup + ':'), JSON.stringify(sl));
 
   // restart after game over, all from phones
-  await tap(phones[0], '#t-start');
+  await phones[0].click('#padcust [data-pc="start"]');
   await until(async () => (await state(tv)) === 'play', 6000);
   await G(tv, () => { const G = RR_DEBUG.G; G.lives = 1; G.tanks.forEach(t => { if (t.team === 'p') { t.shield = 0; t.alive = false; } }); });
   check('game over reached', await until(async () => (await state(tv)) === 'gameover', 6000));
   await tap(phones[3], '#t-a');
   check('remote return to lobby after game over', await until(async () => (await state(tv)) === 'title'));
-  await tap(phones[0], '#t-start');
+  await phones[0].click('#padcust [data-pc="start"]');
   check('remote restart', await until(async () => ['intro', 'play'].includes(await state(tv))));
 
   // manual room code entry on a phone

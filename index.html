@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -173,17 +173,17 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 #touch .tb{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;border:2px solid rgba(241,230,207,.5);background:rgba(20,16,10,.55);color:#f1e6cf;font:700 15px var(--body);display:grid;place-items:center;width:58px;height:58px}
 #touch .tb.on{background:rgba(241,230,207,.85);color:#17140f}
 #touch .tb.small{width:46px;height:34px;border-radius:8px;font-size:11px;letter-spacing:.06em}
-#t-mine{right:18px;bottom:calc(62% + 8px)}
-#t-a{right:18px;bottom:calc(62% + 8px)}
+#t-mine{right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(62% + 8px)}
+#t-a{right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(62% + 8px)}
 #t-b{right:84px;bottom:calc(62% + 8px)}
 #t-start{left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));margin-left:-23px}
-body.padmode #t-start{bottom:auto;top:max(8px,env(safe-area-inset-top,0px))}
 #t-lb{left:18px;bottom:calc(62% + 8px)}#t-rb{left:72px;bottom:calc(62% + 8px)}
 #touch[data-mode="menu"] .zone,#touch[data-mode="menu"] #t-mine,#touch[data-mode="menu"] #t-lb,#touch[data-mode="menu"] #t-rb{display:none}
 #touch[data-mode="menu"] #t-start{left:18px;margin-left:0}
 #touch[data-mode="menu"] #t-a{right:18px;bottom:18px}#touch[data-mode="menu"] #t-b{right:84px;bottom:18px}
 #touch[data-mode="play"] #t-a,#touch[data-mode="play"] #t-b,#touch[data-mode="play"] #t-lb,#touch[data-mode="play"] #t-rb{display:none}
-body.touchy{touch-action:none;overscroll-behavior:none}
+html{touch-action:manipulation}
+body.touchy{touch-action:none;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 body.touchy #legend{display:none}
 @media (max-height:520px){
   body.touchy:not(.padmode) #app{gap:4px;padding-block:max(4px,env(safe-area-inset-top,0px)) max(4px,env(safe-area-inset-bottom,0px))}
@@ -206,10 +206,46 @@ body.padmode #padui{display:flex;position:fixed;inset:0;flex-direction:column;al
 #padui .swatch{width:46px;height:46px;border-radius:10px;border:2px solid var(--line)}
 #padui p{margin:0;color:var(--muted);max-width:420px}
 #padui button{pointer-events:auto}
-body.padmode #touch .zone{height:100%}
-body.padmode #t-a,body.padmode #t-b{bottom:auto;top:max(8px,env(safe-area-inset-top,0px))}
-body.padmode #t-a{right:18px}body.padmode #t-b{right:84px}
-body.padmode #t-lb,body.padmode #t-rb{bottom:auto;top:max(8px,env(safe-area-inset-top,0px))}
+body.padmode #touch .zone{height:100%;width:50%}
+/* phone controller: top row LB RB · ☰ · B A, MINE at the bottom middle, sticks fill the left and right halves */
+body.padmode #touch .tb{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;margin:0}
+body.padmode #t-lb{left:calc(12px + env(safe-area-inset-left,0px))}
+body.padmode #t-rb{left:calc(64px + env(safe-area-inset-left,0px))}
+body.padmode #t-start{left:calc(50% - 23px)}
+body.padmode #t-a{right:calc(12px + env(safe-area-inset-right,0px))}
+body.padmode #t-b{right:calc(78px + env(safe-area-inset-right,0px))}
+body.padmode #touch #t-mine{top:auto;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:calc(50% - 32px);right:auto;width:64px;height:64px}
+body.padmode #padui{padding:84px 24px 92px}
+body.padmode #padui p{font-size:13px}
+@media (max-height:360px){body.padmode #padui .swatch{display:none}body.padmode #padui h2{font-size:18px}}
+/* phone garage: shown in the TV lobby instead of the sticks */
+#padcust{display:none}
+body.padmode.cust #padui,body.padmode.cust #touch{display:none!important}
+body.padmode.cust #padcust{display:block;position:fixed;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:calc(12px + env(safe-area-inset-top,0px)) calc(14px + env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) calc(14px + env(safe-area-inset-left,0px));box-sizing:border-box}
+#padcust .pc-wrap{max-width:760px;margin:0 auto;display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:600px){#padcust .pc-wrap{grid-template-columns:minmax(260px,1fr) 1.2fr;align-items:start}#padcust .pc-left{position:sticky;top:0}}
+#padcust .pc-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#padcust .pc-head h2{margin:0;font:400 22px var(--display)}
+#padcust .pc-head .note{font-size:12px}
+#padcust canvas{width:100%;aspect-ratio:16/9;border-radius:8px;display:block;border:1px solid var(--line)}
+#padcust .pc-name{font:400 20px var(--display);margin-top:8px}
+#padcust .pc-desc{color:var(--muted);font-size:13px;margin:2px 0 0}
+#padcust h3{margin:6px 0 6px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#padcust .sw-row{display:flex;flex-wrap:wrap;gap:8px}
+#padcust .sw{width:40px;height:40px;border-radius:10px;border:3px solid transparent;background:var(--c);padding:0;cursor:pointer}
+#padcust .sw.sel{border-color:#f1e6cf;box-shadow:0 0 0 2px #17140f inset}
+#padcust .chip-row{display:flex;flex-wrap:wrap;gap:6px}
+#padcust .pchip{font:600 13px var(--body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;cursor:pointer}
+#padcust .pchip.sel{background:var(--accent);color:#17140f;border-color:var(--accent)}
+#padcust .tank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}
+#padcust .tk{font:600 13px var(--body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 6px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+#padcust .tk small{font-weight:400;font-size:10px;color:var(--muted)}
+#padcust .tk.elite{border-color:#8a6d1f}
+#padcust .tk.sel{background:var(--accent);color:#17140f;border-color:var(--accent)}
+#padcust .tk.sel small{color:#3a2f12}
+#padcust .tk[disabled]{opacity:.45;cursor:default}
+#padcust .pc-actions{display:flex;gap:8px;flex-wrap:wrap}
+#padcust .pc-actions .pbtn{flex:1;min-height:48px;font-size:16px}
 .qr{display:flex;gap:12px;align-items:center;justify-content:center}
 .qr img{width:96px;height:96px;image-rendering:pixelated;border-radius:4px;background:#fff;padding:4px;pointer-events:auto}
 /* Display-only TV host: a clean game screen meant to be mirrored to a TV (no local controls) */
@@ -263,6 +299,7 @@ body.display #h-room{display:inline}
   <div class="tb small" id="t-lb" data-b="4">LB</div>
   <div class="tb small" id="t-rb" data-b="5">RB</div>
 </div>
+<div id="padcust" aria-live="polite"></div>
 <div id="padui"><div class="swatch" id="pad-swatch"></div><h2 id="pad-title">Phone controller</h2><p id="pad-msg">Connecting…</p><button id="pad-retry" class="pbtn ghost" type="button" hidden>Try again</button></div>
 <div id="rotate">Turn your phone sideways to play.</div>
 <div id="net" hidden>
@@ -798,7 +835,7 @@ function setPref(i, patch) {
 }
 
 // ---------- canvas ----------
-const cv = $('#cv'), ctx = cv.getContext('2d');
+const cv = $('#cv'); let ctx = cv.getContext('2d'); // ctx is swapped briefly to draw the phone's tank preview
 const scv = document.createElement('canvas'), sctx = scv.getContext('2d');
 const frameEl = $('#frame'), wrapEl = $('#wrap'), ov = $('#overlay');
 let RS = 1, staticDirty = true;
@@ -3987,10 +4024,111 @@ touchEl.querySelectorAll('.tb').forEach(b => {
 addEventListener('touchstart', enableTouch, { passive: true });
 if (matchMedia('(pointer:coarse)').matches && !matchMedia('(pointer:fine)').matches) enableTouch();
 let lastTouchMode = '';
+// iPhone Safari zooms on a quick double tap or a pinch even with zoom turned off in the page settings; block both
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => {
+  const now = Date.now();
+  if (now - lastTouchEnd < 350 && !(e.target.closest && e.target.closest('input,textarea,select'))) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
+for (const ev of ['gesturestart', 'gesturechange', 'dblclick']) document.addEventListener(ev, e => e.preventDefault(), { passive: false });
+// A press of an on-screen controller button from a regular page button (garage: Join, Start, Leave)
+function pressPad(n) { TOUCH.btn[n] = true; setTimeout(() => { TOUCH.btn[n] = false; }, 140); }
+const myPadSlot = () => slotOf('r:' + NET.myId + ':pad' + TOUCH_PAD);
+// ---------- phone garage (TV lobby): see your tank, pick color, shell trail and tank ----------
+const padCustEl = $('#padcust');
+let lastCust = '';
+function updateCust() {
+  const on = PAD.mode && NET.mode === 'client' && G.state === 'title';
+  if (document.body.classList.contains('cust') !== on) document.body.classList.toggle('cust', on);
+  if (!on) { lastCust = ''; return; }
+  const i = myPadSlot(), sl = i >= 0 ? G.slots[i] : null, n = joinedCount(), unl = unlockedChassis();
+  const key = [i, sl && sl.color, sl && sl.trail, sl && sl.chassis, n, unl.length, NET.code].join('|');
+  if (key !== lastCust) { lastCust = key; padCustEl.innerHTML = custHTML(i, sl, n, unl); }
+  if (sl) drawTankPreview(i);
+}
+function custHTML(i, sl, n, unl) {
+  if (!sl) {
+    return `<div class="pc-wrap" style="grid-template-columns:1fr;max-width:460px;text-align:center;padding-top:8vh">
+      <div class="pc-head" style="justify-content:center"><h2>Room ${esc(NET.code)}</h2></div>
+      <p class="pc-desc">${n}/4 players have joined the game on the TV.</p>
+      ${n >= 4 ? '<p class="warn">The game is full (4 players). You can join as soon as someone leaves.</p>'
+        : '<div class="pc-actions"><button type="button" class="pbtn" data-pc="join">Join the game</button></div>'}</div>`;
+  }
+  const k = slotChassis(i), S = CHASSIS[k];
+  const sw = COLORS.map((c, ci) => `<button type="button" class="sw${ci === sl.color ? ' sel' : ''}" style="--c:${c[1]}" data-pc="color" data-v="${ci}" aria-label="${c[0]}"></button>`).join('');
+  const tr = TRAILS.map((t, ti) => `<button type="button" class="pchip${ti === sl.trail ? ' sel' : ''}" data-pc="trail" data-v="${ti}">${t[1]}</button>`).join('');
+  const order = [...CHASSIS_ORDER.filter(c => unl.includes(c)), ...CHASSIS_ORDER.filter(c => !unl.includes(c))];
+  const tanks = order.map(c => {
+    const ok = unl.includes(c), C = CHASSIS[c];
+    const need = ok ? (C.elite ? 'Elite' : '') : C.unlock ? eliteNeed(c) : `${Math.min(KILLS[c] || 0, KILL_NEED)}/${KILL_NEED} kills`;
+    return `<button type="button" class="tk${c === k ? ' sel' : ''}${C.elite ? ' elite' : ''}" data-pc="tank" data-v="${c}"${ok ? '' : ' disabled'}>${ok ? '' : '🔒 '}${C.name}${need ? `<small>${need}</small>` : ''}</button>`;
+  }).join('');
+  return `<div class="pc-wrap">
+    <div class="pc-left">
+      <div class="pc-head"><h2 style="color:${COLORS[sl.color][1]}">You are P${i + 1}</h2><span class="note">Room ${esc(NET.code)} · ${n}/4</span></div>
+      <canvas id="pc-prev" width="640" height="360" aria-label="Your tank"></canvas>
+      <div class="pc-name">${S.name}</div><p class="pc-desc">${esc(S.desc || 'The all-rounder: bouncing shells and mines.')}</p>
+      <div class="pc-actions" style="margin-top:10px"><button type="button" class="pbtn" data-pc="start">Start game</button><button type="button" class="pbtn ghost" data-pc="leave">Leave</button></div>
+    </div>
+    <div class="pc-right">
+      <h3>Color · ${COLORS[sl.color][0]}</h3><div class="sw-row">${sw}</div>
+      <h3>Shell trail</h3><div class="chip-row">${tr}</div>
+      <h3>Tank · ${unl.length} of ${CHASSIS_ORDER.length} unlocked</h3><div class="tank-grid">${tanks}</div>
+      <p class="pc-desc" style="margin-top:8px">Unlocks are saved on this phone. Destroy 20 of an enemy type to unlock it; elite tanks unlock by reaching levels or total kills.</p>
+    </div></div>`;
+}
+padCustEl.addEventListener('click', e => {
+  const b = e.target.closest('[data-pc]'); if (!b || b.disabled) return;
+  const i = myPadSlot(), v = b.dataset.v;
+  if (navigator.vibrate) try { navigator.vibrate(8); } catch (er) {}
+  switch (b.dataset.pc) {
+    case 'join': pressPad(0); break;
+    case 'start': pressPad(9); break;
+    case 'leave': pressPad(1); break;
+    case 'color': if (i >= 0) setPref(i, { color: +v }); break;
+    case 'trail': if (i >= 0) setPref(i, { trail: +v }); break;
+    case 'tank': if (i >= 0 && unlockedChassis().includes(v)) setPref(i, { chassis: v }); break;
+  }
+});
+// Live preview: your tank, in your color, sweeping its turret and firing a shell with your trail
+function drawTankPreview(i) {
+  const cvs = $('#pc-prev'); if (!cvs) return;
+  const p = cvs.getContext('2d'), w = 320, h = 180, sl = G.slots[i], k = slotChassis(i), S = CHASSIS[k];
+  const col = COLORS[sl.color][1], dark = slotDark(i), time = performance.now() / 1000;
+  p.setTransform(2, 0, 0, 2, 0, 0);
+  p.fillStyle = '#e2d3b2'; p.fillRect(0, 0, w, h);
+  p.fillStyle = 'rgba(120,90,50,.08)'; for (let x = 0; x < w; x += 20) for (let y = 0; y < h; y += 20) if ((x + y) / 20 % 2 === 0) p.fillRect(x, y, 20, 20);
+  const tx = 92, ty = h / 2, sc = 2.2, aim = Math.sin(time * .9) * .22;
+  // shell flying out of the barrel with the chosen trail
+  const ph = (time * .7) % 1, x0 = tx + Math.cos(aim) * 26 * sc, y0 = ty + Math.sin(aim) * 26 * sc;
+  const dist = ph * (w + 40 - x0), bx = x0 + Math.cos(aim) * dist, by = y0 + Math.sin(aim) * dist;
+  const kind = TRAILS[sl.trail][0];
+  for (let q = 1; q <= 14 && kind !== 'none'; q++) {
+    const d = dist - q * 9; if (d < 0) break;
+    const px = x0 + Math.cos(aim) * d, py = y0 + Math.sin(aim) * d, f = 1 - q / 15;
+    p.globalAlpha = f * .9;
+    if (kind === 'smoke') { p.fillStyle = '#9a8f80'; p.beginPath(); p.arc(px, py, 2 + q * .45, 0, TAU); p.fill(); }
+    else if (kind === 'fire') { p.fillStyle = q % 2 ? '#ff7a2e' : '#ffc24d'; p.beginPath(); p.arc(px, py + Math.sin(q * 2 + time * 20) * 1.5, 4 - q * .2, 0, TAU); p.fill(); }
+    else if (kind === 'tint') { p.fillStyle = col; p.beginPath(); p.arc(px, py, 3.5 - q * .15, 0, TAU); p.fill(); }
+    else if (kind === 'spark') { p.fillStyle = q % 2 ? '#fff3b0' : '#f2b90f'; const j = Math.sin(q * 7.3 + time * 30) * 4; p.fillRect(px - 1.5, py + j - 1.5, 3, 3); }
+    else if (kind === 'rainbow') { p.fillStyle = `hsl(${(q * 28 + time * 200) % 360},85%,55%)`; p.beginPath(); p.arc(px, py, 3.2, 0, TAU); p.fill(); }
+    else if (kind === 'bubble') { p.strokeStyle = '#6fc3ff'; p.lineWidth = 1.2; p.beginPath(); p.arc(px, py + Math.sin(q + time * 6) * 2, 2 + q * .3, 0, TAU); p.stroke(); }
+  }
+  p.globalAlpha = 1;
+  if (!S.ram && !S.pulse) { p.fillStyle = '#2b2620'; p.beginPath(); p.arc(bx, by, 3.6, 0, TAU); p.fill(); p.fillStyle = '#f1e6cf'; p.beginPath(); p.arc(bx - 1, by - 1, 1.3, 0, TAU); p.fill(); }
+  // the tank itself, drawn with the game's own tank drawing
+  const t = { x: 0, y: 0, r: R, body: 0, turret: aim, tread: time * 12, recoil: Math.max(0, 1 - ph * 6), team: 'p', slot: i, charge: 0, hit: 0, hv: 0 };
+  p.save(); p.translate(tx, ty); p.scale(sc, sc);
+  const keep = ctx; ctx = p;
+  try { drawStyledTank(t, S, col, dark, 1); } catch (er) {} finally { ctx = keep; }
+  p.restore();
+}
 function updateTouchUi() {
+  updateCust();
   if (NET.display) { const playing = G.state !== 'title'; if (document.body.classList.contains('playing') !== playing) document.body.classList.toggle('playing', playing); }
   if (!TOUCH.on) return;
-  const mode = PAD.mode ? 'pad' : ['play', 'intro', 'clear', 'fail'].includes(G.state) ? 'play' : 'menu';
+  const mode = PAD.mode ? (document.body.classList.contains('cust') ? 'cust' : 'pad') : ['play', 'intro', 'clear', 'fail'].includes(G.state) ? 'play' : 'menu';
   if (mode !== lastTouchMode) { lastTouchMode = mode; touchEl.dataset.mode = mode; }
   if (PAD.mode) updatePadUi();
 }
