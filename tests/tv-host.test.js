@@ -4,7 +4,9 @@ const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path');
 const root = path.join(__dirname, '..');
 const PORT = 8830 + Math.floor(Math.random() * 100);
+const turnApi = require(path.join(root, 'api', 'turn.js'));
 const srv = http.createServer((q, r) => {
+  if (q.url.split('?')[0] === '/api/turn') return turnApi(q, r); // the real function, as Vercel runs it (no relay keys set here)
   const f = path.join(root, q.url === '/' ? 'index.html' : decodeURIComponent(q.url.split('?')[0].split('#')[0]));
   if (!f.startsWith(root)) { r.statusCode = 403; return r.end(); }
   fs.readFile(f, (e, d) => { if (e) { r.statusCode = 404; return r.end(); } r.setHeader('content-type', f.endsWith('.js') ? 'text/javascript' : 'text/html'); r.end(d); });
@@ -54,6 +56,32 @@ async function until(fn, ms = 4000) { const t0 = Date.now(); while (Date.now() -
     const sl = await slots(h);
     check('host & play: host keyboard is P1, phone is P2', sl[0] === 'kb' && /^r:.+:pad9$/.test(sl[1] || ''), JSON.stringify(sl));
     check('host & play: host is not in TV mode', !(await h.evaluate(() => document.body.classList.contains('display'))));
+    await ctx.close();
+  }
+
+  // ---------- 2b. internet relay (TURN) ----------
+  {
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 800 } });
+    await ctx.addInitScript({ path: path.join(__dirname, 'fakepeer.js') });
+    await ctx.addInitScript(() => { const P = window.Peer; window.__peerOpts = []; window.Peer = class extends P { constructor(a, o) { super(a, o); window.__peerOpts.push(typeof a === 'object' ? a : o); } }; });
+    await ctx.route('**/api/turn', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ configured: true, iceServers: [{ urls: ['turn:relay.example:3478?transport=udp'], username: 'u', credential: 'c' }] }) }));
+    const h = watch(await ctx.newPage(), 'relay-host');
+    await h.goto(URL + '#debug'); await wait(300);
+    await h.click('#net-btn');
+    check('relay: panel says the internet relay is on', await until(async () => /relay on/i.test(await h.textContent('#net-relay'))));
+    await h.click('#net-host'); await h.waitForFunction(() => document.querySelector('#net-room').textContent.length === 5);
+    const code = await h.textContent('#net-room');
+    const ph = watch(await ctx.newPage(), 'relay-phone'); await ph.goto(URL + '#pad=' + code);
+    await until(async () => (await ph.textContent('#pad-title')).startsWith('Room'));
+    const hostIce = await h.evaluate(() => JSON.stringify(window.__peerOpts[0].config.iceServers)), phIce = await ph.evaluate(() => JSON.stringify(window.__peerOpts[0].config.iceServers));
+    check('relay: host and phone both connect with the relay servers', /relay\.example/.test(hostIce) && /relay\.example/.test(phIce) && /stun:/.test(hostIce));
+    await ctx.close();
+  }
+  {
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 800 } });
+    const h = watch(await ctx.newPage(), 'no-relay');
+    await h.goto(URL); await wait(300); await h.click('#net-btn');
+    check('no relay set up: panel says so (and play still works, see the tests below)', await until(async () => /not set up/i.test(await h.textContent('#net-relay'))));
     await ctx.close();
   }
 

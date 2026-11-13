@@ -322,6 +322,7 @@ body.display #h-room{display:inline}
       <button id="net-voice" class="pbtn ghost" type="button">Turn voice chat on</button>
     </div>
     <p id="net-status" role="status"></p>
+    <p class="note" id="net-relay"></p>
     <div class="btnrow"><button id="net-leave" class="pbtn ghost" type="button" hidden>Leave room</button><button id="net-close" class="pbtn ghost" type="button">Close</button></div>
   </div>
 </div>
@@ -2937,6 +2938,9 @@ function send(msg) { const c = NET.hostConn; if (c && c.open) { try { c.send(msg
 function broadcast(msg) { for (const id in NET.conns) { const c = NET.conns[id].conn; if (c && c.open) { try { c.send(msg); } catch (e) {} } } }
 let peerLoad = null;
 function loadPeer() {
+  return Promise.all([loadPeerScript(), loadIce()]);
+}
+function loadPeerScript() {
   if (window.Peer) return Promise.resolve();
   if (peerLoad) return peerLoad;
   peerLoad = new Promise((res, rej) => {
@@ -2947,7 +2951,24 @@ function loadPeer() {
   });
   return peerLoad;
 }
-const PEER_OPTS = { config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }] } };
+// STUN finds a direct path between players. When there is none (mobile data, strict networks), a TURN relay passes the
+// game along instead; its short-lived credentials come from this site's /api/turn function (see api/turn.js and the README).
+const STUN = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }];
+const ICE = { servers: [], relay: false, checked: false, t: 0 };
+async function loadIce() {
+  if (ICE.checked && Date.now() - ICE.t < 6 * 3600e3) return; // credentials last 24 h; refresh well before that
+  try {
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 4000);
+    const r = await fetch('api/turn', { signal: ctl.signal, cache: 'no-store' }); clearTimeout(to);
+    if (r.ok && /json/.test(r.headers.get('content-type') || '')) {
+      const d = await r.json();
+      ICE.servers = Array.isArray(d.iceServers) ? d.iceServers.filter(x => x && x.urls) : [];
+      ICE.relay = ICE.servers.some(x => [].concat(x.urls).some(u => /^turns?:/.test(u)));
+    }
+  } catch (e) { /* no relay available here: direct connections only */ }
+  ICE.checked = true; ICE.t = Date.now(); renderNet();
+}
+const peerOpts = () => ({ config: { iceServers: [...STUN, ...ICE.servers] } });
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const genCode = () => Array.from({ length: 5 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
 const cleanName = n => String(n || '').replace(/[<>&"'`]/g, '').trim().slice(0, 16) || 'Player';
@@ -2969,7 +2990,7 @@ function hostRoom(display) {
 function openHostPeer(attempt) {
   const code = genCode();
   let peer;
-  try { peer = new window.Peer(PREFIX + code, PEER_OPTS); } catch (e) { setNetStatus(netErr(e), true); return; }
+  try { peer = new window.Peer(PREFIX + code, peerOpts()); } catch (e) { setNetStatus(netErr(e), true); return; }
   NET.peer = peer;
   peer.on('open', id => {
     NET.mode = 'host'; NET.myId = id; NET.hostId = id; NET.code = code; NET.conns = {}; NET.events = []; NET.held = {};
@@ -3098,7 +3119,7 @@ function joinRoom(raw) {
 }
 function openClientPeer(code) {
   let peer, opened = false;
-  try { peer = new window.Peer(PEER_OPTS); } catch (e) { setNetStatus(netErr(e), true); return; }
+  try { peer = new window.Peer(peerOpts()); } catch (e) { setNetStatus(netErr(e), true); return; }
   NET.peer = peer;
   const fail = msg => {
     if (opened) return; clearTimeout(to);
@@ -3107,7 +3128,8 @@ function openClientPeer(code) {
     setNetStatus(msg, true);
     padReconnectLater();
   };
-  const to = setTimeout(() => fail('Could not reach that room. Check the code, and make sure the host still has the game open.'), 15000);
+  const to = setTimeout(() => fail('Could not reach that room. Check the code, and make sure the host still has the game open.'
+    + (ICE.relay ? '' : ' If you are on different networks (for example mobile data), the site needs its internet relay set up; see the README.')), 20000);
   peer.on('open', id => {
     NET.myId = id;
     const conn = peer.connect(PREFIX + code, { serialization: 'json', reliable: true });
@@ -3330,7 +3352,7 @@ $('#cheat-close').addEventListener('click', closeCheat);
 cheatEl.addEventListener('click', e => { if (e.target === cheatEl) closeCheat(); });
 const nameIn = $('#net-name'), codeIn = $('#net-code');
 nameIn.value = NET.name;
-function openNet() { netEl.hidden = false; renderNet(); }
+function openNet() { netEl.hidden = false; renderNet(); loadIce(); }
 function closeNet() { netEl.hidden = true; if (document.activeElement) document.activeElement.blur(); }
 function renderNet() {
   const on = NET.mode !== 'off';
@@ -3349,6 +3371,9 @@ function renderNet() {
   if (NET.mode === 'host') qr.innerHTML = `${qrImg(NET.code)}<span class="note">Phones can be controllers: scan this, or open this page on the phone, click Play online, enter the code and tap <b>Use this phone as a controller</b>.</span>`;
   $('#net-roster').innerHTML = NET.roster.map(r => `<li><span>${esc(r.name)}${r.id === NET.myId ? ' (you)' : ''}${r.host ? ' · host' : ''}</span><span class="tag ${r.voice ? 'on' : ''}">${r.voice ? 'Voice on' : 'Voice off'}</span></li>`).join('');
   $('#net-voice').textContent = NET.voice ? 'Turn voice chat off' : 'Turn voice chat on';
+  $('#net-relay').textContent = !ICE.checked ? '' : ICE.relay
+    ? 'Internet relay on: players can join from any network, including mobile data.'
+    : 'Internet relay not set up on this site: players on different networks (for example mobile data) may not be able to connect.';
   const st = $('#net-status'); st.textContent = NET.status; st.dataset.err = NET.err ? '1' : '0';
   netBtn.textContent = on ? `Room ${NET.code} · ${Math.max(1, NET.roster.length)} online` : 'Play online';
   voiceBtn.hidden = !on; voiceBtn.textContent = NET.voice ? 'Voice on' : 'Voice off'; voiceBtn.dataset.on = NET.voice ? '1' : '0';

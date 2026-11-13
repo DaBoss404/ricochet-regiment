@@ -64,6 +64,7 @@ Browser tests cover offline play, Host & play, and TV mode with five phones (joi
 
 ```bash
 node tests/tv-host.test.js
+node tests/turn-api.test.js
 ```
 
 ## Online play
@@ -75,5 +76,17 @@ Click **Play online** at the top of the page.
 - Up to 4 players in total, across up to 4 computers. Each computer can have more than one player on it.
 - The host's browser runs the game for everyone, so the host should keep the game tab in front.
 - **Voice chat** is off by default. Turn it on with the **Voice** button, V, or the controller's View button. You hear the others only while your own voice chat is on.
+
+### Playing across different networks (internet relay)
+
+Players don't need to be on the same Wi-Fi. When two devices can't connect directly (common on mobile data and strict school or office networks), the game sends its traffic through a TURN relay instead. The site gets temporary relay passwords from its own `/api/turn` function (`api/turn.js`), so the secret keys stay in Vercel and never appear in the page. Without keys, the game still works but uses direct connections only. The online panel says whether the relay is on.
+
+To turn the relay on (free Cloudflare account):
+
+1. In the Cloudflare dashboard, open **Realtime** (also listed as **Calls**) → **TURN Server** → **Create**, and give it a name. Copy the **Turn Token ID** and the **API Token** it shows.
+2. In Vercel, open the project → **Settings → Environment Variables** and add `CLOUDFLARE_TURN_KEY_ID` (the Turn Token ID) and `CLOUDFLARE_TURN_API_TOKEN` (the API Token), for Production and Preview.
+3. Redeploy (Deployments → ⋯ → **Redeploy**). Then open the site, click **Play online**, and check it says "Internet relay on".
+
+Metered.ca works too: set `METERED_DOMAIN` (for example `yourapp.metered.live`) and `METERED_API_KEY` instead.
 
 Online play uses [PeerJS](https://peerjs.com/) (MIT licensed, bundled as `peerjs.min.js`; license in `peerjs.LICENSE`) to connect browsers directly, with its free public server used only to introduce players to each other. Some strict school or office networks block direct connections; if a friend can't connect, try a different network.
