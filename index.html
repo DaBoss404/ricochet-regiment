@@ -380,7 +380,7 @@ const ETYPES = {
   l: { name: 'Laser',    color: '#dc2626', speed: 40, bs: 0, bounces: 0, max: 1, cd: 3.4, turn: 1.8, aimEvery: .35, laser: true, charge: .7, pref: 340, miss: 0, err: .04 },
   i: { name: 'Bouncer',  color: '#65a30d', speed: 55, bs: 210, bounces: 4, max: 2, cd: 1.8, turn: 2.4, aimEvery: .35, smart: true, accel: .12, pref: 300, miss: .35, err: .12 },
   u: { name: 'Summoner', color: '#b45309', speed: 35, bs: 170, bounces: 1, max: 1, cd: 2.8, turn: 1.8, aimEvery: .5, summon: 6, pref: 360, miss: .45, err: .2 },
-  sie:  { name: 'Siege',     color: '#4a4036', speed: 32, bs: 150, bounces: 1, max: 1, cd: 2.6, turn: 1.4, aimEvery: .5, smart: true, kind: 'cannon', hr: 7, pref: 320, miss: .3, err: .1 },
+  sie:  { name: 'Siege',     color: '#4a4036', speed: 32, bs: 150, bounces: 0, max: 1, cd: 2.6, turn: 1.4, aimEvery: .5, smart: true, kind: 'cannon', hr: 7, pref: 320, miss: .3, err: .1 },
   kam:  { name: 'Kamikaze',  color: '#e85d04', r: 11, speed: 125, bs: 0, bounces: 0, max: 0, cd: 99, turn: 4, aimEvery: 1, pref: 0, miss: 0, err: 0, kami: true },
   mag:  { name: 'Magnet',    color: '#a21caf', speed: 45, bs: 200, bounces: 1, max: 1, cd: 2.2, turn: 2, aimEvery: .4, smart: true, magnet: 85, pref: 260, miss: .35, err: .14 },
   gen:  { name: 'Generator', color: '#0284c7', speed: 30, bs: 170, bounces: 1, max: 1, cd: 3, turn: 1.6, aimEvery: .5, gen: 120, pref: 380, miss: .45, err: .2 },
@@ -643,7 +643,7 @@ const CHASSIS = {
   f:   { name: 'Brute',    desc: 'Fires a 3-shell burst, then reloads slowly.', burst: 3, burstGap: .09, cd: 3.2 },
   v:   { name: 'Splitter', desc: 'Shells split in two on their first bounce.', fis: true, cd: 1.15 },
   x:   { name: 'Hive',     desc: 'When destroyed, splits into two small tanks: steer one with the left stick (WASD) and the other with the right stick (arrow keys). They fire on their own.', split: true },
-  sie: { name: 'Siege',     desc: 'Fires a slow giant cannonball that smashes through every enemy in its path.', kind: 'cannon', spd: .6, bnc: -1, pierce: 99, hr: 7, cd: 2.4 },
+  sie: { name: 'Siege',     desc: 'Fires a slow giant cannonball that smashes through every tank and shell in its path, then destroys the first wooden block or crate it hits.', kind: 'cannon', spd: .6, bnc: -1, pierce: 99, hr: 7, cd: 2.4 },
   kam: { name: 'Kamikaze',  desc: 'Fire to launch a bomb car that races to the nearest enemy and explodes (up to 3 at once).', kamiLaunch: true },
   mag: { name: 'Magnet',    desc: 'A magnetic field bends enemy shells away from you.', magnet: 90 },
   gen: { name: 'Generator', desc: 'A bubble shield blocks one hit, then recharges after 6 seconds.', bubble: 6, bubbles: 1 },
@@ -1622,6 +1622,26 @@ function shellEnd(b) {
     case 'cluster': { const back = Math.atan2(-b.dy, -b.dx), cn = ch.cn || 5; for (let k = 0; k < cn; k++) { const a = back + (k / (cn - 1) - .5) * 1.8; looseShell(o, b.x - b.dx * 6, b.y - b.dy * 6, a, 280, 1); } emit({ t: 'boom', x: r1(b.x), y: r1(b.y), c: '#ffb04d', k: .5 }); sfx('pop'); break; }
   }
 }
+// Siege cannonball: if its next step runs into a wooden block or crate, that block is destroyed and the cannonball stops.
+// (The arena's outer edge is outside the grid and can't be broken.)
+function cannonSmash(b) {
+  const nx = b.x + b.dx * STEP, ny = b.y + b.dy * STEP, ex = Math.sign(b.dx) * 3, ey = Math.sign(b.dy) * 3;
+  const hx = bb(nx + ex, b.y), hy = bb(b.x, ny + ey);
+  if (!hx && !hy && !bb(nx + ex, ny + ey)) return false;
+  const cells = hx || hy ? [hx && [nx + ex, b.y], hy && [b.x, ny + ey]].filter(Boolean) : [[nx + ex, ny + ey]];
+  let broke = false;
+  for (const [x, y] of cells) {
+    const c = Math.floor(x / TS), r = Math.floor(y / TS);
+    if (r < 0 || c < 0 || r >= ROWS || c >= COLS) continue;
+    const tile = G.grid[r][c]; if (tile !== 1 && tile !== 2) continue;
+    G.grid[r][c] = 0; staticDirty = true; broke = true;
+    const cx = c * TS + TS / 2, cy = r * TS + TS / 2;
+    emit({ t: 'crate', x: cx, y: cy });
+    if (tile === 1) emit({ t: 'puff', x: cx, y: cy, n: 10, v: 70, z: 6 });
+  }
+  emit({ t: 'boom', x: r1(b.x), y: r1(b.y), c: '#c8a46a', k: .5 }); sfx(broke ? 'boom' : 'pop'); if (broke) shake(4);
+  return true;
+}
 // Tesla: instant lightning to the nearest enemy roughly in front, then it leaps to up to 2 more
 function teslaShot(t) {
   const hit = [], pts = [[r1(t.x + Math.cos(t.turret) * 22), r1(t.y + Math.sin(t.turret) * 22)]];
@@ -2588,6 +2608,7 @@ function updateBullets(dt) {
     b.acc = (b.acc || 0) + b.speed * dt * (b.team === 'e' && sk('warp') ? .65 : 1);
     while (b.acc >= STEP && b.alive) {
       b.acc -= STEP;
+      if (b.kind === 'cannon') { b.bounces = 0; if (cannonSmash(b)) { killBullet(b, false); break; } }
       const r = advance(b, STEP);
       if (r === 'dead') { if (b.wpn) shellEnd(b); killBullet(b, !b.wpn); break; }
       if (r === 'bounce') {
@@ -2620,7 +2641,7 @@ function updateBullets(dt) {
             emit({ t: 'spk', x: r1(t.x), y: r1(t.y), n: 10, v: 120 }); sfx('clank'); rumble(t.dev, .3, .3, 150); break;
           }
           const rp = t.team === 'e' ? (t.spec && t.spec.reflectP) || 0 : (!t.ally && !t.half ? chassisOf(t).reflectP || 0 : 0);
-          if (b.team !== t.team && rp && Math.random() < rp) {
+          if (b.team !== t.team && rp && b.kind !== 'cannon' && Math.random() < rp) {
             // Reflector: the shell bounces back for the other side
             const d = Math.hypot(b.x - t.x, b.y - t.y) || 1;
             if (!b.free) b.owner.bullets = Math.max(0, b.owner.bullets - 1);
@@ -2628,7 +2649,7 @@ function updateBullets(dt) {
             b.dx = (b.x - t.x) / d; b.dy = (b.y - t.y) / d; b.bounced = true; b.hitIds = [t.id];
             emit({ t: 'spk', x: r1(b.x), y: r1(b.y), n: 6, v: 120 }); sfx('clank'); break;
           }
-          if (b.team === 'e' && t.team === 'p' && sk('reflect') && Math.random() < F.reflect(sk('reflect'))) {
+          if (b.team === 'e' && t.team === 'p' && b.kind !== 'cannon' && sk('reflect') && Math.random() < F.reflect(sk('reflect'))) {
             // Mirror Plating: the shell flips sides and flies back out
             const d = Math.hypot(b.x - t.x, b.y - t.y) || 1;
             if (!b.free) b.owner.bullets = Math.max(0, b.owner.bullets - 1);
@@ -2639,7 +2660,7 @@ function updateBullets(dt) {
           }
           const shielded = b.team !== t.team && (t.team === 'e' ? !!(t.spec && t.spec.shield && t.shState !== 2) : !!chassisOf(t).shield);
           const arc = t.team === 'p' ? (chassisOf(t).arc || 1.05) : 1.05;
-          if (shielded && Math.abs(angDiff(Math.atan2(b.y - t.y, b.x - t.x), t.turret)) < arc) {
+          if (shielded && b.kind !== 'cannon' && Math.abs(angDiff(Math.atan2(b.y - t.y, b.x - t.x), t.turret)) < arc) {
             // Bulwark (enemy or player): shells that hit the front shield bounce away
             const nx = (b.x - t.x) / (Math.hypot(b.x - t.x, b.y - t.y) || 1), ny = (b.y - t.y) / (Math.hypot(b.x - t.x, b.y - t.y) || 1);
             const dot = b.dx * nx + b.dy * ny;
@@ -2654,6 +2675,7 @@ function updateBullets(dt) {
             break;
           }
           hurtTank(t, b.owner, b.team === 'p' ? F.bossDmg(sk('heavy')) + (b.bounced ? sk('bankshot') : 0) + (b.big ? 2 : 0) : 1);
+          if (b.kind === 'cannon') { b.hitIds.push(t.id); emit({ t: 'spk', x: r1(t.x), y: r1(t.y), n: 8, v: 150 }); continue; } // Siege: keeps rolling through every tank
           if (b.kind === 'ice' && b.team === 'p') freezeArea(b.x, b.y, chassisOf(b.owner).freezeR || 70, chassisOf(b.owner).freezeT || 2);
           if ((b.wpn === 'grenade' || b.wpn === 'bomb' || b.wpn === 'swarm' || b.wpn === 'napalm' || b.wpn === 'vortex') && t.team === 'e') { if (b.wpn !== 'vortex') hurtTank(t, b.owner, 1); shellEnd(b); killBullet(b, false); break; }
           if (b.team === 'e' && b.wpn) { shellEnd(b); killBullet(b, false); break; }
@@ -2674,7 +2696,8 @@ function updateBullets(dt) {
       const b = bs[j]; if (!b.alive || a.team === b.team || a.kind === 'flame' || b.kind === 'flame') continue;
       if ((a.x - b.x) ** 2 + (a.y - b.y) ** 2 < (a.big || b.big ? 196 : 81)) {
         // Parry: your shell survives and only the enemy shell is destroyed
-        const pb = a.team === 'p' ? a : b, keep = sk('parry') || pb.big ? pb : null;
+        const pb = a.team === 'p' ? a : b, ca = a.kind === 'cannon', cb = b.kind === 'cannon';
+        const keep = ca !== cb ? (ca ? a : b) : sk('parry') || pb.big ? pb : null; // a Siege cannonball rolls through shells
         if (keep !== a) killBullet(a, false); if (keep !== b) killBullet(b, false); sfx('pop');
         emit({ t: 'spk', x: r1(a.x), y: r1(a.y), n: 8, v: 140 }); emit({ t: 'puff', x: r1(a.x), y: r1(a.y), n: 4, v: 40, z: 4 });
         if (!a.alive) break;
@@ -3630,7 +3653,7 @@ function render() {
       c.beginPath(); c.arc(mx, my, ch.starfall ? 75 : 50 * (ch.mr || 1), 0, TAU); c.stroke(); c.setLineDash([]); c.beginPath(); c.arc(mx, my, 4, 0, TAU); c.stroke(); c.restore();
       continue;
     }
-    const pts = ch.laser || (ch.lance && ch.lbnc) ? aimPath(t, (ch.lbnc || 0) + (ch.laser ? sk('bounce') : 0), 1600) : ch.lance || ch.ion || ch.beams ? aimPath(t, 0, 1400) : ch.beam ? aimPath(t, ch.beam + sk('bounce'), 1600) : ch.tesla ? aimPath(t, 0, 340) : aimPath(t, Math.max(0, F.bounces(sk('bounce')) + (ch.bnc || 0)) + (sk('mythic') ? 6 : 0), ch.pellets ? 150 : ch.flame ? 100 : F.sights(sk('sights')) * (ch.sight || 1));
+    const pts = ch.laser || (ch.lance && ch.lbnc) ? aimPath(t, (ch.lbnc || 0) + (ch.laser ? sk('bounce') : 0), 1600) : ch.lance || ch.ion || ch.beams ? aimPath(t, 0, 1400) : ch.beam ? aimPath(t, ch.beam + sk('bounce'), 1600) : ch.tesla ? aimPath(t, 0, 340) : aimPath(t, ch.kind === 'cannon' ? 0 : Math.max(0, F.bounces(sk('bounce')) + (ch.bnc || 0)) + (sk('mythic') ? 6 : 0), ch.pellets ? 150 : ch.flame ? 100 : F.sights(sk('sights')) * (ch.sight || 1));
     c.save(); c.strokeStyle = slotColor(t.slot); c.globalAlpha = .55; c.lineWidth = 2; c.setLineDash([2, 7]); c.lineCap = 'round';
     if (t.charge > 0) { c.strokeStyle = '#ff2d2d'; c.globalAlpha = .9; c.lineWidth = 2.5; c.setLineDash([]); } // Sniper charge-up laser
     c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const p of pts.slice(1)) c.lineTo(p[0], p[1]); c.stroke(); c.restore();
