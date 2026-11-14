@@ -55,6 +55,14 @@ async function until(fn, ms = 4000) { const t0 = Date.now(); while (Date.now() -
     await tap(ph, '#t-a'); await wait(300);
     const sl = await slots(h);
     check('host & play: host keyboard is P1, phone is P2', sl[0] === 'kb' && /^r:.+:pad9$/.test(sl[1] || ''), JSON.stringify(sl));
+    const cl = watch(await ctx.newPage(), 'h&p-pc'); await cl.goto(URL);
+    await cl.click('#net-btn'); await cl.fill('#net-code', code); await cl.click('#net-join');
+    await until(() => cl.evaluate(() => !document.querySelector('#leave-btn').hidden)); await cl.click('#net-close');
+    await cl.keyboard.press('Space'); await wait(300);
+    const before3 = (await slots(h)).filter(Boolean).length;
+    await cl.click('#leave-btn'); await cl.click('#leave-btn'); await wait(600);
+    check('online mode: top-bar Leave room removes that player from the host', before3 === 3 && (await slots(h)).filter(Boolean).length === 2, before3 + '');
+    check('online mode: the player who left is back on their own title screen', await cl.evaluate(() => document.querySelector('#leave-btn').hidden && document.querySelector('#net-btn').textContent === 'Play online'));
     check('host & play: host is not in TV mode', !(await h.evaluate(() => document.body.classList.contains('display'))));
     await ctx.close();
   }
@@ -118,6 +126,12 @@ async function until(fn, ms = 4000) { const t0 = Date.now(); while (Date.now() -
   check('fifth phone is told the game is full', /full/i.test(await phones[4].textContent('#pad-msg')));
   await tap(phones[4], '#t-start'); await wait(300);
   check('fifth phone cannot start the game', (await state(tv)) === 'title');
+  const conns5 = await tv.evaluate(() => /5 phones connected/.test(document.querySelector('#overlay').textContent));
+  await phones[4].click('#padcust [data-pc="leaveroom"]'); await wait(100);
+  check('Leave room asks for a second tap', /again/i.test(await phones[4].textContent('#padcust [data-pc="leaveroom"]')));
+  await phones[4].click('#padcust [data-pc="leaveroom"]'); await wait(700);
+  check('phone that leaves the room goes back to the title screen', await phones[4].evaluate(() => !document.body.classList.contains('padmode') && /Tank/.test(document.querySelector('#overlay h1').textContent) && !/#pad=/.test(location.hash)));
+  check('TV lobby counts the phone as gone', conns5 && await tv.evaluate(() => /4 phones connected/.test(document.querySelector('#overlay').textContent)));
   check('TV lobby says all 4 slots are full', await tv.evaluate(() => /All 4 player slots are full/.test(document.querySelector('#overlay').textContent)));
   await tv.screenshot({ path: path.join(__dirname, 'out-tv-lobby-full.png') });
 
@@ -164,6 +178,8 @@ async function until(fn, ms = 4000) { const t0 = Date.now(); while (Date.now() -
       const out = [];
       for (const [q, r] of els) if (r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight) out.push(q + ' off-screen');
       for (let x = 0; x < els.length; x++) for (let y = x + 1; y < els.length; y++) { const [qa, a] = els[x], [qb, b] = els[y]; if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) out.push(qa + ' overlaps ' + qb); }
+      const lv = document.querySelector('#pad-leave').getBoundingClientRect();
+      for (const [q, r] of els) if (lv.width && lv.left < r.right && r.left < lv.right && lv.top < r.bottom && r.top < lv.bottom) out.push('Leave room overlaps ' + q);
       const msg = document.querySelector('#pad-msg').getBoundingClientRect(), mine = document.querySelector('#t-mine').getBoundingClientRect();
       if (msg.bottom > mine.top && msg.right > mine.left && msg.left < mine.right) out.push('status text overlaps MINE');
       return out;
@@ -246,9 +262,24 @@ async function until(fn, ms = 4000) { const t0 = Date.now(); while (Date.now() -
   await manual.click('#net-btn'); await manual.fill('#net-code', code.toLowerCase()); await manual.click('#net-pad');
   check('manual code entry joins as controller', await until(async () => (await manual.textContent('#pad-title')).startsWith('Room')));
 
-  // leaving TV mode restores the normal host
-  await tv.evaluate(() => document.querySelector('#net-btn').click()); await tv.click('#net-leave'); await wait(300);
-  check('leaving the room ends TV mode', !(await tv.evaluate(() => document.body.classList.contains('display'))));
+  // a player leaves the room in the middle of a game: tank and slot gone right away, the others play on
+  await until(async () => (await state(tv)) === 'play', 6000);
+  const leaver = phones[3];
+  check('phone shows a Leave room button during play', await leaver.evaluate(() => { const b = document.querySelector('#pad-leave'); return !b.hidden && b.getBoundingClientRect().width > 0; }));
+  await leaver.click('#pad-leave'); await leaver.click('#pad-leave'); await wait(700);
+  const gone = await G(tv, () => ({ slot: RR_DEBUG.G.slots[3], tank: RR_DEBUG.G.tanks.some(t => t.team === 'p' && t.slot === 3 && t.alive), st: RR_DEBUG.G.state, others: RR_DEBUG.G.slots.filter(Boolean).length }));
+  check('player who left: slot and tank gone right away', !gone.slot && !gone.tank, JSON.stringify(gone));
+  check('other players keep playing after someone leaves', gone.st === "play" && gone.others === 3, JSON.stringify(gone));
+  check("phone that left mid-game is back on its title screen", await leaver.evaluate(() => !document.body.classList.contains('padmode')));
+
+  // the host leaves: every phone goes back to the title screen with a message, nobody tries to reconnect
+  await tv.evaluate(() => { document.querySelector('#leave-btn').click(); document.querySelector('#leave-btn').click(); }); await wait(900);
+  check('leaving the room ends TV mode and returns the host to the title', await tv.evaluate(() => !document.body.classList.contains('display') && RR_DEBUG.G.state === 'title'));
+  const back2 = await Promise.all([phones[0], phones[2], manual].map(p => p.evaluate(() => ({ pad: document.body.classList.contains('padmode'), net: !document.querySelector('#net').hidden, msg: document.querySelector('#net-status').textContent }))));
+  check('host leaving sends every phone to the title screen', back2.every(x => !x.pad), JSON.stringify(back2));
+  check('phones are told the host closed the room', back2.every(x => /host closed/i.test(x.msg)), JSON.stringify(back2.map(x => x.msg)));
+  await wait(3000);
+  check('phones do not keep trying to reconnect after the host left', (await Promise.all([phones[0], phones[2]].map(p => p.evaluate(() => document.body.classList.contains('padmode'))))).every(x => !x));
 
   check('no page errors', errs.length === 0, errs.slice(0, 5).join(' | '));
   await b.close(); srv.close();

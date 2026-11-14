@@ -55,7 +55,7 @@ Good to know:
 - A fifth phone can connect but waits until someone leaves; it can't take over a slot or start the game.
 - If a phone locks or loses Wi-Fi, it reconnects by itself when you come back to the page; press A and it gets its old player number, color and tank back. The other players keep playing meanwhile.
 - Tanks a phone can pick depend on unlocks saved on that phone.
-- To end TV mode, tap the top of the iPad screen to show the menu buttons, open the room button and choose **Leave room**.
+- **Leave room** (tap it twice): on a phone it's in the garage and under the status text during play; on a computer it's in the top bar. A player who leaves disappears from the game and the lobby right away. When the host leaves (on the TV device, tap the top of the screen to show the buttons), every phone and computer goes back to the title screen.
 - **Host & play** (the other hosting button) works as before: the host device plays too, and friends join from their own computers or phones.
 
 ## Tests

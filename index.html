@@ -215,7 +215,10 @@ body.padmode #t-start{left:calc(50% - 23px)}
 body.padmode #t-a{right:calc(12px + env(safe-area-inset-right,0px))}
 body.padmode #t-b{right:calc(78px + env(safe-area-inset-right,0px))}
 body.padmode #touch #t-mine{top:auto;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:calc(50% - 32px);right:auto;width:64px;height:64px}
-body.padmode #padui{padding:84px 24px 92px}
+body.padmode #padui{padding:84px 24px 92px;z-index:6}
+.hbtn.leave{border-color:#7a3b34}
+.leave.armed{background:#e5484d!important;border-color:#e5484d!important;color:#fff!important}
+#pad-leave{min-height:40px;padding:6px 16px;font-size:13px}
 body.padmode #padui p{font-size:13px}
 @media (max-height:360px){body.padmode #padui .swatch{display:none}body.padmode #padui h2{font-size:18px}}
 /* phone garage: shown in the TV lobby instead of the sticks */
@@ -274,7 +277,7 @@ body.display #h-room{display:inline}
   <header id="hud">
     <div class="hgroup"><span class="lbl">Level</span><b id="h-stage">–</b><span id="h-name"></span><span id="h-room"></span></div>
     <div class="hgroup"><span class="lbl">Enemies</span><b id="h-enemies">–</b><span class="lbl">Lives</span><b id="h-lives">–</b><span class="lbl" id="h-ff">Friendly fire off</span></div>
-    <div class="hgroup net"><button id="net-btn" class="hbtn" type="button">Play online</button><button id="voice-btn" class="hbtn" type="button" hidden>Voice off</button><button id="music-btn" class="hbtn" type="button">Music on</button><button id="fs-btn" class="hbtn" type="button" hidden>Full screen</button></div>
+    <div class="hgroup net"><button id="net-btn" class="hbtn" type="button">Play online</button><button id="voice-btn" class="hbtn" type="button" hidden>Voice off</button><button id="music-btn" class="hbtn" type="button">Music on</button><button id="fs-btn" class="hbtn" type="button" hidden>Full screen</button><button id="leave-btn" class="hbtn leave" type="button" hidden>Leave room</button></div>
     <div class="hud-slots">
       <div class="chip" data-state="empty" style="--c:var(--p1)"><i></i><b>P1</b><span>–</span></div>
       <div class="chip" data-state="empty" style="--c:var(--p2)"><i></i><b>P2</b><span>–</span></div>
@@ -300,7 +303,7 @@ body.display #h-room{display:inline}
   <div class="tb small" id="t-rb" data-b="5">RB</div>
 </div>
 <div id="padcust" aria-live="polite"></div>
-<div id="padui"><div class="swatch" id="pad-swatch"></div><h2 id="pad-title">Phone controller</h2><p id="pad-msg">Connecting…</p><button id="pad-retry" class="pbtn ghost" type="button" hidden>Try again</button></div>
+<div id="padui"><div class="swatch" id="pad-swatch"></div><h2 id="pad-title">Phone controller</h2><p id="pad-msg">Connecting…</p><button id="pad-leave" class="pbtn ghost leave" type="button" hidden>Leave room</button><button id="pad-retry" class="pbtn ghost" type="button" hidden>Try again</button></div>
 <div id="rotate">Turn your phone sideways to play.</div>
 <div id="net" hidden>
   <div class="net-card" role="dialog" aria-modal="true" aria-labelledby="net-title">
@@ -3037,12 +3040,13 @@ function onHostData(pid, d) {
     case 'in': if (d.d && typeof d.d === 'object') p.input = d.d; break;
     case 'pref': { const s = G.slots[d.slot]; if (s && s.dev.startsWith('r:' + pid + ':')) applyPref(d.slot, d.patch); break; }
     case 'voice': p.voice = !!d.on; updateRoster(); break;
+    case 'bye': try { p.conn.close(); } catch (e) {} dropPeer(pid, true); break; // left on purpose: tank and slot go away now, not held
     case 'pick': if (Object.keys(p.input).length && G.slots.some(s => s && s.dev.startsWith('r:' + pid + ':'))) chooseSkill(d.i | 0); break;
   }
 }
-function dropPeer(pid) {
+function dropPeer(pid, left) {
   if (!NET.conns[pid]) return;
-  const tok = NET.conns[pid].tok;
+  const tok = left ? null : NET.conns[pid].tok;
   delete NET.conns[pid];
   G.slots.forEach((s, i) => {
     if (!s || !s.dev.startsWith('r:' + pid + ':')) return;
@@ -3156,7 +3160,8 @@ function onClientData(d) {
   switch (d.t) {
     case 'snap': applySnap(d); break;
     case 'roster': NET.roster = Array.isArray(d.list) ? d.list : []; onRosterChanged(); break;
-    case 'full': leaveRoom('That room is full.'); break;
+    case 'full': if (PAD.mode) exitPadMode(); leaveRoom('That room is full.'); break;
+    case 'closed': if (PAD.mode) exitPadMode(); leaveRoom('The host closed the room.'); break; // host left on purpose: everyone back to the title
   }
 }
 function applySnap(s) {
@@ -3259,7 +3264,7 @@ function leaveRoom(msg) {
   NET.peer = null; NET.conns = {}; NET.hostConn = null; NET.mode = 'off'; NET.roster = []; NET.code = ''; NET.events = []; NET.held = {};
   if (NET.display) exitDisplayMode();
   if (was === 'client') { G.slots = [null, null, null, null]; toTitle(); }
-  else if (was === 'host') G.slots.forEach((s, i) => { if (s && s.dev.startsWith('r:')) removeSlot(i); });
+  else if (was === 'host') { G.slots.forEach((s, i) => { if (s && s.dev.startsWith('r:')) removeSlot(i); }); toTitle(); }
   setNetStatus(msg || '', !!msg);
   if (PAD.mode) { if (msg) padReconnectLater(); return; }
   if (msg) openNet();
@@ -3359,6 +3364,7 @@ function renderNet() {
   $('#net-offline').style.display = on ? 'none' : 'flex';
   $('#net-online').hidden = !on; $('#net-online').style.display = on ? 'flex' : 'none';
   $('#net-leave').hidden = !on;
+  $('#leave-btn').hidden = !on;
   $('#net-host').disabled = $('#net-host-tv').disabled = $('#net-join').disabled = !!NET.peer && !on;
   $('#net-room').textContent = NET.code;
   $('#net-title').textContent = NET.display ? 'TV display mode' : 'Play online';
@@ -3387,7 +3393,30 @@ $('#net-host-tv').addEventListener('click', () => { unlockAudio(); hostRoom(true
 $('#net-join').addEventListener('click', () => joinRoom(codeIn.value));
 $('#net-pad').addEventListener('click', () => { unlockAudio(); startPadMode(codeIn.value); });
 codeIn.addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(codeIn.value); });
-$('#net-leave').addEventListener('click', () => leaveRoom(''));
+$('#net-leave').addEventListener('click', e => armLeave(e.currentTarget));
+$('#leave-btn').addEventListener('click', e => { e.currentTarget.blur(); armLeave(e.currentTarget); });
+$('#pad-leave').addEventListener('click', e => armLeave(e.currentTarget));
+// Leave room asks for a second tap within 3 seconds, so nobody leaves by accident
+function armLeave(btn) {
+  if (btn.classList.contains('armed')) { btn.classList.remove('armed'); clearTimeout(btn._t); btn.textContent = 'Leave room'; leaveRoomNow(); return; }
+  btn.classList.add('armed'); btn.textContent = 'Tap again to leave';
+  clearTimeout(btn._t); btn._t = setTimeout(() => { btn.classList.remove('armed'); btn.textContent = 'Leave room'; }, 3000);
+}
+// Host: tell everyone the room is closing (they go back to the title). Player: tell the host, whose screen drops your tank and slot.
+function leaveRoomNow() {
+  const was = NET.mode;
+  if (PAD.mode) exitPadMode();
+  if (was === 'host') { broadcast({ t: 'closed' }); setTimeout(() => leaveRoom(''), 250); }
+  else if (was === 'client') { send({ t: 'bye' }); setTimeout(() => leaveRoom(''), 200); }
+  else leaveRoom('');
+}
+// Back from phone-controller mode to the normal game page
+function exitPadMode() {
+  PAD.mode = false; clearTimeout(PAD.retryT); PAD.retryT = 0;
+  document.body.classList.remove('padmode', 'cust');
+  if (/^#pad=/.test(location.hash)) try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  lastTouchMode = ''; lastOv = null; resize();
+}
 $('#net-voice').addEventListener('click', toggleVoice);
 $('#net-copy').addEventListener('click', () => {
   const b = $('#net-copy');
@@ -4078,7 +4107,8 @@ function custHTML(i, sl, n, unl) {
       <div class="pc-head" style="justify-content:center"><h2>Room ${esc(NET.code)}</h2></div>
       <p class="pc-desc">${n}/4 players have joined the game on the TV.</p>
       ${n >= 4 ? '<p class="warn">The game is full (4 players). You can join as soon as someone leaves.</p>'
-        : '<div class="pc-actions"><button type="button" class="pbtn" data-pc="join">Join the game</button></div>'}</div>`;
+        : '<div class="pc-actions"><button type="button" class="pbtn" data-pc="join">Join the game</button></div>'}
+      <div class="pc-actions" style="margin-top:10px"><button type="button" class="pbtn ghost leave" data-pc="leaveroom">Leave room</button></div></div>`;
   }
   const k = slotChassis(i), S = CHASSIS[k];
   const sw = COLORS.map((c, ci) => `<button type="button" class="sw${ci === sl.color ? ' sel' : ''}" style="--c:${c[1]}" data-pc="color" data-v="${ci}" aria-label="${c[0]}"></button>`).join('');
@@ -4094,7 +4124,7 @@ function custHTML(i, sl, n, unl) {
       <div class="pc-head"><h2 style="color:${COLORS[sl.color][1]}">You are P${i + 1}</h2><span class="note">Room ${esc(NET.code)} · ${n}/4</span></div>
       <canvas id="pc-prev" width="640" height="360" aria-label="Your tank"></canvas>
       <div class="pc-name">${S.name}</div><p class="pc-desc">${esc(S.desc || 'The all-rounder: bouncing shells and mines.')}</p>
-      <div class="pc-actions" style="margin-top:10px"><button type="button" class="pbtn" data-pc="start">Start game</button><button type="button" class="pbtn ghost" data-pc="leave">Leave</button></div>
+      <div class="pc-actions" style="margin-top:10px"><button type="button" class="pbtn" data-pc="start">Start game</button><button type="button" class="pbtn ghost leave" data-pc="leaveroom">Leave room</button></div>
     </div>
     <div class="pc-right">
       <h3>Color · ${COLORS[sl.color][0]}</h3><div class="sw-row">${sw}</div>
@@ -4111,6 +4141,7 @@ padCustEl.addEventListener('click', e => {
     case 'join': pressPad(0); break;
     case 'start': pressPad(9); break;
     case 'leave': pressPad(1); break;
+    case 'leaveroom': armLeave(b); break;
     case 'color': if (i >= 0) setPref(i, { color: +v }); break;
     case 'trail': if (i >= 0) setPref(i, { trail: +v }); break;
     case 'tank': if (i >= 0 && unlockedChassis().includes(v)) setPref(i, { chassis: v }); break;
@@ -4195,6 +4226,7 @@ function updatePadUi() {
       : G.state === 'clear' ? 'Level cleared!'
       : `Level ${G.level} · ${G.lives} ${G.lives === 1 ? 'life' : 'lives'}. Left stick moves, right stick aims (push far to fire). ☰ pauses.`;
   }
+  $('#pad-leave').hidden = NET.mode !== 'client';
   const col = sl ? slotColor(i) : 'transparent', key = title + '|' + msg + '|' + col;
   if (key === lastPadUi) return; lastPadUi = key;
   $('#pad-title').textContent = title; $('#pad-msg').textContent = msg; $('#pad-swatch').style.background = col;
